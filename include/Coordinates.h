@@ -40,7 +40,7 @@
 class Coordinates
 {
   public:
-    Coordinates(std::string body, double JD, int coordtype, int xyz, int theory,
+    Coordinates(std::string body, double JD, int timesc, int coordtype, int xyz, int theory,
                 int unit, double step, int stepnum, std::string epmpath, int *cancel);
     virtual
     ~Coordinates();
@@ -57,6 +57,7 @@ class Coordinates
     int stepnum = -1;
     std::string epmpath = "";
     int *cancel = nullptr;
+    int timesc = 0;
 };
 
 #endif /* COORDINATES_H_ */

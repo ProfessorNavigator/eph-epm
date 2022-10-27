@@ -85,7 +85,7 @@ AuxFunc::timeTT(int day, int month, int year, int hour, int minut,
             (153.0 * m1 + 2.0) / 5.0)) + chd + 1721119;
   if(J >= 0)
     {
-      JD = static_cast<double>(J) + static_cast<double>(chh - 12) / 24.0 +
+      JD = static_cast<double>(J) + static_cast<double>(chh) / 24.0 +
            static_cast<double>(chmin) / 1440.0 + chsec / 86400.0;
     }
   else
@@ -97,7 +97,6 @@ AuxFunc::timeTT(int day, int month, int year, int hour, int minut,
     }
   if(JD <= 2424151.5)
     {
-      JD = JD + 0.5;
       if(JD <= 2299161.0)
         {
           dateJulian(JD, &chd, &chm, &chy, &chh, &chmin, &chsec);
@@ -119,6 +118,10 @@ AuxFunc::timeTT(int day, int month, int year, int hour, int minut,
               JD = static_cast<double>(J) - k;
             }
         }
+    }
+  else
+    {
+      JD = JD - 0.5;
     }
   double delta;
   int ch = iauDat(chy, chm, chd, JD - std::floor(JD), &delta);
@@ -228,7 +231,7 @@ AuxFunc::timeTT(double JDutc)
                 (153.0 * m1 + 2.0) / 5.0)) + chd + 1721119;
   if(J >= 0)
     {
-      JD = static_cast<double>(J) + static_cast<double>(chh - 12) / 24.0 +
+      JD = static_cast<double>(J) + static_cast<double>(chh) / 24.0 +
            static_cast<double>(chmin) / 1440.0 + chsec / 86400.0;
     }
   else
@@ -240,14 +243,6 @@ AuxFunc::timeTT(double JDutc)
     }
   if(JD <= 2424151.5)
     {
-      if(JD < 0)
-        {
-          JD = JD - 0.5;
-        }
-      else
-        {
-          JD = JD + 0.5;
-        }
       if(JD <= 2299161.0)
         {
           dateJulian(JD, &chd, &chm, &chy, &chh, &chmin, &chsec);
@@ -269,6 +264,10 @@ AuxFunc::timeTT(double JDutc)
               JD = static_cast<double>(J) - k;
             }
         }
+    }
+  else
+    {
+      JD = JD - 0.5;
     }
   double delta;
   int ch = iauDat(chy, chm, chd, JD - std::floor(JD), &delta);
@@ -413,6 +412,34 @@ AuxFunc::utcJD(int day, int month, int year, int hour, int minut, double sec)
   if(J >= 0)
     {
 
+      JD = static_cast<double>(J) + static_cast<double>(hour) / 24.0 +
+           static_cast<double>(minut) / 1440.0 + sec / 86400.0;
+    }
+  else
+    {
+      double k = static_cast<double>(hour) / 24.0 + static_cast<double>
+                 (minut) / 1440.0 + sec / 86400.0;
+      k = 1 - k;
+      JD = static_cast<double>(J) - k;
+    }
+  return JD;
+}
+
+double
+AuxFunc::grigToJuliancal(double JDgr)
+{
+  int day, month, year, hour, minut;
+  double sec;
+  dateJulian(JDgr, &day, &month, &year, &hour, &minut, &sec);
+  double a1, m1;
+  a1 = std::floor(static_cast<double>(month - 3) / 12.0);
+  m1 = static_cast<double>(month - 3) - 12.0 * a1;
+  int J = static_cast<int>(std::floor(1461.0 *
+                                      (static_cast<double>(year) + a1) / 4.0)) + static_cast<int>(std::floor(
+                                          (153.0 * m1 + 2.0) / 5.0)) + day + 1721117;
+  double JD;
+  if(J >= 0)
+    {
       JD = static_cast<double>(J) + static_cast<double>(hour) / 24.0 +
            static_cast<double>(minut) / 1440.0 + sec / 86400.0;
     }

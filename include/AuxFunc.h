@@ -19,8 +19,8 @@
 #define AUXFUNC_H_
 
 #ifdef _WIN32
-#define _USE_MATH_DEFINES
-#include <Windows.h>
+  #define _USE_MATH_DEFINES
+  #include <Windows.h>
 #endif // _WIN32
 
 #include <iostream>
@@ -52,6 +52,8 @@ class AuxFunc
                int *minut, double *second); //Julian date to calendar date
     double
     utcJD(int day, int month, int year, int hour, int minut, double sec);
+    double
+    grigToJuliancal(double JDgr);
     void
     toEcliptic(mpf_class *Oldx, mpf_class *Oldy,
                mpf_class *Oldz, mpf_class *Newx,

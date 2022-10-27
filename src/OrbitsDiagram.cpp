@@ -18,7 +18,7 @@
 #include "OrbitsDiagram.h"
 
 OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
-                             double JD, int coordtype, int theory, int *cancel)
+                             double JD, int timesc, int coordtype, int theory, int *cancel)
 {
   this->mw = mw;
   this->ephpath = ephpath;
@@ -33,6 +33,7 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
   Width = req.get_width();
   this->coordtype = coordtype;
   this->theory = theory;
+  this->timesc = timesc;
 }
 
 OrbitsDiagram::~OrbitsDiagram()
@@ -71,7 +72,7 @@ OrbitsDiagram::calculateSize()
   bodyv.push_back(std::make_tuple("bamberga", 1607.041));
   bodyv.push_back(std::make_tuple("iris", 1345.337));
 
-  bool ch = daf->epochCheckUTC(JD, &epb, &epe, ephpath);
+  bool ch = daf->epochCheckUTC(JD, timesc, &epb, &epe, ephpath);
   if(ch)
     {
       double summa = 1.0 / scale_factor * static_cast<double>(bodyv.size() - 2)
@@ -142,7 +143,8 @@ OrbitsDiagram::calculateOrbits()
             }
         }
 
-      Coordinates *coord = new Coordinates("sedna", JDbeg, coordtype, 0, theory, 0,
+      Coordinates *coord = new Coordinates("sedna", JDbeg, timesc, coordtype, 0,
+                                           theory, 0,
                                            period * scale_factor, stepnum, ephpath, cancel);
       coord->pulse_signal = [this]
       {
@@ -297,7 +299,8 @@ OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
             }
         }
 
-      Coordinates *coord = new Coordinates(bodyc, JDbeg, coordtype, 0, theory, 0,
+      Coordinates *coord = new Coordinates(bodyc, JDbeg, timesc, coordtype, 0, theory,
+                                           0,
                                            period * scale_factor, stepnum, ephpath, cancel);
       coord->pulse_signal = [this]
       {
@@ -442,9 +445,8 @@ OrbitsDiagram::diagramPlot()
 void
 OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
 {
-  Coordinates *coord = new Coordinates(body, JD, coordtype, 0, theory, 0, 1.0, 1,
-                                       ephpath,
-                                       cancel);
+  Coordinates *coord = new Coordinates(body, JD, timesc, coordtype, 0, theory, 0,
+                                       1.0, 1, ephpath, cancel);
   coord->pulse_signal = [this]
   {
     if(this->pulse_signal)

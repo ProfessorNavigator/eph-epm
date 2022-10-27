@@ -49,6 +49,7 @@ class MainWindow : public Gtk::ApplicationWindow
     void
     calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
               Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+              Gtk::ComboBoxText *timecomb,
               Gtk::ComboBoxText *belt, Gtk::ComboBoxText *objcomb,
               Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *xyzcomb,
               Gtk::ComboBoxText *equincomb, Gtk::ComboBoxText *unitcomb,
@@ -85,6 +86,7 @@ class MainWindow : public Gtk::ApplicationWindow
     void
     orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
                 Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+                Gtk::ComboBoxText *timecomb,
                 Gtk::ComboBoxText *belt, Gtk::ComboBoxText *coordcomb,
                 Gtk::ComboBoxText *equincomb, Gtk::Entry *pathent);
 

@@ -37,9 +37,10 @@ class DAFOperations
     fileVersion(std::fstream *f);
     bool
     epochCheckUTC(int day, int month, int year, int hours, int minutes,
-                  double seconds, int belt, std::string filename);
+                  double seconds, int timesc, int belt, std::string filename);
     bool
-    epochCheckUTC(double JD, double *epb, double *epe, std::string filename);
+    epochCheckUTC(double JD, int timesc, double *epb, double *epe,
+                  std::string filename);
     int
     bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end, int NAIFid);
   private:

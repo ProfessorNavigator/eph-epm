@@ -137,17 +137,26 @@ MainWindow::createWindow()
   second->set_input_purpose(Gtk::InputPurpose::DIGITS);
   grid->attach(*second, 5, 2, 1, 1);
 
-  Gtk::Label *inpparl = Gtk::make_managed<Gtk::Label>();
-  inpparl->set_margin(5);
-  inpparl->set_halign(Gtk::Align::CENTER);
-  inpparl->set_markup(gettext("<b>Parameters input</b>"));
-  grid->attach(*inpparl, 0, 3, 6, 1);
+  Gtk::Label *timelab = Gtk::make_managed<Gtk::Label>();
+  timelab->set_text(gettext("Time: "));
+  timelab->set_halign(Gtk::Align::START);
+  timelab->set_margin(5);
+  grid->attach(*timelab, 0, 3, 1, 1);
+
+  Gtk::ComboBoxText *timecomb = Gtk::make_managed<Gtk::ComboBoxText>();
+  timecomb->append("UTC");
+  timecomb->append("TT");
+  timecomb->append("TDB");
+  timecomb->set_halign(Gtk::Align::START);
+  timecomb->set_margin(5);
+  timecomb->set_active(0);
+  grid->attach(*timecomb, 1, 3, 1, 1);
 
   Gtk::Label *beltlab = Gtk::make_managed<Gtk::Label>();
   beltlab->set_text(gettext("Hour belt: "));
   beltlab->set_halign(Gtk::Align::START);
   beltlab->set_margin(5);
-  grid->attach(*beltlab, 0, 4, 2, 1);
+  grid->attach(*beltlab, 2, 3, 2, 1);
 
   Gtk::ComboBoxText *belt = Gtk::make_managed<Gtk::ComboBoxText>();
   std::vector<int> beltv;
@@ -178,13 +187,19 @@ MainWindow::createWindow()
   belt->set_halign(Gtk::Align::START);
   belt->set_margin(5);
   belt->set_active(12);
-  grid->attach(*belt, 1, 4, 2, 1);
+  grid->attach(*belt, 3, 3, 2, 1);
+
+  Gtk::Label *inpparl = Gtk::make_managed<Gtk::Label>();
+  inpparl->set_margin(5);
+  inpparl->set_halign(Gtk::Align::CENTER);
+  inpparl->set_markup(gettext("<b>Parameters input</b>"));
+  grid->attach(*inpparl, 0, 4, 6, 1);
 
   Gtk::Label *obj = Gtk::make_managed<Gtk::Label>();
   obj->set_text(gettext("Object: "));
   obj->set_halign(Gtk::Align::START);
   obj->set_margin(5);
-  grid->attach(*obj, 3, 4, 1, 1);
+  grid->attach(*obj, 0, 5, 1, 1);
 
   Gtk::ComboBoxText *objcomb = Gtk::make_managed<Gtk::ComboBoxText>();
   objcomb->append(gettext("Sun"));
@@ -212,13 +227,13 @@ MainWindow::createWindow()
   objcomb->set_halign(Gtk::Align::START);
   objcomb->set_margin(5);
   objcomb->set_active(0);
-  grid->attach(*objcomb, 4, 4, 2, 1);
+  grid->attach(*objcomb, 1, 5, 2, 1);
 
   Gtk::Label *coord = Gtk::make_managed<Gtk::Label>();
   coord->set_text(gettext("Coordinates: "));
   coord->set_halign(Gtk::Align::START);
   coord->set_margin(5);
-  grid->attach(*coord, 0, 5, 1, 1);
+  grid->attach(*coord, 0, 6, 1, 1);
 
   Gtk::ComboBoxText *coordcomb = Gtk::make_managed<Gtk::ComboBoxText>();
   coordcomb->append(gettext("Equatorial"));
@@ -226,7 +241,7 @@ MainWindow::createWindow()
   coordcomb->set_halign(Gtk::Align::START);
   coordcomb->set_margin(5);
   coordcomb->set_active(0);
-  grid->attach(*coordcomb, 1, 5, 2, 1);
+  grid->attach(*coordcomb, 1, 6, 2, 1);
 
   Gtk::ComboBoxText *xyzcomb = Gtk::make_managed<Gtk::ComboBoxText>();
   xyzcomb->append("X, Y, Z");
@@ -234,13 +249,13 @@ MainWindow::createWindow()
   xyzcomb->set_halign(Gtk::Align::START);
   xyzcomb->set_margin(5);
   xyzcomb->set_active(0);
-  grid->attach(*xyzcomb, 3, 5, 2, 1);
+  grid->attach(*xyzcomb, 3, 6, 2, 1);
 
   Gtk::Label *equin = Gtk::make_managed<Gtk::Label>();
   equin->set_text(gettext("Equator and equinox: "));
   equin->set_halign(Gtk::Align::START);
   equin->set_margin(5);
-  grid->attach(*equin, 0, 6, 2, 1);
+  grid->attach(*equin, 0, 7, 2, 1);
 
   Gtk::ComboBoxText *equincomb = Gtk::make_managed<Gtk::ComboBoxText>();
   equincomb->append(gettext("Mean (J2000)"));
@@ -249,13 +264,13 @@ MainWindow::createWindow()
   equincomb->set_halign(Gtk::Align::START);
   equincomb->set_margin(5);
   equincomb->set_active(0);
-  grid->attach(*equincomb, 2, 6, 3, 1);
+  grid->attach(*equincomb, 2, 7, 3, 1);
 
   Gtk::Label *unit = Gtk::make_managed<Gtk::Label>();
   unit->set_text(gettext("Units of measurement: "));
   unit->set_halign(Gtk::Align::START);
   unit->set_margin(5);
-  grid->attach(*unit, 0, 7, 2, 1);
+  grid->attach(*unit, 0, 8, 2, 1);
 
   Gtk::ComboBoxText *unitcomb = Gtk::make_managed<Gtk::ComboBoxText>();
   unitcomb->append(gettext("Astronomical units"));
@@ -264,7 +279,7 @@ MainWindow::createWindow()
   unitcomb->set_halign(Gtk::Align::START);
   unitcomb->set_margin(5);
   unitcomb->set_active(0);
-  grid->attach(*unitcomb, 2, 7, 3, 1);
+  grid->attach(*unitcomb, 2, 8, 3, 1);
   objcomb->signal_changed().connect(
     [objcomb, xyzcomb, unitcomb, coord, coordcomb, equin, equincomb]
   {
@@ -338,7 +353,7 @@ MainWindow::createWindow()
   step->set_text(gettext("Step size (days): "));
   step->set_halign(Gtk::Align::START);
   step->set_margin(5);
-  grid->attach(*step, 0, 8, 1, 1);
+  grid->attach(*step, 0, 9, 1, 1);
 
   Gtk::Entry *stepent = Gtk::make_managed<Gtk::Entry>();
   stepent->set_halign(Gtk::Align::START);
@@ -346,13 +361,13 @@ MainWindow::createWindow()
   stepent->set_max_width_chars(4);
   stepent->set_alignment(0.5);
   stepent->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*stepent, 1, 8, 1, 1);
+  grid->attach(*stepent, 1, 9, 1, 1);
 
   Gtk::Label *stepnum = Gtk::make_managed<Gtk::Label>();
   stepnum->set_text(gettext("Number of steps: "));
   stepnum->set_halign(Gtk::Align::END);
   stepnum->set_margin(5);
-  grid->attach(*stepnum, 2, 8, 2, 1);
+  grid->attach(*stepnum, 2, 9, 2, 1);
 
   Gtk::Entry *stepnument = Gtk::make_managed<Gtk::Entry>();
   stepnument->set_halign(Gtk::Align::START);
@@ -360,13 +375,13 @@ MainWindow::createWindow()
   stepnument->set_max_width_chars(4);
   stepnument->set_alignment(0.5);
   stepnument->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*stepnument, 4, 8, 1, 1);
+  grid->attach(*stepnument, 4, 9, 1, 1);
 
   Gtk::Label *pathlab = Gtk::make_managed<Gtk::Label>();
   pathlab->set_halign(Gtk::Align::START);
   pathlab->set_margin(5);
   pathlab->set_text(gettext("Path to ephemerides file:"));
-  grid->attach(*pathlab, 0, 9, 2, 1);
+  grid->attach(*pathlab, 0, 10, 2, 1);
 
   Gtk::Entry *pathent = Gtk::make_managed<Gtk::Entry>();
   pathent->set_margin_start(5);
@@ -385,7 +400,7 @@ MainWindow::createWindow()
       f.close();
       pathent->set_text(Glib::ustring(line));
     }
-  grid->attach(*pathent, 0, 10, 3, 1);
+  grid->attach(*pathent, 0, 11, 3, 1);
 
   Gtk::Button *openb = Gtk::make_managed<Gtk::Button>();
   openb->set_margin_start(5);
@@ -398,7 +413,7 @@ MainWindow::createWindow()
       GTK_STYLE_PROVIDER_PRIORITY_USER);
   openb->signal_clicked().connect(
     sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), pathent));
-  grid->attach(*openb, 3, 10, 1, 1);
+  grid->attach(*openb, 3, 11, 1, 1);
 
   Gtk::Button *calc = Gtk::make_managed<Gtk::Button>();
   calc->set_halign(Gtk::Align::CENTER);
@@ -409,9 +424,9 @@ MainWindow::createWindow()
                                           GTK_STYLE_PROVIDER_PRIORITY_USER);
   calc->signal_clicked().connect(
     sigc::bind(sigc::mem_fun(*this, &MainWindow::calcCoord), day, month,
-               year, hour, minut, second, belt, objcomb, coordcomb, xyzcomb,
+               year, hour, minut, second, timecomb, belt, objcomb, coordcomb, xyzcomb,
                equincomb, unitcomb, stepent, stepnument, pathent));
-  grid->attach(*calc, 0, 11, 2, 1);
+  grid->attach(*calc, 0, 12, 2, 1);
 
   Gtk::Button *orb = Gtk::make_managed<Gtk::Button>();
   orb->set_halign(Gtk::Align::CENTER);
@@ -422,8 +437,8 @@ MainWindow::createWindow()
                                          GTK_STYLE_PROVIDER_PRIORITY_USER);
   orb->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this,
                                 &MainWindow::orbitsGraph), day, month, year,
-                                hour, minut, second, belt, coordcomb, equincomb, pathent));
-  grid->attach(*orb, 2, 11, 1, 1);
+                                hour, minut, second, timecomb, belt, coordcomb, equincomb, pathent));
+  grid->attach(*orb, 2, 12, 1, 1);
 
   Gtk::Button *about = Gtk::make_managed<Gtk::Button>();
   about->set_halign(Gtk::Align::CENTER);
@@ -434,7 +449,7 @@ MainWindow::createWindow()
       GTK_STYLE_PROVIDER_PRIORITY_USER);
   about->signal_clicked().connect(
     sigc::mem_fun(*this, &MainWindow::aboutProg));
-  grid->attach(*about, 3, 11, 1, 1);
+  grid->attach(*about, 3, 12, 1, 1);
 
   this->signal_close_request().connect([this, pathent]
   {
@@ -497,6 +512,7 @@ MainWindow::openDialogFunc(int rid, Glib::RefPtr<Gtk::FileChooserNative> fcd,
 void
 MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
                       Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+                      Gtk::ComboBoxText *timecomb,
                       Gtk::ComboBoxText *belt, Gtk::ComboBoxText *objcomb,
                       Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *xyzcomb,
                       Gtk::ComboBoxText *equincomb,
@@ -816,7 +832,7 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   JDshow = af.utcJD(daynum, monthnum, yearnum, hournum, minutnum, secondnum);
   DAFOperations daf;
   bool datech = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-                                  secondnum, beltnum, pathstr);
+                                  secondnum, timecomb->get_active_row_number(), beltnum, pathstr);
   if(!datech)
     {
       info_win->close();
@@ -824,7 +840,7 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       return void();
     }
   double JDcalc = JDshow;
-  if(JDcalc < 0)
+  if(JDcalc < 0 && beltnum != 0)
     {
       double k = -static_cast<double>(beltnum) / 24.0;
       k = 1.0 - k;
@@ -835,7 +851,8 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       double k = -static_cast<double>(beltnum) / 24.0;
       JDcalc = JDcalc + k;
     }
-  Coordinates *calc = new Coordinates(objname, JDcalc, coordtype, xyz, theory,
+  Coordinates *calc = new Coordinates(objname, JDcalc,
+                                      timecomb->get_active_row_number(), coordtype, xyz, theory,
                                       unit, stepnum, stepnumbernum, pathstr, &orbits_cancel);
   std::vector<std::array<mpf_class, 3>> *result =
                                        new std::vector<std::array<mpf_class, 3>>;
@@ -1383,6 +1400,7 @@ MainWindow::saveDialogFunc(int rid, Glib::RefPtr<Gtk::FileChooserNative> fcd,
 void
 MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
                         Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+                        Gtk::ComboBoxText *timecomb,
                         Gtk::ComboBoxText *belt, Gtk::ComboBoxText *coordcomb,
                         Gtk::ComboBoxText *equincomb, Gtk::Entry *pathent)
 {
@@ -1573,13 +1591,14 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
     }
   DAFOperations daf;
   bool chtm = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-                                secondnum, beltnum, pathstr);
+                                secondnum, timecomb->get_active_row_number(), beltnum, pathstr);
   if(chtm)
     {
       Gtk::ProgressBar *bar = Gtk::make_managed<Gtk::ProgressBar>();
       bar->set_fraction(0.0);
 
       OrbitsDiagram *od = new OrbitsDiagram(this, pathstr, JDcalc,
+                                            timecomb->get_active_row_number(),
                                             coordcomb->get_active_row_number(), equincomb->get_active_row_number(),
                                             &orbits_cancel);
 

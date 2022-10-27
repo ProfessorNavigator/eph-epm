@@ -39,6 +39,7 @@ class OrbitsDiagram
 {
   public:
     OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath, double JD,
+                  int timesc,
                   int coordtype, int theory, int *cancel);
     virtual ~OrbitsDiagram();
     int
@@ -65,6 +66,7 @@ class OrbitsDiagram
     std::vector<std::tuple<std::string, double>> bodyv;
     DAFOperations *daf = nullptr;
     double JD = 0.0;
+    int timesc = 0;
     double epb = 0.0;
     double epe = 0.0;
     mglGraph *gr = nullptr;

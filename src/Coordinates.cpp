@@ -17,8 +17,8 @@
 
 #include "Coordinates.h"
 
-Coordinates::Coordinates(std::string body, double JD, int coordtype, int xyz,
-                         int theory, int unit, double step, int stepnum,
+Coordinates::Coordinates(std::string body, double JD, int timesc, int coordtype,
+                         int xyz, int theory, int unit, double step, int stepnum,
                          std::string epmpath, int *cancel)
 {
   this->body = body;
@@ -31,6 +31,7 @@ Coordinates::Coordinates(std::string body, double JD, int coordtype, int xyz,
   this->stepnum = stepnum;
   this->epmpath = epmpath;
   this->cancel = cancel;
+  this->timesc = timesc;
 }
 
 Coordinates::~Coordinates()
@@ -189,9 +190,46 @@ std::vector<std::array<mpf_class, 3>>
             {
               break;
             }
-          double JDcalc = af.timeTT(i);
-          mpf_class JDfin = mpf_class(JDcalc)
-                            - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype) / mpf_class(86400);
+
+          mpf_class JDfin;
+          double JDcalc = 0.0;
+          if(timesc == 0)
+            {
+              JDcalc = af.timeTT(i);
+              JDfin = mpf_class(JDcalc)
+                      - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype) / mpf_class(86400.0);
+            }
+          if(timesc == 1)
+            {
+              if(i < 0)
+                {
+                  JDcalc = i + 0.5;
+                }
+              else
+                {
+                  JDcalc = i - 0.5;
+                }
+              if(JDcalc <= 2299161.0)
+                {
+                  JDcalc = af.grigToJuliancal(JDcalc);
+                }
+              JDfin = mpf_class(JDcalc)
+                      - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype) / mpf_class(86400.0);
+            }
+          if(timesc == 2)
+            {
+              if(i - 0.5 <= 2299161.0)
+                {
+                  if(i < 0)
+                    {
+                      JDfin = JDcalc = af.grigToJuliancal(i + 0.5);
+                    }
+                  else
+                    {
+                      JDfin = JDcalc = af.grigToJuliancal(i - 0.5);
+                    }
+                }
+            }
           mpf_class X;
           mpf_class Y;
           mpf_class Z;

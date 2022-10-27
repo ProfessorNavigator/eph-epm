@@ -76,12 +76,26 @@ DAFOperations::fileVersion(std::fstream *f)
 
 bool
 DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
-                             int minutes, double seconds, int belt, std::string filename)
+                             int minutes, double seconds, int timesc, int belt, std::string filename)
 {
   bool result = false;
   std::filesystem::path filepath = std::filesystem::u8path(filename);
   AuxFunc af;
-  double JDtt = af.timeTT(day, month, year, hours, minutes, seconds, belt);
+  double JDtt =  0.0;
+  if(timesc == 0)
+    {
+      JDtt = af.timeTT(day, month, year, hours, minutes, seconds, belt);
+    }
+  if(timesc == 1)
+    {
+      JDtt = af.utcJD(day, month, year, hours, minutes, seconds);
+      JDtt = JDtt - static_cast<double>(belt) / 24.0;
+    }
+  if(timesc == 2)
+    {
+      JDtt = af.utcJD(day, month, year, hours, minutes, seconds);
+      JDtt = JDtt - static_cast<double>(belt) / 24.0;
+    }
   std::fstream f;
   f.open(filepath, std::ios_base::in | std::ios_base::binary);
   if(!f.is_open())
@@ -114,6 +128,14 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
           {
             return std::get<2>(el) == 1000000001;
           });
+          if(timesc == 2)
+            {
+              itspk = std::find_if(spkv.begin(), spkv.end(), []
+                                   (auto & el)
+              {
+                return std::get<2>(el) == 1;
+              });
+            }
           if(itspk != spkv.end())
             {
               if(JDtt >= std::get<0>(*itspk) && JDtt <= std::get<1>(*itspk))
@@ -159,7 +181,8 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
 }
 
 bool
-DAFOperations::epochCheckUTC(double JD, double *epb, double *epe, std::string filename)
+DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
+                             std::string filename)
 {
   bool result = false;
   std::filesystem::path filepath = std::filesystem::u8path(filename);
@@ -198,6 +221,14 @@ DAFOperations::epochCheckUTC(double JD, double *epb, double *epe, std::string fi
           {
             return std::get<2>(el) == 1000000001;
           });
+          if(timesc == 2)
+            {
+              itspk = std::find_if(spkv.begin(), spkv.end(), []
+                                   (auto & el)
+              {
+                return std::get<2>(el) == 1;
+              });
+            }
           if(itspk != spkv.end())
             {
               if(JDtt >= std::get<0>(*itspk) && JDtt <= std::get<1>(*itspk))
@@ -358,7 +389,8 @@ std::vector<std::tuple<double, double, int, int, int, int, int, int>>
 }
 
 int
-DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end, int NAIFid)
+DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
+                        int NAIFid)
 {
   int type = -1;
   if(!result->is_open())
