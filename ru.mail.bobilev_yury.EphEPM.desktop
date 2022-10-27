@@ -1,0 +1,15 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name=EphEPM
+Comment=EphEPM calculats coordinates of Solar System bodies
+GenericName=EphEPM
+Exec=ephepm
+Icon=ephepm
+Categories=Science;
+Terminal=false
+Type=Application
+Version=1.5
+Name[ru]=EphEPM
+Comment[ru]=Программа расчёта барицентрических координат тел солнечной системы
+GenericName[ru]=EphEPM
+Name[ru_RU]=EphEPM

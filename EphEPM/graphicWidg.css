@@ -1,0 +1,112 @@
+#sizeButton {
+	background-image: none;
+	background-color: rgb(26, 100, 31);
+	color: rgb(239, 255, 0);
+	border-width: 1px;
+	border-color: black;
+	box-shadow:
+   inset rgba(0,0,0,.6) 0 -3px 8px,
+   inset rgba(252,255,255,.7) 0 3px 8px,
+   rgba(0,0,0,.8) 0 3px 8px -3px;
+}
+
+#restoreButton {
+	background-image: none;
+	background-color: rgb(0, 145, 255);
+	color: rgb(8, 8, 8);
+	border-width: 1px;
+	border-color: black;
+	box-shadow:
+   inset rgba(0,0,0,.6) 0 -3px 8px,
+   inset rgba(252,255,255,.7) 0 3px 8px,
+   rgba(0,0,0,.8) 0 3px 8px -3px;
+}
+
+#saveButton {
+	background-image: none;
+	background-color: rgb(255, 152, 0);
+	color: rgb(8, 8, 8);
+	border-width: 1px;
+	border-color: black;
+	box-shadow:
+   inset rgba(0,0,0,.6) 0 -3px 8px,
+   inset rgba(252,255,255,.7) 0 3px 8px,
+   rgba(0,0,0,.8) 0 3px 8px -3px;
+}
+
+#minButton {
+	background-image: none;
+	background-color: yellow;
+	border-width: 1px;
+    border-radius: 10px;	
+	color: black;
+	border-width: 1px;
+	border-color: black;
+	box-shadow:
+   inset rgba(0,0,0,.6) 0 -3px 8px,
+   inset rgba(252,255,255,.7) 0 3px 8px,
+   rgba(0,0,0,.8) 0 3px 8px -3px;
+}
+
+#closeButton {
+	background-image: none;
+	border-width: 1px;
+    border-radius: 10px;
+	background-color: rgb(255, 9, 0);
+	color: yellow;
+	border-width: 1px;
+	border-color: black;
+	box-shadow:
+   inset rgba(0,0,0,.6) 0 -3px 8px,
+   inset rgba(252,255,255,.7) 0 3px 8px,
+   rgba(0,0,0,.8) 0 3px 8px -3px;
+}
+
+#buttonPanel {
+	background-color: rgb(66, 143, 143);
+}
+
+#minButton:hover {
+	background-color: rgb(51, 36, 249);
+	color: white;
+}
+
+#closeButton:hover {
+	background-color: rgb(51, 36, 249);
+	color: white;
+}
+
+#saveButton:hover {
+	background-color: rgb(51, 36, 249);
+	color: white;
+}
+
+#restoreButton:hover {
+	background-color: rgb(51, 36, 249);
+	color: white;
+}
+
+#sizeButton:hover {
+	background-color: rgb(51, 36, 249);
+	color: white;
+}
+
+#minButton:active {
+	background-color: rgb(199, 43, 10);
+}
+
+#closeButton:active {
+	background-color: rgb(199, 43, 10);
+}
+
+#saveButton:active {
+	background-color: rgb(199, 43, 10);
+}
+
+#restoreButton:active {
+	background-color: rgb(199, 43, 10);
+}
+
+#sizeButton:active {
+	background-color: rgb(199, 43, 10);
+}

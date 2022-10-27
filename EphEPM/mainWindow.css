@@ -1,0 +1,37 @@
+#button {
+	background-image: none;	
+	box-shadow:
+   		inset rgba(0,0,0,.6) 0 -3px 8px,
+   		inset rgba(252,255,255,.7) 0 3px 8px,
+   		rgba(0,0,0,.8) 0 3px 8px -3px; 
+	background-color: rgb(60, 209, 236);
+	border-color: black;
+	color: black;
+}
+
+#button:hover {
+	background-image: none;
+	background-color: rgb(61, 155, 194);	
+}
+
+#open_button {
+	background-image: none;	
+	box-shadow:
+   		inset rgba(0,0,0,.6) 0 -3px 8px,
+   		inset rgba(252,255,255,.7) 0 3px 8px,
+   		rgba(0,0,0,.8) 0 3px 8px -3px; 
+	background-color: rgb(209, 162, 242);
+	border-color: black;
+	color: black;	
+}
+
+#open_button:hover {
+	background-image: none;
+	background-color: rgb(61, 155, 194);	
+}
+
+#ResultTable {
+	border: solid;
+	border-width: 1px 1px 1px 1px;
+	border-color: black;		
+}
