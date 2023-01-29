@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -32,5 +32,4 @@ main(int argc, char *argv[])
   auto app = EPMApplication::create();
   return app->run(argc, argv);
 }
-
 

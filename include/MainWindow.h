@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -15,8 +15,8 @@
  see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MAINWINDOW_H_
-#define MAINWINDOW_H_
+#ifndef INCLUDE_MAINWINDOW_H_
+#define INCLUDE_MAINWINDOW_H_
 
 #include <gtkmm.h>
 #include <vector>
@@ -39,65 +39,59 @@
 
 class MainWindow : public Gtk::ApplicationWindow
 {
-  public:
-    MainWindow();
-    virtual
-    ~MainWindow();
-  private:
-    void
-    createWindow();
-    void
-    calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-              Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-              Gtk::ComboBoxText *timecomb,
-              Gtk::ComboBoxText *belt, Gtk::ComboBoxText *objcomb,
-              Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *xyzcomb,
-              Gtk::ComboBoxText *equincomb, Gtk::ComboBoxText *unitcomb,
-              Gtk::Entry *stepent, Gtk::Entry *stepnument, Gtk::Entry *pathent);
-    void
-    aboutProg();
-    void
-    errDialog(int variant);
-    void
-    resultPresenting(
-      std::vector<std::array<mpf_class, 3>> *result,
-      Gtk::ComboBoxText *belt, Gtk::ComboBoxText *objcomb,
-      Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *xyzcomb,
-      Gtk::ComboBoxText *equincomb, Gtk::ComboBoxText *unitcomb,
-      Glib::Dispatcher *result_win_disp);
-    Gtk::Window *
-    resultPulseWin(int variant, Gtk::ProgressBar *bar);
-    void
-    openDialog(Gtk::Entry *pathent);
-    void
-    openDialogFunc(int rid, Glib::RefPtr<Gtk::FileChooserNative> fcd,
-                   Gtk::Entry *pathent);
-    void
-    saveDialog(Gtk::Window *win, Gtk::Label *objlab, Gtk::Label *coordlab,
-               Gtk::Label *equinlab,
-               Gtk::Label *unitlab, Gtk::Label *beltlab, Gtk::TreeView *view,
-               Gtk::ComboBoxText *objcomb);
-    void
-    saveDialogFunc(int rid, Glib::RefPtr<Gtk::FileChooserNative> fcd,
-                   Gtk::Label *objlab,
-                   Gtk::Label *coordlab, Gtk::Label *equinlab,
-                   Gtk::Label *unitlab, Gtk::Label *beltlab, Gtk::TreeView *view,
-                   Gtk::ComboBoxText *objcomb);
-    void
-    orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-                Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-                Gtk::ComboBoxText *timecomb,
-                Gtk::ComboBoxText *belt, Gtk::ComboBoxText *coordcomb,
-                Gtk::ComboBoxText *equincomb, Gtk::Entry *pathent);
+public:
+  MainWindow();
+  virtual
+  ~MainWindow();
+private:
+  void
+  createWindow();
+  void
+  calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
+	    Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+	    Gtk::ComboBoxText *timecomb, Gtk::ComboBoxText *belt,
+	    Gtk::ComboBoxText *objcomb, Gtk::ComboBoxText *coordcomb,
+	    Gtk::ComboBoxText *xyzcomb, Gtk::ComboBoxText *equincomb,
+	    Gtk::ComboBoxText *unitcomb, Gtk::Entry *stepent,
+	    Gtk::Entry *stepnument, Gtk::Entry *pathent);
+  void
+  aboutProg();
+  void
+  errDialog(int variant);
+  void
+  resultPresenting(std::vector<std::array<mpf_class, 3>> *result,
+		   Gtk::ComboBoxText *belt, Gtk::ComboBoxText *objcomb,
+		   Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *xyzcomb,
+		   Gtk::ComboBoxText *equincomb, Gtk::ComboBoxText *unitcomb,
+		   Glib::Dispatcher *result_win_disp);
+  Gtk::Window*
+  resultPulseWin(int variant, Gtk::ProgressBar *bar);
+  void
+  openDialog(Gtk::Entry *pathent);
+  void
+  openDialogFunc(int rid, Gtk::FileChooserDialog *fcd, Gtk::Entry *pathent);
+  void
+  saveDialog(Gtk::Window *win, Gtk::Label *objlab, Gtk::Label *coordlab,
+	     Gtk::Label *equinlab, Gtk::Label *unitlab, Gtk::Label *beltlab,
+	     Gtk::TreeView *view, Gtk::ComboBoxText *objcomb);
+  void
+  saveDialogFunc(int rid, Gtk::FileChooserDialog *fcd, Gtk::Label *objlab,
+		 Gtk::Label *coordlab, Gtk::Label *equinlab,
+		 Gtk::Label *unitlab, Gtk::Label *beltlab, Gtk::TreeView *view,
+		 Gtk::ComboBoxText *objcomb);
+  void
+  orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
+	      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+	      Gtk::ComboBoxText *timecomb, Gtk::ComboBoxText *belt,
+	      Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *equincomb,
+	      Gtk::Entry *pathent);
 
-    Glib::RefPtr<Gtk::CssProvider> css_provider;
-    std::string Sharepath = "";
+  std::string Sharepath = "";
 
-    int orbits_cancel = 0;
-    double JDshow = 0.0;
-    double stepnum = -1;
+  int orbits_cancel = 0;
+  double JDshow = 0.0;
+  double stepnum = -1;
 };
 
-#endif /* MAINWINDOW_H_ */
-
+#endif /* INCLUDE_MAINWINDOW_H_ */
 

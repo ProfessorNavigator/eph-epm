@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -17,8 +17,8 @@
 
 #include "EPMApplication.h"
 
-EPMApplication::EPMApplication():
-  Gtk::Application("ru.mail.bobilev_yury.EphEPM")
+EPMApplication::EPMApplication() :
+    Gtk::Application("ru.mail.bobilev_yury.EphEPM")
 {
   // TODO Auto-generated constructor stub
 
@@ -32,8 +32,7 @@ EPMApplication::~EPMApplication()
 Glib::RefPtr<EPMApplication>
 EPMApplication::create()
 {
-  return Glib::make_refptr_for_instance < EPMApplication
-         >(new EPMApplication());
+  return Glib::make_refptr_for_instance<EPMApplication>(new EPMApplication());
 }
 
 MainWindow*
@@ -41,18 +40,18 @@ EPMApplication::create_appwindow()
 {
   MainWindow *mw = new MainWindow;
   this->add_window(*mw);
-  mw->signal_hide().connect( [mw, this]
+  mw->signal_hide().connect([mw, this]
   {
     std::vector<Gtk::Window*> wv;
     wv = this->get_windows();
     for(size_t i = 0; i < wv.size(); i++)
       {
-        Gtk::Window *win = wv[i];
-        if(win != mw)
-          {
-            win->hide();
-            delete win;
-          }
+	Gtk::Window *win = wv[i];
+	if(win != mw)
+	  {
+	    win->hide();
+	    delete win;
+	  }
       }
     delete mw;
   });
@@ -65,11 +64,10 @@ EPMApplication::on_activate()
 {
   std::vector<Gtk::Window*> winv;
   winv = this->get_windows();
-  if(winv.size()== 0)
+  if(winv.size() == 0)
     {
       auto appwin = create_appwindow();
       appwin->present();
     }
 }
-
 

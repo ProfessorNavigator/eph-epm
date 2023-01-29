@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -15,8 +15,8 @@
  see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef ORBITSDIAGRAM_H
-#define ORBITSDIAGRAM_H
+#ifndef INCLUDE_ORBITSDIAGRAM_H
+#define INCLUDE_ORBITSDIAGRAM_H
 
 #include <gtkmm.h>
 #include <vector>
@@ -37,52 +37,56 @@
 
 class OrbitsDiagram
 {
-  public:
-    OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath, double JD,
-                  int timesc,
-                  int coordtype, int theory, int *cancel);
-    virtual ~OrbitsDiagram();
-    int
-    calculateSize();
-    std::function<void()>pulse_signal;
-    std::function<void()>calc_completed;
-    std::function<void()>canceled_signal;
-    std::function<void()>diagram_close;
-    void
-    calculateOrbits();
-    void
-    diagramPlot();
-  private:
-    void
-    planetOrbCalc(std::tuple<std::string, double> planettup);
-    void
-    bodyBuilding(std::string body, mglGraph *graph);
-    Gdk::Rectangle
-    screenRes();
+public:
+  OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath, double JD,
+		int timesc, int coordtype, int theory, int *cancel);
+  virtual
+  ~OrbitsDiagram();
+  int
+  calculateSize();
+  std::function<void
+  ()> pulse_signal;
+  std::function<void
+  ()> calc_completed;
+  std::function<void
+  ()> canceled_signal;
+  std::function<void
+  ()> diagram_close;
+  void
+  calculateOrbits();
+  void
+  diagramPlot();
+private:
+  void
+  planetOrbCalc(std::tuple<std::string, double> planettup);
+  void
+  bodyBuilding(std::string body, mglGraph *graph);
+  Gdk::Rectangle
+  screenRes();
 
-    Gtk::ApplicationWindow *mw = nullptr;
-    DiagramWidget *dw = nullptr;
-    std::string ephpath;
-    std::vector<std::tuple<std::string, double>> bodyv;
-    DAFOperations *daf = nullptr;
-    double JD = 0.0;
-    int timesc = 0;
-    double epb = 0.0;
-    double epe = 0.0;
-    mglGraph *gr = nullptr;
-    std::mutex *grmtx = nullptr;
-    std::vector<std::string> threadv;
-    std::mutex *threadvmtx = nullptr;
-    std::mutex cyclemtx;
-    double scale_factor = 0.001;
-    int *cancel = nullptr;
-    int Width = 0;
-    int Height = 0;
-    double plot_factor = 0.000000001;
-    int coordtype = 0;
-    int theory = 0;
-    std::vector<std::array<mpf_class, 3>> resultsed;
+  Gtk::ApplicationWindow *mw = nullptr;
+  DiagramWidget *dw = nullptr;
+  std::string ephpath;
+  std::vector<std::tuple<std::string, double>> bodyv;
+  DAFOperations *daf = nullptr;
+  double JD = 0.0;
+  int timesc = 0;
+  double epb = 0.0;
+  double epe = 0.0;
+  mglGraph *gr = nullptr;
+  std::mutex *grmtx = nullptr;
+  std::vector<std::string> threadv;
+  std::mutex *threadvmtx = nullptr;
+  std::mutex cyclemtx;
+  double scale_factor = 0.001;
+  int *cancel = nullptr;
+  int Width = 0;
+  int Height = 0;
+  double plot_factor = 0.000000001;
+  int coordtype = 0;
+  int theory = 0;
+  std::vector<std::array<mpf_class, 3>> resultsed;
 };
 
-#endif // ORBITSDIAGRAM_H
+#endif /* INCLUDE_ORBITSDIAGRAM_H */
 

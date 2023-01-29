@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -15,8 +15,8 @@
  see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef DIAGRAMWIDGET_H
-#define DIAGRAMWIDGET_H
+#ifndef INCLUDE_DIAGRAMWIDGET_H
+#define INCLUDE_DIAGRAMWIDGET_H
 
 #include <gtkmm.h>
 #include <string>
@@ -31,48 +31,45 @@
 
 class DiagramWidget
 {
-  public:
-    DiagramWidget(Gtk::ApplicationWindow *mw, mglGraph *gr);
-    virtual ~DiagramWidget();
-    void
-    diagramPlot();
-    std::function<void()>diagram_close;
-  private:
-    void
-    planetOrbCalc(std::tuple<std::string, double> planettup);
-    void
-    on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int width, int height);
-    bool
-    scrollEvent(double x, double y, Gtk::Entry *entx, Gtk::Entry *enty,
-                Gtk::Entry *entz, Gtk::DrawingArea *drar);
-    void
-    dragOperation(double x, double y, Gtk::Entry *entx, Gtk::Entry *enty,
-                  Gtk::Entry *entz, Gtk::DrawingArea *drar);
-    void
-    zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty,
-              Gtk::Entry *entz, Gtk::DrawingArea *drar, int id);
-    void
-    saveGraph(mglGraph *gr, int mode);
-    void
-    saveJPEG(Gtk::Window *window, std::string filename,
-             Gtk::FileChooser *filech, Gtk::Entry *file,
-             mglGraph *graph, int mode);
-    void
-    rotationFunc(Gtk::Entry *entx, Gtk::Entry *enty,
-                 Gtk::Entry *entz, Gtk::DrawingArea *drar);
-    Gdk::Rectangle
-    screenRes();
+public:
+  DiagramWidget(Gtk::ApplicationWindow *mw, mglGraph *gr);
+  virtual
+  ~DiagramWidget();
+  void
+  diagramPlot();
+  std::function<void
+  ()> diagram_close;
+private:
+  void
+  planetOrbCalc(std::tuple<std::string, double> planettup);
+  void
+  on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int width, int height);
+  bool
+  scrollEvent(double x, double y, Gtk::Entry *entx, Gtk::Entry *enty,
+	      Gtk::Entry *entz, Gtk::DrawingArea *drar);
+  void
+  dragOperation(double x, double y, Gtk::Entry *entx, Gtk::Entry *enty,
+		Gtk::Entry *entz, Gtk::DrawingArea *drar);
+  void
+  zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
+	    Gtk::DrawingArea *drar, int id);
+  void
+  saveGraph(mglGraph *gr, Gtk::Window *win, int mode);
+  void
+  rotationFunc(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
+	       Gtk::DrawingArea *drar);
+  Gdk::Rectangle
+  screenRes();
 
-    Gtk::ApplicationWindow *mw = nullptr;
-    mglGraph *gr = nullptr;
-    std::vector<double> plotincr;
-    int Height, Width;
-    int X = 0;
-    int Y = 0;
-    Glib::RefPtr<Gtk::CssProvider> css_provider;
-    std::string Sharepath;
-    double scale_val1 = -1143583.890685;
-    double scale_val2 = 1143584.890685;
+  Gtk::ApplicationWindow *mw = nullptr;
+  mglGraph *gr = nullptr;
+  std::vector<double> plotincr;
+  int Height, Width;
+  int X = 0;
+  int Y = 0;
+  std::string Sharepath;
+  double scale_val1 = -1143583.890685;
+  double scale_val2 = 1143584.890685;
 };
 
-#endif // DIAGRAMWIDGET_H
+#endif /* INCLUDE_DIAGRAMWIDGET_H */

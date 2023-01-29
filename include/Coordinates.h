@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -15,12 +15,12 @@
  see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef COORDINATES_H_
-#define COORDINATES_H_
+#ifndef INCLUDE_COORDINATES_H_
+#define INCLUDE_COORDINATES_H_
 
 #ifdef _WIN32
 #define _USE_MATH_DEFINES
-#endif // _WIN32
+#endif
 
 #include <iostream>
 #include <string>
@@ -39,27 +39,29 @@
 
 class Coordinates
 {
-  public:
-    Coordinates(std::string body, double JD, int timesc, int coordtype, int xyz, int theory,
-                int unit, double step, int stepnum, std::string epmpath, int *cancel);
-    virtual
-    ~Coordinates();
-    std::vector<std::array<mpf_class, 3>> calculationsXYZ();
-    std::function<void()>pulse_signal;
-  private:
-    std::string body = "";
-    double JD = -1;
-    int coordtype = -1;
-    int xyz = -1;
-    int theory = -1;
-    int unit = -1;
-    double step = -1;
-    int stepnum = -1;
-    std::string epmpath = "";
-    int *cancel = nullptr;
-    int timesc = 0;
+public:
+  Coordinates(std::string body, double JD, int timesc, int coordtype, int xyz,
+	      int theory, int unit, double step, int stepnum,
+	      std::string epmpath, int *cancel);
+  virtual
+  ~Coordinates();
+  std::vector<std::array<mpf_class, 3>>
+  calculationsXYZ();
+  std::function<void
+  ()> pulse_signal;
+private:
+  std::string body = "";
+  double JD = -1;
+  int coordtype = -1;
+  int xyz = -1;
+  int theory = -1;
+  int unit = -1;
+  double step = -1;
+  int stepnum = -1;
+  std::string epmpath = "";
+  int *cancel = nullptr;
+  int timesc = 0;
 };
 
-#endif /* COORDINATES_H_ */
-
+#endif /* INCLUDE_COORDINATES_H_ */
 

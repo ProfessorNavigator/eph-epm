@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -22,8 +22,36 @@ MainWindow::MainWindow()
   AuxFunc af;
   std::filesystem::path p(std::filesystem::u8path(af.get_selfpath()));
   Sharepath = p.parent_path().u8string() + "/../share/EphEPM";
-  css_provider = Gtk::CssProvider::create();
-  css_provider->load_from_path(Glib::ustring(Sharepath + "/mainWindow.css"));
+  Glib::RefPtr<Gtk::CssProvider> css_provider = Gtk::CssProvider::create();
+  std::string filename = Sharepath + "/mainWindow.css";
+  p = std::filesystem::u8path(filename);
+  std::string styles;
+  std::fstream f;
+  f.open(p, std::ios_base::in | std::ios_base::binary);
+  if(f.is_open())
+    {
+      std::string cont;
+      cont.resize(std::filesystem::file_size(p));
+      f.read(&cont[0], cont.size());
+      f.close();
+      styles = styles + cont;
+    }
+
+  filename = Sharepath + "/graphicWidg.css";
+  p = std::filesystem::u8path(filename);
+  f.open(p, std::ios_base::in | std::ios_base::binary);
+  if(f.is_open())
+    {
+      std::string cont;
+      cont.resize(std::filesystem::file_size(p));
+      f.read(&cont[0], cont.size());
+      f.close();
+      styles = styles + cont;
+    }
+  css_provider->load_from_data(styles);
+  Glib::RefPtr<Gdk::Display> disp = this->get_display();
+  Gtk::StyleContext::add_provider_for_display(disp, css_provider,
+  GTK_STYLE_PROVIDER_PRIORITY_USER);
   createWindow();
 }
 
@@ -36,6 +64,7 @@ void
 MainWindow::createWindow()
 {
   this->set_title("EphEPM");
+  this->set_name("mainWindow");
   Gtk::Grid *grid = Gtk::make_managed<Gtk::Grid>();
   this->set_child(*grid);
   grid->set_halign(Gtk::Align::CENTER);
@@ -175,13 +204,13 @@ MainWindow::createWindow()
       strm.imbue(loc);
       strm << beltv[i];
       if(i <= 12)
-        {
-          beltstr = strm.str();
-        }
+	{
+	  beltstr = strm.str();
+	}
       else
-        {
-          beltstr = "+" + strm.str();
-        }
+	{
+	  beltstr = "+" + strm.str();
+	}
       belt->append(Glib::ustring(beltstr));
     }
   belt->set_halign(Gtk::Align::START);
@@ -281,71 +310,71 @@ MainWindow::createWindow()
   unitcomb->set_active(0);
   grid->attach(*unitcomb, 2, 8, 3, 1);
   objcomb->signal_changed().connect(
-    [objcomb, xyzcomb, unitcomb, coord, coordcomb, equin, equincomb]
-  {
-    xyzcomb->remove_all();
-    unitcomb->remove_all();
-    if(objcomb->get_active_row_number() == 21)
+      [objcomb, xyzcomb, unitcomb, coord, coordcomb, equin, equincomb]
       {
-        xyzcomb->append("φ, θ, ψ");
-        xyzcomb->append("φ', θ', ψ'");
-        unitcomb->append(gettext("rad"));
-        unitcomb->append(gettext("degrees"));
-        coord->set_opacity(0);
-        coordcomb->set_opacity(0);
-        equin->set_opacity(0);
-        equincomb->set_opacity(0);
-      }
-    else
-      {
-        xyzcomb->append("X, Y, Z");
-        xyzcomb->append("Vx, Vy, Vz");
-        unitcomb->append(gettext("Astronomical units"));
-        unitcomb->append(gettext("Kilometers"));
-        unitcomb->append(gettext("Meters"));
-        coord->set_opacity(1);
-        coordcomb->set_opacity(1);
-        equin->set_opacity(1);
-        equincomb->set_opacity(1);
-      }
-    xyzcomb->set_active(0);
-    unitcomb->set_active(0);
-  });
+	xyzcomb->remove_all();
+	unitcomb->remove_all();
+	if(objcomb->get_active_row_number() == 21)
+	  {
+	    xyzcomb->append("φ, θ, ψ");
+	    xyzcomb->append("φ', θ', ψ'");
+	    unitcomb->append(gettext("rad"));
+	    unitcomb->append(gettext("degrees"));
+	    coord->set_opacity(0);
+	    coordcomb->set_opacity(0);
+	    equin->set_opacity(0);
+	    equincomb->set_opacity(0);
+	  }
+	else
+	  {
+	    xyzcomb->append("X, Y, Z");
+	    xyzcomb->append("Vx, Vy, Vz");
+	    unitcomb->append(gettext("Astronomical units"));
+	    unitcomb->append(gettext("Kilometers"));
+	    unitcomb->append(gettext("Meters"));
+	    coord->set_opacity(1);
+	    coordcomb->set_opacity(1);
+	    equin->set_opacity(1);
+	    equincomb->set_opacity(1);
+	  }
+	xyzcomb->set_active(0);
+	unitcomb->set_active(0);
+      });
 
   xyzcomb->signal_changed().connect([xyzcomb, unitcomb, objcomb]
   {
     if(objcomb->get_active_row_number() != 21)
       {
-        unitcomb->remove_all();
-        if(xyzcomb->get_active_row_number() == 0)
-          {
-            unitcomb->append(gettext("Astronomical units"));
-            unitcomb->append(gettext("Kilometers"));
-            unitcomb->append(gettext("Meters"));
-          }
-        if(xyzcomb->get_active_row_number() == 1)
-          {
-            unitcomb->append(gettext("AU/day"));
-            unitcomb->append(gettext("km/day"));
-            unitcomb->append(gettext("km/s"));
-            unitcomb->append(gettext("m/s"));
-          }
-        unitcomb->set_active(0);
+	unitcomb->remove_all();
+	if(xyzcomb->get_active_row_number() == 0)
+	  {
+	    unitcomb->append(gettext("Astronomical units"));
+	    unitcomb->append(gettext("Kilometers"));
+	    unitcomb->append(gettext("Meters"));
+	  }
+	if(xyzcomb->get_active_row_number() == 1)
+	  {
+	    unitcomb->append(gettext("AU/day"));
+	    unitcomb->append(gettext("km/day"));
+	    unitcomb->append(gettext("km/s"));
+	    unitcomb->append(gettext("m/s"));
+	  }
+	unitcomb->set_active(0);
       }
     else
       {
-        unitcomb->remove_all();
-        if(xyzcomb->get_active_row_number() == 0)
-          {
-            unitcomb->append(gettext("rad"));
-            unitcomb->append(gettext("degrees"));
-          }
-        if(xyzcomb->get_active_row_number() == 1)
-          {
-            unitcomb->append(gettext("rad/day"));
-            unitcomb->append(gettext("\"/day"));
-          }
-        unitcomb->set_active(0);
+	unitcomb->remove_all();
+	if(xyzcomb->get_active_row_number() == 0)
+	  {
+	    unitcomb->append(gettext("rad"));
+	    unitcomb->append(gettext("degrees"));
+	  }
+	if(xyzcomb->get_active_row_number() == 1)
+	  {
+	    unitcomb->append(gettext("rad/day"));
+	    unitcomb->append(gettext("\"/day"));
+	  }
+	unitcomb->set_active(0);
       }
   });
 
@@ -409,10 +438,8 @@ MainWindow::createWindow()
   openb->set_halign(Gtk::Align::CENTER);
   openb->set_label(gettext("Open"));
   openb->set_name("open_button");
-  openb->get_style_context()->add_provider(css_provider,
-      GTK_STYLE_PROVIDER_PRIORITY_USER);
   openb->signal_clicked().connect(
-    sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), pathent));
+      sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), pathent));
   grid->attach(*openb, 3, 11, 1, 1);
 
   Gtk::Button *calc = Gtk::make_managed<Gtk::Button>();
@@ -420,12 +447,10 @@ MainWindow::createWindow()
   calc->set_margin(5);
   calc->set_label(gettext("Calculate coordinates"));
   calc->set_name("button");
-  calc->get_style_context()->add_provider(css_provider,
-                                          GTK_STYLE_PROVIDER_PRIORITY_USER);
   calc->signal_clicked().connect(
-    sigc::bind(sigc::mem_fun(*this, &MainWindow::calcCoord), day, month,
-               year, hour, minut, second, timecomb, belt, objcomb, coordcomb, xyzcomb,
-               equincomb, unitcomb, stepent, stepnument, pathent));
+      sigc::bind(sigc::mem_fun(*this, &MainWindow::calcCoord), day, month, year,
+		 hour, minut, second, timecomb, belt, objcomb, coordcomb,
+		 xyzcomb, equincomb, unitcomb, stepent, stepnument, pathent));
   grid->attach(*calc, 0, 12, 2, 1);
 
   Gtk::Button *orb = Gtk::make_managed<Gtk::Button>();
@@ -433,11 +458,10 @@ MainWindow::createWindow()
   orb->set_margin(5);
   orb->set_label(gettext("Orbits"));
   orb->set_name("button");
-  orb->get_style_context()->add_provider(css_provider,
-                                         GTK_STYLE_PROVIDER_PRIORITY_USER);
-  orb->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this,
-                                &MainWindow::orbitsGraph), day, month, year,
-                                hour, minut, second, timecomb, belt, coordcomb, equincomb, pathent));
+  orb->signal_clicked().connect(
+      sigc::bind(sigc::mem_fun(*this, &MainWindow::orbitsGraph), day, month,
+		 year, hour, minut, second, timecomb, belt, coordcomb,
+		 equincomb, pathent));
   grid->attach(*orb, 2, 12, 1, 1);
 
   Gtk::Button *about = Gtk::make_managed<Gtk::Button>();
@@ -445,10 +469,7 @@ MainWindow::createWindow()
   about->set_margin(5);
   about->set_label(gettext("About"));
   about->set_name("button");
-  about->get_style_context()->add_provider(css_provider,
-      GTK_STYLE_PROVIDER_PRIORITY_USER);
-  about->signal_clicked().connect(
-    sigc::mem_fun(*this, &MainWindow::aboutProg));
+  about->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::aboutProg));
   grid->attach(*about, 3, 12, 1, 1);
 
   this->signal_close_request().connect([this, pathent]
@@ -458,66 +479,100 @@ MainWindow::createWindow()
     std::filesystem::path filepath = std::filesystem::u8path(savepath);
     if(!std::filesystem::exists(filepath.parent_path()))
       {
-        std::filesystem::create_directories(filepath.parent_path());
+	std::filesystem::create_directories(filepath.parent_path());
       }
     if(std::filesystem::exists(filepath))
       {
-        std::filesystem::remove_all(filepath);
+	std::filesystem::remove_all(filepath);
       }
     std::string line(pathent->get_text());
     if(!line.empty())
       {
-        std::fstream f;
-        f.open(filepath, std::ios_base::out | std::ios_base::binary);
-        f.write(line.c_str(), line.size());
-        f.close();
+	std::fstream f;
+	f.open(filepath, std::ios_base::out | std::ios_base::binary);
+	f.write(line.c_str(), line.size());
+	f.close();
       }
     this->hide();
     return true;
   },
-  false);
+				       false);
 }
 
 void
 MainWindow::openDialog(Gtk::Entry *pathent)
 {
-  Glib::RefPtr<Gtk::FileChooserNative> fcd = Gtk::FileChooserNative::create(
-        gettext("Directory selection"), *this, Gtk::FileChooser::Action::OPEN,
-        gettext("Select"), gettext("Cancel"));
+  Gtk::FileChooserDialog *fcd = new Gtk::FileChooserDialog(
+      *this, gettext("Directory selection"), Gtk::FileChooser::Action::OPEN,
+      false);
+  fcd->set_application(this->get_application());
+
+  Gtk::Box *box = fcd->get_content_area();
+  box->set_margin(5);
+
+  Gtk::Requisition min, nat;
+  fcd->get_preferred_size(min, nat);
+
+  Gtk::Button *cancel = fcd->add_button(gettext("Cancel"),
+					Gtk::ResponseType::CANCEL);
+  cancel->set_margin(5);
+
+  Gtk::Button *select = fcd->add_button(gettext("Select"),
+					Gtk::ResponseType::ACCEPT);
+  select->set_name("open_button");
+  select->set_margin_bottom(5);
+  select->set_margin_end(5);
+  select->set_margin_top(5);
+  select->set_margin_start(nat.get_width() - 15);
+
   Glib::RefPtr<Gio::File> fl = Gio::File::create_for_parse_name(
-                                 Glib::get_home_dir());
+      Glib::get_home_dir());
   if(fl)
     {
       fcd->set_current_folder(fl);
     }
 
   fcd->signal_response().connect(
-    sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialogFunc), fcd,
-               pathent));
+      sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialogFunc), fcd,
+		 pathent));
+  fcd->signal_close_request().connect([fcd]
+  {
+    fcd->hide();
+    delete fcd;
+    return true;
+  },
+				      false);
 
-  fcd->show();
+  fcd->present();
 }
 void
-MainWindow::openDialogFunc(int rid, Glib::RefPtr<Gtk::FileChooserNative> fcd,
-                           Gtk::Entry *pathent)
+MainWindow::openDialogFunc(int rid, Gtk::FileChooserDialog *fcd,
+			   Gtk::Entry *pathent)
 {
   if(rid == Gtk::ResponseType::ACCEPT)
     {
       Glib::RefPtr<Gio::File> fl = fcd->get_file();
-      std::string filename = fl->get_path();
-      pathent->set_text(Glib::ustring(filename));
+      if(fl)
+	{
+	  std::string filename = fl->get_path();
+	  pathent->set_text(Glib::ustring(filename));
+	}
+      fcd->close();
+    }
+  else if(rid == Gtk::ResponseType::CANCEL)
+    {
+      fcd->close();
     }
 }
 
 void
 MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-                      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-                      Gtk::ComboBoxText *timecomb,
-                      Gtk::ComboBoxText *belt, Gtk::ComboBoxText *objcomb,
-                      Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *xyzcomb,
-                      Gtk::ComboBoxText *equincomb,
-                      Gtk::ComboBoxText *unitcomb, Gtk::Entry *stepent,
-                      Gtk::Entry *stepnument, Gtk::Entry *pathent)
+		      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+		      Gtk::ComboBoxText *timecomb, Gtk::ComboBoxText *belt,
+		      Gtk::ComboBoxText *objcomb, Gtk::ComboBoxText *coordcomb,
+		      Gtk::ComboBoxText *xyzcomb, Gtk::ComboBoxText *equincomb,
+		      Gtk::ComboBoxText *unitcomb, Gtk::Entry *stepent,
+		      Gtk::Entry *stepnument, Gtk::Entry *pathent)
 {
   std::string daystr(day->get_text());
   std::string monthstr(month->get_text());
@@ -539,87 +594,87 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
     {
       objname = "sun";
     }
-  if(objnum == 1)
+  else if(objnum == 1)
     {
       objname = "mercury";
     }
-  if(objnum == 2)
+  else if(objnum == 2)
     {
       objname = "venus";
     }
-  if(objnum == 3)
+  else if(objnum == 3)
     {
       objname = "earth";
     }
-  if(objnum == 4)
+  else if(objnum == 4)
     {
       objname = "mars";
     }
-  if(objnum == 5)
+  else if(objnum == 5)
     {
       objname = "jupiter";
     }
-  if(objnum == 6)
+  else if(objnum == 6)
     {
       objname = "saturn";
     }
-  if(objnum == 7)
+  else if(objnum == 7)
     {
       objname = "uranus";
     }
-  if(objnum == 8)
+  else if(objnum == 8)
     {
       objname = "neptune";
     }
-  if(objnum == 9)
+  else if(objnum == 9)
     {
       objname = "pluto";
     }
-  if(objnum == 10)
+  else if(objnum == 10)
     {
       objname = "moon";
     }
-  if(objnum == 11)
+  else if(objnum == 11)
     {
       objname = "moongeo";
     }
-  if(objnum == 12)
+  else if(objnum == 12)
     {
       objname = "ceres";
     }
-  if(objnum == 13)
+  else if(objnum == 13)
     {
       objname = "pallas";
     }
-  if(objnum == 14)
+  else if(objnum == 14)
     {
       objname = "vesta";
     }
-  if(objnum == 15)
+  else if(objnum == 15)
     {
       objname = "erida";
     }
-  if(objnum == 16)
+  else if(objnum == 16)
     {
       objname = "haumea";
     }
-  if(objnum == 17)
+  else if(objnum == 17)
     {
       objname = "makemake";
     }
-  if(objnum == 18)
+  else if(objnum == 18)
     {
       objname = "sedna";
     }
-  if(objnum == 19)
+  else if(objnum == 19)
     {
       objname = "bamberga";
     }
-  if(objnum == 20)
+  else if(objnum == 20)
     {
       objname = "iris";
     }
-  if(objnum == 21)
+  else if(objnum == 21)
     {
       objname = "moonlibr";
     }
@@ -653,10 +708,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << daystr;
       strm >> daynum;
       if(daynum < 1)
-        {
-          errDialog(1);
-          return void();
-        }
+	{
+	  errDialog(1);
+	  return void();
+	}
     }
 
   if(monthstr == "")
@@ -672,27 +727,27 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << monthstr;
       strm >> monthnum;
       if(monthnum < 1 || monthnum > 12)
-        {
-          errDialog(2);
-          return void();
-        }
+	{
+	  errDialog(2);
+	  return void();
+	}
       if(monthnum == 1 || monthnum == 3 || monthnum == 5 || monthnum == 7
-          || monthnum == 8 || monthnum == 10 || monthnum == 12)
-        {
-          if(daynum > 31)
-            {
-              errDialog(1);
-              return void();
-            }
-        }
+	  || monthnum == 8 || monthnum == 10 || monthnum == 12)
+	{
+	  if(daynum > 31)
+	    {
+	      errDialog(1);
+	      return void();
+	    }
+	}
       else
-        {
-          if(daynum > 30)
-            {
-              errDialog(1);
-              return void();
-            }
-        }
+	{
+	  if(daynum > 30)
+	    {
+	      errDialog(1);
+	      return void();
+	    }
+	}
     }
 
   if(yearstr == "")
@@ -708,27 +763,27 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << yearstr;
       strm >> yearnum;
       if((yearnum & 3) == 0 && ((yearnum % 25) != 0 || (yearnum & 15) == 0))
-        {
-          if(monthnum == 2)
-            {
-              if(daynum > 29)
-                {
-                  errDialog(1);
-                  return void();
-                }
-            }
-        }
+	{
+	  if(monthnum == 2)
+	    {
+	      if(daynum > 29)
+		{
+		  errDialog(1);
+		  return void();
+		}
+	    }
+	}
       else
-        {
-          if(monthnum == 2)
-            {
-              if(daynum > 28)
-                {
-                  errDialog(1);
-                  return void();
-                }
-            }
-        }
+	{
+	  if(monthnum == 2)
+	    {
+	      if(daynum > 28)
+		{
+		  errDialog(1);
+		  return void();
+		}
+	    }
+	}
     }
 
   if(hourstr == "")
@@ -744,10 +799,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << hourstr;
       strm >> hournum;
       if(hournum < 0 || hournum > 23)
-        {
-          errDialog(4);
-          return void();
-        }
+	{
+	  errDialog(4);
+	  return void();
+	}
     }
 
   if(minutstr == "")
@@ -763,10 +818,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << minutstr;
       strm >> minutnum;
       if(minutnum < 0 || minutnum > 59)
-        {
-          errDialog(5);
-          return void();
-        }
+	{
+	  errDialog(5);
+	  return void();
+	}
     }
 
   if(secondstr == "")
@@ -782,10 +837,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << secondstr;
       strm >> secondnum;
       if(secondnum < 0 || secondnum > 59)
-        {
-          errDialog(6);
-          return void();
-        }
+	{
+	  errDialog(6);
+	  return void();
+	}
     }
 
   if(stepstr == "")
@@ -801,10 +856,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << stepstr;
       strm >> stepnum;
       if(stepnum <= 0)
-        {
-          errDialog(7);
-          return void();
-        }
+	{
+	  errDialog(7);
+	  return void();
+	}
     }
 
   if(stepnumberstr == "")
@@ -820,10 +875,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << stepnumberstr;
       strm >> stepnumbernum;
       if(stepnumbernum <= 0)
-        {
-          errDialog(8);
-          return void();
-        }
+	{
+	  errDialog(8);
+	  return void();
+	}
     }
   Gtk::ProgressBar *bar = nullptr;
   Gtk::Window *info_win = resultPulseWin(0, bar);
@@ -832,7 +887,8 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   JDshow = af.utcJD(daynum, monthnum, yearnum, hournum, minutnum, secondnum);
   DAFOperations daf;
   bool datech = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-                                  secondnum, timecomb->get_active_row_number(), beltnum, pathstr);
+				  secondnum, timecomb->get_active_row_number(),
+				  beltnum, pathstr);
   if(!datech)
     {
       info_win->close();
@@ -852,19 +908,20 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       JDcalc = JDcalc + k;
     }
   Coordinates *calc = new Coordinates(objname, JDcalc,
-                                      timecomb->get_active_row_number(), coordtype, xyz, theory,
-                                      unit, stepnum, stepnumbernum, pathstr, &orbits_cancel);
-  std::vector<std::array<mpf_class, 3>> *result =
-                                       new std::vector<std::array<mpf_class, 3>>;
+				      timecomb->get_active_row_number(),
+				      coordtype, xyz, theory, unit, stepnum,
+				      stepnumbernum, pathstr, &orbits_cancel);
+  std::vector<std::array<mpf_class, 3>> *result = new std::vector<
+      std::array<mpf_class, 3>>;
   Glib::Dispatcher *result_win_disp = new Glib::Dispatcher;
   result_win_disp->connect(
-    [result, this, belt, objcomb, coordcomb, xyzcomb, equincomb, unitcomb,
-             result_win_disp, info_win]
-  {
-    info_win->close();
-    this->resultPresenting(result, belt, objcomb, coordcomb, xyzcomb,
-                           equincomb, unitcomb, result_win_disp);
-  });
+      [result, this, belt, objcomb, coordcomb, xyzcomb, equincomb, unitcomb,
+       result_win_disp, info_win]
+      {
+	info_win->close();
+	this->resultPresenting(result, belt, objcomb, coordcomb, xyzcomb,
+			       equincomb, unitcomb, result_win_disp);
+      });
 
   std::thread *coordthr = new std::thread([calc, result_win_disp, result]
   {
@@ -879,87 +936,84 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
 void
 MainWindow::errDialog(int variant)
 {
-  Gtk::Window *window = new Gtk::Window;
-  window->set_application(this->get_application());
-  window->set_title(gettext("Error!"));
-  Gtk::Grid *grid = Gtk::make_managed<Gtk::Grid>();
-  window->set_child(*grid);
-  grid->set_halign(Gtk::Align::CENTER);
-  grid->set_valign(Gtk::Align::CENTER);
-
-  Gtk::Label *errtxt = Gtk::make_managed<Gtk::Label>();
-  errtxt->set_halign(Gtk::Align::CENTER);
-  errtxt->set_margin(5);
+  Glib::ustring msgtxt;
   if(variant == 1)
     {
-      errtxt->set_text(gettext("Wrong day input!"));
+      msgtxt = gettext("Wrong day input!");
     }
-  if(variant == 2)
+  else if(variant == 2)
     {
-      errtxt->set_text(gettext("Wrong month input!"));
+      msgtxt = gettext("Wrong month input!");
     }
-  if(variant == 3)
+  else if(variant == 3)
     {
-      errtxt->set_text(gettext("Wrong year input!"));
+      msgtxt = gettext("Wrong year input!");
     }
-  if(variant == 4)
+  else if(variant == 4)
     {
-      errtxt->set_text(gettext("Wrong hour input!"));
+      msgtxt = gettext("Wrong hour input!");
     }
-  if(variant == 5)
+  else if(variant == 5)
     {
-      errtxt->set_text(gettext("Wrong minutes input!"));
+      msgtxt = gettext("Wrong minutes input!");
     }
-  if(variant == 6)
+  else if(variant == 6)
     {
-      errtxt->set_text(gettext("Wrong seconds input!"));
+      msgtxt = gettext("Wrong seconds input!");
     }
-  if(variant == 7)
+  else if(variant == 7)
     {
-      errtxt->set_text(gettext("Wrong step input!"));
+      msgtxt = gettext("Wrong step input!");
     }
-  if(variant == 8)
+  else if(variant == 8)
     {
-      errtxt->set_text(gettext("Wrong step number input!"));
+      msgtxt = gettext("Wrong step number input!");
     }
-  if(variant == 9)
+  else if(variant == 9)
     {
-      errtxt->set_text(gettext("Date is out of ephemeris time interval!"));
+      msgtxt = gettext("Date is out of ephemeris time interval!");
     }
-  grid->attach(*errtxt, 0, 0, 1, 1);
+  Gtk::MessageDialog *msg = new Gtk::MessageDialog(*this, msgtxt, false,
+						   Gtk::MessageType::ERROR,
+						   Gtk::ButtonsType::CLOSE);
+  msg->set_application(this->get_application());
+  msg->set_modal(true);
 
-  Gtk::Button *close = Gtk::make_managed<Gtk::Button>();
-  close->set_halign(Gtk::Align::CENTER);
-  close->set_margin(5);
-  close->set_label(gettext("Close"));
-  close->signal_clicked().connect(
-    sigc::mem_fun(*window, &Gtk::Window::close));
-  grid->attach(*close, 0, 1, 1, 1);
+  msg->signal_response().connect([msg]
+  (int id)
+    {
+      if(id == Gtk::ResponseType::CLOSE)
+	{
+	  msg->close();
+	}
+    });
 
-  window->signal_close_request().connect([window]
+  msg->signal_close_request().connect([msg]
   {
-    window->hide();
-    delete window;
+    msg->hide();
+    delete msg;
     return true;
   },
-  false);
-  window->show();
+				      false);
+  msg->present();
 }
 
-Gtk::Window *
+Gtk::Window*
 MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
 {
   orbits_cancel = 0;
   Gtk::Window *window = new Gtk::Window;
   window->set_application(this->get_application());
+  window->set_name("mainWindow");
   window->set_title(gettext("Processing..."));
+  window->set_modal(true);
+  window->set_deletable(false);
+  window->set_transient_for(*this);
+
   Gtk::Grid *grid = Gtk::make_managed<Gtk::Grid>();
   grid->set_halign(Gtk::Align::CENTER);
   grid->set_valign(Gtk::Align::CENTER);
   window->set_child(*grid);
-  window->set_modal(true);
-  window->set_deletable(false);
-  window->set_transient_for(*this);
 
   if(variant == 0)
     {
@@ -969,7 +1023,7 @@ MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
       calclab->set_text(gettext("Calculation in progress..."));
       grid->attach(*calclab, 0, 0, 1, 1);
     }
-  if(variant == 1)
+  else if(variant == 1)
     {
       Gtk::Label *calclab = Gtk::make_managed<Gtk::Label>();
       calclab->set_halign(Gtk::Align::CENTER);
@@ -977,18 +1031,20 @@ MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
       calclab->set_text(gettext("Calculation in progress..."));
       grid->attach(*calclab, 0, 0, 1, 1);
 
+      bar->set_name("prgBar");
       bar->set_halign(Gtk::Align::CENTER);
       bar->set_margin(5);
       bar->set_show_text(true);
       grid->attach(*bar, 0, 1, 1, 1);
 
       Gtk::Button *cancel = Gtk::make_managed<Gtk::Button>();
+      cancel->set_name("closeButton");
       cancel->set_halign(Gtk::Align::CENTER);
       cancel->set_margin(5);
       cancel->set_label(gettext("Cancel"));
       cancel->signal_clicked().connect([this]
       {
-        this->orbits_cancel = 1;
+	this->orbits_cancel = 1;
       });
       grid->attach(*cancel, 0, 2, 1, 1);
     }
@@ -999,64 +1055,69 @@ MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
     delete window;
     return true;
   },
-  false);
-  window->show();
+					 false);
+  window->present();
 
   return window;
 }
 
 void
-MainWindow::resultPresenting(
-  std::vector<std::array<mpf_class, 3>> *result,
-  Gtk::ComboBoxText *belt, Gtk::ComboBoxText *objcomb,
-  Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *xyzcomb,
-  Gtk::ComboBoxText *equincomb, Gtk::ComboBoxText *unitcomb,
-  Glib::Dispatcher *result_win_disp)
+MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3>> *result,
+			     Gtk::ComboBoxText *belt,
+			     Gtk::ComboBoxText *objcomb,
+			     Gtk::ComboBoxText *coordcomb,
+			     Gtk::ComboBoxText *xyzcomb,
+			     Gtk::ComboBoxText *equincomb,
+			     Gtk::ComboBoxText *unitcomb,
+			     Glib::Dispatcher *result_win_disp)
 {
   Gtk::Window *window = new Gtk::Window;
   window->set_application(this->get_application());
+  window->set_name("mainWindow");
   window->set_title(gettext("Result"));
+  window->set_transient_for(*this);
+
   Gtk::Grid *grid = Gtk::make_managed<Gtk::Grid>();
   grid->set_halign(Gtk::Align::CENTER);
   grid->set_valign(Gtk::Align::CENTER);
+  grid->set_column_homogeneous(true);
   window->set_child(*grid);
 
   Gtk::Label *objlab = Gtk::make_managed<Gtk::Label>();
   objlab->set_halign(Gtk::Align::START);
   objlab->set_margin(5);
   objlab->set_text(
-    Glib::ustring(gettext("Object: ") + objcomb->get_active_text()));
+      Glib::ustring(gettext("Object: ") + objcomb->get_active_text()));
   grid->attach(*objlab, 0, 0, 1, 1);
 
   Gtk::Label *coordlab = Gtk::make_managed<Gtk::Label>();
   coordlab->set_halign(Gtk::Align::START);
   coordlab->set_margin(5);
   coordlab->set_text(
-    Glib::ustring(
-      gettext("Coordinates: ") + coordcomb->get_active_text()));
+      Glib::ustring(gettext("Coordinates: ") + coordcomb->get_active_text()));
   grid->attach(*coordlab, 0, 1, 1, 1);
 
   Gtk::Label *equinlab = Gtk::make_managed<Gtk::Label>();
   equinlab->set_halign(Gtk::Align::START);
   equinlab->set_margin(5);
   equinlab->set_text(
-    Glib::ustring(
-      gettext("Equator and equinox: ") + equincomb->get_active_text()));
+      Glib::ustring(
+	  gettext("Equator and equinox: ") + equincomb->get_active_text()));
   grid->attach(*equinlab, 0, 2, 1, 1);
 
   Gtk::Label *unitlab = Gtk::make_managed<Gtk::Label>();
   unitlab->set_halign(Gtk::Align::START);
   unitlab->set_margin(5);
   unitlab->set_text(
-    Glib::ustring(
-      gettext("Units of measurement: ") + unitcomb->get_active_text()));
+      Glib::ustring(
+	  gettext("Units of measurement: ") + unitcomb->get_active_text()));
   grid->attach(*unitlab, 0, 3, 1, 1);
 
   Gtk::Label *beltlab = Gtk::make_managed<Gtk::Label>();
   beltlab->set_halign(Gtk::Align::START);
   beltlab->set_margin(5);
   beltlab->set_text(
-    Glib::ustring(gettext("Hour belt: ") + belt->get_active_text()));
+      Glib::ustring(gettext("Hour belt: ") + belt->get_active_text()));
   grid->attach(*beltlab, 0, 4, 1, 1);
 
   Gtk::TreeModel::ColumnRecord record;
@@ -1068,51 +1129,17 @@ MainWindow::resultPresenting(
   record.add(X);
   record.add(Y);
   record.add(Z);
-
   Glib::RefPtr<Gtk::ListStore> model = Gtk::ListStore::create(record);
-
-  auto rowtitle = *(model->append());
-  rowtitle[dates] = std::string(gettext("Date and time(local)"));
-  if(objcomb->get_active_row_number() != 21)
-    {
-      if(xyzcomb->get_active_row_number() == 0)
-        {
-          rowtitle[X] = std::string("X");
-          rowtitle[Y] = std::string("Y");
-          rowtitle[Z] = std::string("Z");
-        }
-      if(xyzcomb->get_active_row_number() == 1)
-        {
-          rowtitle[X] = std::string("Vx");
-          rowtitle[Y] = std::string("Vy");
-          rowtitle[Z] = std::string("Vz");
-        }
-    }
-  else
-    {
-      if(xyzcomb->get_active_row_number() == 0)
-        {
-          rowtitle[X] = std::string("φ");
-          rowtitle[Y] = std::string("θ");
-          rowtitle[Z] = std::string("ψ");
-        }
-      if(xyzcomb->get_active_row_number() == 1)
-        {
-          rowtitle[X] = std::string("φ'");
-          rowtitle[Y] = std::string("θ'");
-          rowtitle[Z] = std::string("ψ'");
-        }
-    }
 
   std::stringstream strm;
   std::locale loc("C");
   AuxFunc af;
-
   for(size_t i = 0; i < result->size(); i++)
     {
       int ych, mch, dch, hch, minch;
       double secch;
-      af.dateJulian(JDshow + i * stepnum, &dch, &mch, &ych, &hch, &minch, &secch);
+      af.dateJulian(JDshow + i * stepnum, &dch, &mch, &ych, &hch, &minch,
+		    &secch);
       auto row = *(model->append());
       strm.clear();
       strm.str("");
@@ -1123,26 +1150,26 @@ MainWindow::resultPresenting(
       strm << dch;
       std::string datestr;
       if(dch < 10)
-        {
-          datestr = "0" + strm.str();
-        }
+	{
+	  datestr = "0" + strm.str();
+	}
       else
-        {
-          datestr = strm.str();
-        }
+	{
+	  datestr = strm.str();
+	}
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
       strm << mch;
       if(mch < 10)
-        {
-          datestr = datestr + ".0" + strm.str();
-        }
+	{
+	  datestr = datestr + ".0" + strm.str();
+	}
       else
-        {
-          datestr = datestr + "." + strm.str();
-        }
+	{
+	  datestr = datestr + "." + strm.str();
+	}
 
       strm.clear();
       strm.str("");
@@ -1155,64 +1182,61 @@ MainWindow::resultPresenting(
       strm.imbue(loc);
       strm << hch;
       if(hch < 10)
-        {
-          datestr = datestr + " 0" + strm.str();
-        }
+	{
+	  datestr = datestr + " 0" + strm.str();
+	}
       else
-        {
-          datestr = datestr + " " + strm.str();
-        }
+	{
+	  datestr = datestr + " " + strm.str();
+	}
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
       strm << minch;
       if(minch < 10)
-        {
-          datestr = datestr + ":0" + strm.str();
-        }
+	{
+	  datestr = datestr + ":0" + strm.str();
+	}
       else
-        {
-          datestr = datestr + ":" + strm.str();
-        }
+	{
+	  datestr = datestr + ":" + strm.str();
+	}
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
       if(secch > 59)
-        {
-          secch = 0;
-        }
+	{
+	  secch = 0;
+	}
       strm << std::fixed << std::setprecision(3) << secch;
       if(secch < 10)
-        {
-          datestr = datestr + ":0" + strm.str();
-        }
+	{
+	  datestr = datestr + ":0" + strm.str();
+	}
       else
-        {
-          datestr = datestr + ":" + strm.str();
-        }
+	{
+	  datestr = datestr + ":" + strm.str();
+	}
       row[dates] = datestr;
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
-      strm << std::fixed << std::setprecision(20)
-           << std::get<0>(result->at(i));
+      strm << std::fixed << std::setprecision(20) << std::get<0>(result->at(i));
       row[X] = strm.str();
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
-      strm << std::fixed << std::setprecision(20)
-           << std::get<1>(result->at(i));
+      strm << std::fixed << std::setprecision(20) << std::get<1>(result->at(i));
       row[Y] = strm.str();
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
-      strm << std::fixed << std::setprecision(20)
-           << std::get<2>(result->at(i));
+      strm << std::fixed << std::setprecision(20) << std::get<2>(result->at(i));
       row[Z] = strm.str();
     }
 
@@ -1223,23 +1247,42 @@ MainWindow::resultPresenting(
   treev->set_valign(Gtk::Align::CENTER);
   treev->set_model(model);
   treev->set_name("ResultTable");
-  treev->get_style_context()->add_provider(css_provider,
-      GTK_STYLE_PROVIDER_PRIORITY_USER);
   int x, y, h, w;
-  Gtk::TreeViewColumn *column1 = Gtk::make_managed<Gtk::TreeViewColumn>();
-  Gtk::TreeViewColumn *column2 = Gtk::make_managed<Gtk::TreeViewColumn>();
-  Gtk::TreeViewColumn *column3 = Gtk::make_managed<Gtk::TreeViewColumn>();
-  Gtk::TreeViewColumn *column4 = Gtk::make_managed<Gtk::TreeViewColumn>();
-  column1->pack_start(dates);
-  column2->pack_start(X);
-  column3->pack_start(Y);
-  column4->pack_start(Z);
-  treev->append_column(*column1);
-  treev->append_column(*column2);
-  treev->append_column(*column3);
-  treev->append_column(*column4);
+  treev->append_column(gettext("Date and time(local)"), dates);
+  if(objcomb->get_active_row_number() != 21)
+    {
+      if(xyzcomb->get_active_row_number() == 0)
+	{
+	  treev->append_column("X", X);
+	  treev->append_column("Y", Y);
+	  treev->append_column("Z", Z);
+	}
+      if(xyzcomb->get_active_row_number() == 1)
+	{
+	  treev->append_column("Vx", X);
+	  treev->append_column("Vy", Y);
+	  treev->append_column("Vz", Z);
+	}
+    }
+  else
+    {
+      if(xyzcomb->get_active_row_number() == 0)
+	{
+	  treev->append_column("φ", X);
+	  treev->append_column("θ", Y);
+	  treev->append_column("ψ", Z);
+	}
+      if(xyzcomb->get_active_row_number() == 1)
+	{
+	  treev->append_column("φ'", X);
+	  treev->append_column("θ'", Y);
+	  treev->append_column("ψ'", Z);
+	}
+    }
+
+  Gtk::TreeViewColumn *column1 = treev->get_column(0);
   column1->cell_get_size(x, y, w, h);
-  treev->set_headers_visible(false);
+  treev->set_headers_visible(true);
   Gtk::Requisition rq1, rq2;
   treev->get_preferred_size(rq1, rq2);
 
@@ -1252,45 +1295,27 @@ MainWindow::resultPresenting(
   ren = treev->get_column_cell_renderer(3);
   ren->set_alignment(0.5, 0.5);
 
-  Glib::RefPtr<Gdk::Surface> surf = this->get_surface();
-  Glib::RefPtr<Gdk::Display> disp = this->get_display();
-  Glib::RefPtr<Gdk::Monitor> mon = disp->get_monitor_at_surface(surf);
-  Gdk::Rectangle req;
-  mon->get_geometry(req);
-
   Gtk::ScrolledWindow *scrl = Gtk::make_managed<Gtk::ScrolledWindow>();
   scrl->set_halign(Gtk::Align::CENTER);
   scrl->set_margin(5);
   scrl->set_policy(Gtk::PolicyType::AUTOMATIC, Gtk::PolicyType::AUTOMATIC);
-  if(req.get_height() > 11 * h)
-    {
-      scrl->set_min_content_height(11 * h);
-    }
-  else
-    {
-      scrl->set_min_content_height(req.get_height());
-    }
-  if(req.get_width() > rq2.get_width())
-    {
-      scrl->set_min_content_width(rq2.get_width());
-    }
-  else
-    {
-      scrl->set_min_content_width(req.get_width());
-    }
   scrl->set_child(*treev);
   grid->attach(*scrl, 0, 5, 2, 1);
+  scrl->set_min_content_height(13 * h);
+  scrl->set_min_content_width(rq2.get_width());
 
   Gtk::Button *save = Gtk::make_managed<Gtk::Button>();
+  save->set_name("button");
   save->set_halign(Gtk::Align::CENTER);
   save->set_margin(5);
   save->set_label(gettext("Save"));
-  save->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this,
-                                 &MainWindow::saveDialog), window, objlab, coordlab, equinlab, unitlab, beltlab,
-                                 treev, objcomb));
+  save->signal_clicked().connect(
+      sigc::bind(sigc::mem_fun(*this, &MainWindow::saveDialog), window, objlab,
+		 coordlab, equinlab, unitlab, beltlab, treev, objcomb));
   grid->attach(*save, 0, 6, 1, 1);
 
   Gtk::Button *close = Gtk::make_managed<Gtk::Button>();
+  close->set_name("closeButton");
   close->set_halign(Gtk::Align::CENTER);
   close->set_margin(5);
   close->set_label(gettext("Close"));
@@ -1313,96 +1338,139 @@ MainWindow::resultPresenting(
     delete window;
     return true;
   },
-  false);
-  window->show();
+					 false);
+  window->present();
   result->clear();
   delete result;
 }
 
 void
 MainWindow::saveDialog(Gtk::Window *win, Gtk::Label *objlab,
-                       Gtk::Label *coordlab, Gtk::Label *equinlab,
-                       Gtk::Label *unitlab, Gtk::Label *beltlab, Gtk::TreeView *view,
-                       Gtk::ComboBoxText *objcomb)
+		       Gtk::Label *coordlab, Gtk::Label *equinlab,
+		       Gtk::Label *unitlab, Gtk::Label *beltlab,
+		       Gtk::TreeView *view, Gtk::ComboBoxText *objcomb)
 {
-  Glib::RefPtr<Gtk::FileChooserNative> fcd = Gtk::FileChooserNative::create(
-        gettext("Save as..."), *win, Gtk::FileChooser::Action::SAVE,
-        gettext("Save"), gettext("Cancel"));
+  Gtk::FileChooserDialog *fcd = new Gtk::FileChooserDialog(
+      *win, gettext("Save result"), Gtk::FileChooser::Action::SAVE, false);
+  fcd->set_application(win->get_application());
+
+  Gtk::Box *box = fcd->get_content_area();
+  box->set_margin(5);
+
+  Gtk::Requisition min, nat;
+  fcd->get_preferred_size(min, nat);
+
+  Gtk::Button *cancel = fcd->add_button(gettext("Cancel"),
+					Gtk::ResponseType::CANCEL);
+  cancel->set_margin(5);
+
+  Gtk::Button *save = fcd->add_button(gettext("Save"),
+				      Gtk::ResponseType::APPLY);
+  save->set_name("open_button");
+  save->set_margin_bottom(5);
+  save->set_margin_end(5);
+  save->set_margin_top(5);
+  save->set_margin_start(nat.get_width() - 15);
   Glib::RefPtr<Gio::File> fl = Gio::File::create_for_parse_name(
-                                 Glib::get_home_dir());
+      Glib::get_home_dir());
   if(fl)
     {
       fcd->set_current_folder(fl);
     }
   fcd->signal_response().connect(
-    sigc::bind(sigc::mem_fun(*this, &MainWindow::saveDialogFunc), fcd, objlab,
-               coordlab, equinlab, unitlab, beltlab, view, objcomb));
+      sigc::bind(sigc::mem_fun(*this, &MainWindow::saveDialogFunc), fcd, objlab,
+		 coordlab, equinlab, unitlab, beltlab, view, objcomb));
+  fcd->signal_close_request().connect([fcd]
+  {
+    fcd->hide();
+    delete fcd;
+    return true;
+  },
+				      false);
 
-  fcd->show();
+  fcd->present();
 }
 
 void
-MainWindow::saveDialogFunc(int rid, Glib::RefPtr<Gtk::FileChooserNative> fcd,
-                           Gtk::Label *objlab, Gtk::Label *coordlab,
-                           Gtk::Label *equinlab,
-                           Gtk::Label *unitlab, Gtk::Label *beltlab, Gtk::TreeView *view,
-                           Gtk::ComboBoxText *objcomb)
+MainWindow::saveDialogFunc(int rid, Gtk::FileChooserDialog *fcd,
+			   Gtk::Label *objlab, Gtk::Label *coordlab,
+			   Gtk::Label *equinlab, Gtk::Label *unitlab,
+			   Gtk::Label *beltlab, Gtk::TreeView *view,
+			   Gtk::ComboBoxText *objcomb)
 {
-  if(rid == Gtk::ResponseType::ACCEPT)
+  if(rid == Gtk::ResponseType::APPLY)
     {
       Glib::RefPtr<Gio::File> fl = fcd->get_file();
-      std::string filename = fl->get_path();
-      std::filesystem::path filepath = std::filesystem::u8path(filename);
-      filename = ".csv";
-      filepath.replace_extension(std::filesystem::u8path(filename));
-      std::fstream f;
-      f.open(filepath, std::ios_base::out | std::ios_base::binary);
-      if(!f.is_open())
-        {
-          std::cerr << "Cannot open file for saving" << std::endl;
-        }
-      else
-        {
-          std::string line(objlab->get_text());
-          line = line + "\n";
-          f.write(line.c_str(), line.size());
-          if(objcomb->get_active_row_number() != 21)
-            {
-              line = std::string(coordlab->get_text()) + ";\n";
-              f.write(line.c_str(), line.size());
-              line = std::string(equinlab->get_text()) + ";\n";
-              f.write(line.c_str(), line.size());
-            }
-          line = std::string(unitlab->get_text()) + ";\n";
-          f.write(line.c_str(), line.size());
-          line = std::string(beltlab->get_text()) + ";\n\n";
-          f.write(line.c_str(), line.size());
-          Glib::RefPtr<Gtk::TreeModel> model = view->get_model();
-          auto children = model->children();
-          for(auto iter = children.begin(), end = children.end(); iter != end; ++iter)
-            {
-              line.clear();
-              auto row = *iter;
-              for(int i = 0; i < model->get_n_columns(); i++)
-                {
-                  std::string valline;
-                  row.get_value(i, valline);
-                  line = line + valline + ";";
-                }
-              line = line + "\n";
-              f.write(line.c_str(), line.size());
-            }
-          f.close();
-        }
+      if(fl)
+	{
+	  std::string filename = fl->get_path();
+	  std::filesystem::path filepath = std::filesystem::u8path(filename);
+	  filename = ".csv";
+	  filepath.replace_extension(std::filesystem::u8path(filename));
+	  std::fstream f;
+	  f.open(filepath, std::ios_base::out | std::ios_base::binary);
+	  if(!f.is_open())
+	    {
+	      std::cerr << "Cannot open file for saving" << std::endl;
+	    }
+	  else
+	    {
+	      std::string line(objlab->get_text());
+	      line = line + "\n";
+	      f.write(line.c_str(), line.size());
+	      if(objcomb->get_active_row_number() != 21)
+		{
+		  line = std::string(coordlab->get_text()) + ";\n";
+		  f.write(line.c_str(), line.size());
+		  line = std::string(equinlab->get_text()) + ";\n";
+		  f.write(line.c_str(), line.size());
+		}
+	      line = std::string(unitlab->get_text()) + ";\n";
+	      f.write(line.c_str(), line.size());
+	      line = std::string(beltlab->get_text()) + ";\n\n";
+	      f.write(line.c_str(), line.size());
+	      line.clear();
+	      for(guint i = 0; i < view->get_n_columns(); i++)
+		{
+		  line = line + std::string(view->get_column(i)->get_title());
+		  line = line + ";";
+		}
+	      line = line + "\n";
+	      f.write(line.c_str(), line.size());
+
+	      Glib::RefPtr<Gtk::TreeModel> model = view->get_model();
+	      auto children = model->children();
+	      for(auto iter = children.begin(), end = children.end();
+		  iter != end; ++iter)
+		{
+		  line.clear();
+		  auto row = *iter;
+		  for(int i = 0; i < model->get_n_columns(); i++)
+		    {
+		      std::string valline;
+		      row.get_value(i, valline);
+		      line = line + valline + ";";
+		    }
+		  line = line + "\n";
+		  f.write(line.c_str(), line.size());
+		}
+	      f.close();
+	    }
+	}
+      fcd->close();
+    }
+  else if(rid == Gtk::ResponseType::CANCEL)
+    {
+      fcd->close();
     }
 }
 
 void
 MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-                        Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-                        Gtk::ComboBoxText *timecomb,
-                        Gtk::ComboBoxText *belt, Gtk::ComboBoxText *coordcomb,
-                        Gtk::ComboBoxText *equincomb, Gtk::Entry *pathent)
+			Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+			Gtk::ComboBoxText *timecomb, Gtk::ComboBoxText *belt,
+			Gtk::ComboBoxText *coordcomb,
+			Gtk::ComboBoxText *equincomb, Gtk::Entry *pathent)
 {
   std::string daystr(day->get_text());
   std::string monthstr(month->get_text());
@@ -1440,10 +1508,10 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << daystr;
       strm >> daynum;
       if(daynum < 1)
-        {
-          errDialog(1);
-          return void();
-        }
+	{
+	  errDialog(1);
+	  return void();
+	}
     }
 
   if(monthstr == "")
@@ -1459,27 +1527,27 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << monthstr;
       strm >> monthnum;
       if(monthnum < 1 || monthnum > 12)
-        {
-          errDialog(2);
-          return void();
-        }
+	{
+	  errDialog(2);
+	  return void();
+	}
       if(monthnum == 1 || monthnum == 3 || monthnum == 5 || monthnum == 7
-          || monthnum == 8 || monthnum == 10 || monthnum == 12)
-        {
-          if(daynum > 31)
-            {
-              errDialog(1);
-              return void();
-            }
-        }
+	  || monthnum == 8 || monthnum == 10 || monthnum == 12)
+	{
+	  if(daynum > 31)
+	    {
+	      errDialog(1);
+	      return void();
+	    }
+	}
       else
-        {
-          if(daynum > 30)
-            {
-              errDialog(1);
-              return void();
-            }
-        }
+	{
+	  if(daynum > 30)
+	    {
+	      errDialog(1);
+	      return void();
+	    }
+	}
     }
 
   if(yearstr == "")
@@ -1495,27 +1563,27 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << yearstr;
       strm >> yearnum;
       if((yearnum & 3) == 0 && ((yearnum % 25) != 0 || (yearnum & 15) == 0))
-        {
-          if(monthnum == 2)
-            {
-              if(daynum > 29)
-                {
-                  errDialog(1);
-                  return void();
-                }
-            }
-        }
+	{
+	  if(monthnum == 2)
+	    {
+	      if(daynum > 29)
+		{
+		  errDialog(1);
+		  return void();
+		}
+	    }
+	}
       else
-        {
-          if(monthnum == 2)
-            {
-              if(daynum > 28)
-                {
-                  errDialog(1);
-                  return void();
-                }
-            }
-        }
+	{
+	  if(monthnum == 2)
+	    {
+	      if(daynum > 28)
+		{
+		  errDialog(1);
+		  return void();
+		}
+	    }
+	}
     }
 
   if(hourstr == "")
@@ -1531,10 +1599,10 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << hourstr;
       strm >> hournum;
       if(hournum < 0 || hournum > 23)
-        {
-          errDialog(4);
-          return void();
-        }
+	{
+	  errDialog(4);
+	  return void();
+	}
     }
 
   if(minutstr == "")
@@ -1550,10 +1618,10 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << minutstr;
       strm >> minutnum;
       if(minutnum < 0 || minutnum > 59)
-        {
-          errDialog(5);
-          return void();
-        }
+	{
+	  errDialog(5);
+	  return void();
+	}
     }
 
   if(secondstr == "")
@@ -1569,14 +1637,14 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << secondstr;
       strm >> secondnum;
       if(secondnum < 0 || secondnum > 59)
-        {
-          errDialog(6);
-          return void();
-        }
+	{
+	  errDialog(6);
+	  return void();
+	}
     }
   AuxFunc af;
   double JDcalc = af.utcJD(daynum, monthnum, yearnum, hournum, minutnum,
-                           secondnum);
+			   secondnum);
 
   if(JDcalc < 0)
     {
@@ -1591,16 +1659,18 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
     }
   DAFOperations daf;
   bool chtm = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-                                secondnum, timecomb->get_active_row_number(), beltnum, pathstr);
+				secondnum, timecomb->get_active_row_number(),
+				beltnum, pathstr);
   if(chtm)
     {
       Gtk::ProgressBar *bar = Gtk::make_managed<Gtk::ProgressBar>();
       bar->set_fraction(0.0);
 
       OrbitsDiagram *od = new OrbitsDiagram(this, pathstr, JDcalc,
-                                            timecomb->get_active_row_number(),
-                                            coordcomb->get_active_row_number(), equincomb->get_active_row_number(),
-                                            &orbits_cancel);
+					    timecomb->get_active_row_number(),
+					    coordcomb->get_active_row_number(),
+					    equincomb->get_active_row_number(),
+					    &orbits_cancel);
 
       Gtk::Window *win = resultPulseWin(1, bar);
       double sz = static_cast<double>(od->calculateSize());
@@ -1611,57 +1681,60 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       double *frac = new double(0.0);
       pulse_disp->connect([bar, frac]
       {
-        bar->set_fraction(*frac);
+	bar->set_fraction(*frac);
       });
 
       od->pulse_signal = [pulse_disp, frac, sz, pulsemtx, bar]
       {
-        pulsemtx->lock();
-        *frac = *frac + 1.0 / sz;
-        if(*frac - bar->get_fraction() > 0.01)
-          {
-            pulse_disp->emit();
-          }
-        pulsemtx->unlock();
+	pulsemtx->lock();
+	*frac = *frac + 1.0 / sz;
+	if(*frac - bar->get_fraction() > 0.01)
+	  {
+	    pulse_disp->emit();
+	  }
+	pulsemtx->unlock();
       };
 
-      od->diagram_close = [od] {delete od;};
+      od->diagram_close = [od]
+      {
+	delete od;
+      };
 
       compl_disp->connect([bar, win, od]
       {
-        bar->set_fraction(1.0);
-        win->close();
-        od->diagramPlot();
+	bar->set_fraction(1.0);
+	win->close();
+	od->diagramPlot();
       });
 
       canceled_disp->connect([win, od]
       {
-        win->close();
-        delete od;
+	win->close();
+	delete od;
       });
 
       od->calc_completed = [compl_disp]
       {
-        compl_disp->emit();
-        delete compl_disp;
+	compl_disp->emit();
+	delete compl_disp;
       };
       od->canceled_signal = [canceled_disp, compl_disp]
       {
-        canceled_disp->emit();
-        delete canceled_disp;
-        delete compl_disp;
+	canceled_disp->emit();
+	delete canceled_disp;
+	delete compl_disp;
       };
 
       bar->signal_destroy().connect([pulsemtx, pulse_disp, frac]
       {
-        delete pulsemtx;
-        delete pulse_disp;
-        delete frac;
+	delete pulsemtx;
+	delete pulse_disp;
+	delete frac;
       });
 
       std::thread *thr = new std::thread([od]
       {
-        od->calculateOrbits();
+	od->calculateOrbits();
       });
       thr->detach();
       delete thr;
@@ -1678,9 +1751,9 @@ MainWindow::aboutProg()
   Gtk::AboutDialog *aboutd = new Gtk::AboutDialog;
   aboutd->set_transient_for(*this);
   aboutd->set_application(this->get_application());
-
+  aboutd->set_name("mainWindow");
   aboutd->set_program_name("EphEPM");
-  aboutd->set_version("1.0");
+  aboutd->set_version("1.0.1");
   aboutd->set_copyright("Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>");
   AuxFunc af;
   std::filesystem::path p = std::filesystem::u8path(af.get_selfpath());
@@ -1716,14 +1789,16 @@ MainWindow::aboutProg()
   Glib::RefPtr<Gio::File> logofile = Gio::File::create_for_path(filename);
   aboutd->set_logo(Gdk::Texture::create_from_file(logofile));
   abbuf =
-    gettext(
-      "EphEPM is simple program to calculate some Solar system bodies coordinates.\n"
-      "Author Yury Bobylev.\n\n"
-      "Program uses next libraries:\n"
-      "GTK https://www.gtk.org\n"
-      "GMP https://gmplib.org\n"
-      "MathGL http://mathgl.sourceforge.net\n"
-      "ICU https://icu.unicode.org");
+      Glib::ustring(
+	  gettext(
+	      "EphEPM is simple program to calculate some Solar system bodies coordinates.\n"
+	      "Author Yury Bobylev.\n\n"
+	      "Program uses next libraries:\n"))
+	  + Glib::ustring("GTK https://www.gtk.org\n"
+			  "GMP https://gmplib.org\n"
+			  "MathGL http://mathgl.sourceforge.net\n"
+			  "ICU https://icu.unicode.org\n"
+			  "SOFA https://iausofa.org/");
   aboutd->set_comments(abbuf);
 
   aboutd->signal_close_request().connect([aboutd]
@@ -1732,8 +1807,7 @@ MainWindow::aboutProg()
     delete aboutd;
     return true;
   },
-  false);
-  aboutd->show();
+					 false);
+  aboutd->present();
 }
-
 

@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -15,8 +15,8 @@
  see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef DAFOPERATIONS_H_
-#define DAFOPERATIONS_H_
+#ifndef INCLUDE_DAFOPERATIONS_H_
+#define INCLUDE_DAFOPERATIONS_H_
 
 #include <iostream>
 #include <fstream>
@@ -29,25 +29,24 @@
 
 class DAFOperations
 {
-  public:
-    DAFOperations();
-    virtual
-    ~DAFOperations();
-    std::string
-    fileVersion(std::fstream *f);
-    bool
-    epochCheckUTC(int day, int month, int year, int hours, int minutes,
-                  double seconds, int timesc, int belt, std::string filename);
-    bool
-    epochCheckUTC(double JD, int timesc, double *epb, double *epe,
-                  std::string filename);
-    int
-    bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end, int NAIFid);
-  private:
-    std::vector<std::tuple<double, double, int, int, int, int, int, int>>
-        bodiesVector(std::fstream *f);
+public:
+  DAFOperations();
+  virtual
+  ~DAFOperations();
+  std::string
+  fileVersion(std::fstream *f);
+  bool
+  epochCheckUTC(int day, int month, int year, int hours, int minutes,
+		double seconds, int timesc, int belt, std::string filename);
+  bool
+  epochCheckUTC(double JD, int timesc, double *epb, double *epe,
+		std::string filename);
+  int
+  bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end, int NAIFid);
+private:
+  std::vector<std::tuple<double, double, int, int, int, int, int, int>>
+  bodiesVector(std::fstream *f);
 };
 
-#endif /* DAFOPERATIONS_H_ */
-
+#endif /* INCLUDE_DAFOPERATIONS_H_ */
 

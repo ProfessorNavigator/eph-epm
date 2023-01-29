@@ -38,7 +38,7 @@
 	background-image: none;
 	background-color: yellow;
 	border-width: 1px;
-    border-radius: 10px;	
+    	border-radius: 10px;	
 	color: black;
 	border-width: 1px;
 	border-color: black;
@@ -51,7 +51,6 @@
 #closeButton {
 	background-image: none;
 	border-width: 1px;
-    border-radius: 10px;
 	background-color: rgb(255, 9, 0);
 	color: yellow;
 	border-width: 1px;
@@ -64,6 +63,11 @@
 
 #buttonPanel {
 	background-color: rgb(66, 143, 143);
+	border-radius: 10px;
+}
+
+#panelLab {
+	color: black;
 }
 
 #minButton:hover {

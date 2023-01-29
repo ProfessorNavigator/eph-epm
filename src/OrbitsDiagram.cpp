@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -18,7 +18,8 @@
 #include "OrbitsDiagram.h"
 
 OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
-                             double JD, int timesc, int coordtype, int theory, int *cancel)
+			     double JD, int timesc, int coordtype, int theory,
+			     int *cancel)
 {
   this->mw = mw;
   this->ephpath = ephpath;
@@ -76,7 +77,7 @@ OrbitsDiagram::calculateSize()
   if(ch)
     {
       double summa = 1.0 / scale_factor * static_cast<double>(bodyv.size() - 2)
-                     + static_cast<double>(bodyv.size());
+	  + static_cast<double>(bodyv.size());
       result = static_cast<int>(std::ceil(summa));
     }
   return result;
@@ -85,10 +86,11 @@ OrbitsDiagram::calculateSize()
 void
 OrbitsDiagram::calculateOrbits()
 {
-  auto itpl = std::find_if(bodyv.begin(), bodyv.end(), [](auto & el)
-  {
-    return std::get<0>(el) == "sedna";
-  });
+  auto itpl = std::find_if(bodyv.begin(), bodyv.end(), []
+  (auto &el)
+    {
+      return std::get<0>(el) == "sedna";
+    });
   if(itpl != bodyv.end())
     {
       double period = std::get<1>(*itpl);
@@ -96,92 +98,92 @@ OrbitsDiagram::calculateOrbits()
       int stepnum = static_cast<int>(1 / scale_factor);
       AuxFunc af;
       if(epe - epb < period)
-        {
-          period = epe - epb - 0.2;
-          JDbeg = epb + 0.1;
-          while(af.timeTT(JDbeg) < epb + 0.1)
-            {
-              JDbeg = JDbeg + 0.1;
-            }
-          while(af.timeTT(JDbeg + period) > epe - 0.1)
-            {
-              period = period - 0.1;
-            }
-        }
+	{
+	  period = epe - epb - 0.2;
+	  JDbeg = epb + 0.1;
+	  while(af.timeTT(JDbeg) < epb + 0.1)
+	    {
+	      JDbeg = JDbeg + 0.1;
+	    }
+	  while(af.timeTT(JDbeg + period) > epe - 0.1)
+	    {
+	      period = period - 0.1;
+	    }
+	}
       else
-        {
-          if(JD - period * 0.5 < epb + 0.1)
-            {
-              JDbeg = epb + 0.1;
-              while(af.timeTT(JDbeg) < epb + 0.1)
-                {
-                  JDbeg = JDbeg + 0.1;
-                }
-              while(af.timeTT(JDbeg + period) > epe - 0.1)
-                {
-                  period = period - 0.1;
-                }
-            }
-          else
-            {
-              if(JD + period * 0.5 > epe - 0.1)
-                {
-                  JDbeg = epe - 0.1 - period;
-                  while(af.timeTT(JDbeg + period) > epe - 0.1)
-                    {
-                      period = period - 0.1;
-                    }
-                }
-              else
-                {
-                  JDbeg = JD - 0.5 * period;
-                  while(af.timeTT(JDbeg + 0.5 * period) > epe - 0.1)
-                    {
-                      period = period - 0.1;
-                    }
-                }
-            }
-        }
+	{
+	  if(JD - period * 0.5 < epb + 0.1)
+	    {
+	      JDbeg = epb + 0.1;
+	      while(af.timeTT(JDbeg) < epb + 0.1)
+		{
+		  JDbeg = JDbeg + 0.1;
+		}
+	      while(af.timeTT(JDbeg + period) > epe - 0.1)
+		{
+		  period = period - 0.1;
+		}
+	    }
+	  else
+	    {
+	      if(JD + period * 0.5 > epe - 0.1)
+		{
+		  JDbeg = epe - 0.1 - period;
+		  while(af.timeTT(JDbeg + period) > epe - 0.1)
+		    {
+		      period = period - 0.1;
+		    }
+		}
+	      else
+		{
+		  JDbeg = JD - 0.5 * period;
+		  while(af.timeTT(JDbeg + 0.5 * period) > epe - 0.1)
+		    {
+		      period = period - 0.1;
+		    }
+		}
+	    }
+	}
 
       Coordinates *coord = new Coordinates("sedna", JDbeg, timesc, coordtype, 0,
-                                           theory, 0,
-                                           period * scale_factor, stepnum, ephpath, cancel);
+					   theory, 0, period * scale_factor,
+					   stepnum, ephpath, cancel);
       coord->pulse_signal = [this]
       {
-        if(this->pulse_signal)
-          {
-            this->pulse_signal();
-          }
+	if(this->pulse_signal)
+	  {
+	    this->pulse_signal();
+	  }
       };
 
       resultsed = coord->calculationsXYZ();
       delete coord;
       double rng = 0.0;
       for(int i = 0; i < 3; i++)
-        {
-          auto minmaxel = std::minmax_element(resultsed.begin(),
-                                              resultsed.end(), [i](auto el1,
-                                                  auto & el2)
-          {
-            return el1.at(i) > el2.at(i);
-          });
-          if(minmaxel.first != resultsed.end())
-            {
-              std::array<mpf_class, 3> maxar = *(minmaxel.first);
-              if(maxar.at(i).get_d() > rng)
-                {
-                  rng = maxar.at(i).get_d();
-                }
-            }
-          if(minmaxel.second != resultsed.end())
-            {
-              std::array<mpf_class, 3> minar = *(minmaxel.second);
-              if(std::abs(minar.at(i).get_d()) > rng)
-                {
-                  rng = std::abs(minar.at(i).get_d());
-                }
-            }
-        }
+	{
+	  auto minmaxel = std::minmax_element(resultsed.begin(),
+					      resultsed.end(), [i]
+					      (auto el1, auto &el2)
+						{
+						  return el1.at(i) > el2.at(i);
+						});
+	  if(minmaxel.first != resultsed.end())
+	    {
+	      std::array<mpf_class, 3> maxar = *(minmaxel.first);
+	      if(maxar.at(i).get_d() > rng)
+		{
+		  rng = maxar.at(i).get_d();
+		}
+	    }
+	  if(minmaxel.second != resultsed.end())
+	    {
+	      std::array<mpf_class, 3> minar = *(minmaxel.second);
+	      if(std::abs(minar.at(i).get_d()) > rng)
+		{
+		  rng = std::abs(minar.at(i).get_d());
+		}
+	    }
+	}
       gr->SetSize(Width, Height);
       gr->SetRanges(-rng, rng, -rng, rng, -rng, rng);
       gr->Rotate(50, 60, 0);
@@ -191,40 +193,40 @@ OrbitsDiagram::calculateOrbits()
       gr->SetQuality(3);
 
       for(size_t i = 0; i < bodyv.size(); i++)
-        {
-          if(*cancel > 0)
-            {
-              break;
-            }
-          threadvmtx->lock();
-          size_t thrnum = threadv.size();
-          threadvmtx->unlock();
-          if(thrnum < std::thread::hardware_concurrency())
-            {
-              std::tuple<std::string, double>planettup;
-              planettup = bodyv[i];
-              std::thread *thr = new std::thread(std::bind(&OrbitsDiagram::planetOrbCalc,
-                                                 this, planettup));
-              threadvmtx->lock();
-              threadv.push_back(std::get<0>(planettup));
-              threadvmtx->unlock();
-              thr->detach();
-              delete thr;
-            }
-          else
-            {
-              cyclemtx.lock();
-              std::tuple<std::string, double>planettup;
-              planettup = bodyv[i];
-              std::thread *thr = new std::thread(std::bind(&OrbitsDiagram::planetOrbCalc,
-                                                 this, planettup));
-              threadvmtx->lock();
-              threadv.push_back(std::get<0>(planettup));
-              threadvmtx->unlock();
-              thr->detach();
-              delete thr;
-            }
-        }
+	{
+	  if(*cancel > 0)
+	    {
+	      break;
+	    }
+	  threadvmtx->lock();
+	  size_t thrnum = threadv.size();
+	  threadvmtx->unlock();
+	  if(thrnum < std::thread::hardware_concurrency())
+	    {
+	      std::tuple<std::string, double> planettup;
+	      planettup = bodyv[i];
+	      std::thread *thr = new std::thread(
+		  std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
+	      threadvmtx->lock();
+	      threadv.push_back(std::get<0>(planettup));
+	      threadvmtx->unlock();
+	      thr->detach();
+	      delete thr;
+	    }
+	  else
+	    {
+	      cyclemtx.lock();
+	      std::tuple<std::string, double> planettup;
+	      planettup = bodyv[i];
+	      std::thread *thr = new std::thread(
+		  std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
+	      threadvmtx->lock();
+	      threadv.push_back(std::get<0>(planettup));
+	      threadvmtx->unlock();
+	      thr->detach();
+	      delete thr;
+	    }
+	}
     }
 
 }
@@ -252,62 +254,62 @@ OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
       AuxFunc af;
       int stepnum = static_cast<int>(1 / scale_factor);
       if(epe - epb < period)
-        {
-          period = epe - epb - 0.2;
-          JDbeg = epb + 0.1;
-          while(af.timeTT(JDbeg) < epb + 0.1)
-            {
-              JDbeg = JDbeg + 0.1;
-            }
-          while(af.timeTT(JDbeg + period) > epe - 0.1)
-            {
-              period = period - 0.1;
-            }
-        }
+	{
+	  period = epe - epb - 0.2;
+	  JDbeg = epb + 0.1;
+	  while(af.timeTT(JDbeg) < epb + 0.1)
+	    {
+	      JDbeg = JDbeg + 0.1;
+	    }
+	  while(af.timeTT(JDbeg + period) > epe - 0.1)
+	    {
+	      period = period - 0.1;
+	    }
+	}
       else
-        {
-          if(JD - period * 0.5 < epb + 0.1)
-            {
-              JDbeg = epb + 0.1;
-              while(af.timeTT(JDbeg) < epb + 0.1)
-                {
-                  JDbeg = JDbeg + 0.1;
-                }
-              while(af.timeTT(JDbeg + period) > epe - 0.1)
-                {
-                  period = period - 0.1;
-                }
-            }
-          else
-            {
-              if(JD + period * 0.5 > epe - 0.1)
-                {
-                  JDbeg = epe - 0.1 - period;
-                  while(af.timeTT(JDbeg + period) > epe - 0.1)
-                    {
-                      period = period - 0.1;
-                    }
-                }
-              else
-                {
-                  JDbeg = JD - 0.5 * period;
-                  while(af.timeTT(JDbeg + 0.5 * period) > epe - 0.1)
-                    {
-                      period = period - 0.1;
-                    }
-                }
-            }
-        }
+	{
+	  if(JD - period * 0.5 < epb + 0.1)
+	    {
+	      JDbeg = epb + 0.1;
+	      while(af.timeTT(JDbeg) < epb + 0.1)
+		{
+		  JDbeg = JDbeg + 0.1;
+		}
+	      while(af.timeTT(JDbeg + period) > epe - 0.1)
+		{
+		  period = period - 0.1;
+		}
+	    }
+	  else
+	    {
+	      if(JD + period * 0.5 > epe - 0.1)
+		{
+		  JDbeg = epe - 0.1 - period;
+		  while(af.timeTT(JDbeg + period) > epe - 0.1)
+		    {
+		      period = period - 0.1;
+		    }
+		}
+	      else
+		{
+		  JDbeg = JD - 0.5 * period;
+		  while(af.timeTT(JDbeg + 0.5 * period) > epe - 0.1)
+		    {
+		      period = period - 0.1;
+		    }
+		}
+	    }
+	}
 
-      Coordinates *coord = new Coordinates(bodyc, JDbeg, timesc, coordtype, 0, theory,
-                                           0,
-                                           period * scale_factor, stepnum, ephpath, cancel);
+      Coordinates *coord = new Coordinates(bodyc, JDbeg, timesc, coordtype, 0,
+					   theory, 0, period * scale_factor,
+					   stepnum, ephpath, cancel);
       coord->pulse_signal = [this]
       {
-        if(this->pulse_signal)
-          {
-            this->pulse_signal();
-          }
+	if(this->pulse_signal)
+	  {
+	    this->pulse_signal();
+	  }
       };
       result = coord->calculationsXYZ();
       delete coord;
@@ -317,9 +319,9 @@ OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
       result = resultsed;
       resultsed.clear();
     }
-  std::vector<double>X;
-  std::vector<double>Y;
-  std::vector<double>Z;
+  std::vector<double> X;
+  std::vector<double> Y;
+  std::vector<double> Z;
   for(size_t i = 0; i < result.size(); i++)
     {
       X.push_back(std::get<0>(result[i]).get_d());
@@ -402,7 +404,8 @@ OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
     }
   bodyBuilding(body, gr);
   threadvmtx->lock();
-  threadv.erase(std::remove(threadv.begin(), threadv.end(), body), threadv.end());
+  threadv.erase(std::remove(threadv.begin(), threadv.end(), body),
+		threadv.end());
   size_t ch = threadv.size();
   threadvmtx->unlock();
   if(cyclemtx.try_lock())
@@ -417,20 +420,20 @@ OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
     {
       std::string mgl_warn(gr->Message());
       if(!mgl_warn.empty())
-        {
-          std::cerr << "MathGL warning: " << mgl_warn << std::endl;
-        }
+	{
+	  std::cerr << "MathGL warning: " << mgl_warn << std::endl;
+	}
       if(calc_completed)
-        {
-          calc_completed();
-        }
+	{
+	  calc_completed();
+	}
     }
   else
     {
       if(ch == 0 && canceled_signal)
-        {
-          canceled_signal();
-        }
+	{
+	  canceled_signal();
+	}
     }
 }
 
@@ -445,21 +448,21 @@ OrbitsDiagram::diagramPlot()
 void
 OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
 {
-  Coordinates *coord = new Coordinates(body, JD, timesc, coordtype, 0, theory, 0,
-                                       1.0, 1, ephpath, cancel);
+  Coordinates *coord = new Coordinates(body, JD, timesc, coordtype, 0, theory,
+				       0, 1.0, 1, ephpath, cancel);
   coord->pulse_signal = [this]
   {
     if(this->pulse_signal)
       {
-        this->pulse_signal();
+	this->pulse_signal();
       }
   };
   std::vector<std::array<mpf_class, 3>> result;
   result = coord->calculationsXYZ();
   delete coord;
-  std::vector<double>X;
-  std::vector<double>Y;
-  std::vector<double>Z;
+  std::vector<double> X;
+  std::vector<double> Y;
+  std::vector<double> Z;
   double Rv;
   double Rh2;
   double Rh;
@@ -627,45 +630,47 @@ OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
       Rh2 = 99.915;
       Rv = 99.915;
     }
-  for(double phi = -M_PI / 2.0; phi <= M_PI / 2.0; phi = phi +  M_PI / 180.0)
+  for(double phi = -M_PI / 2.0; phi <= M_PI / 2.0; phi = phi + M_PI / 180.0)
     {
       for(double tet = 0.0; tet <= 2.0 * M_PI; tet = tet + M_PI / 180.0)
-        {
-          mpf_class xyz[3];
-          xyz[0] = mpf_class(Rh / 149597870.7) * af.Cos(phi) * af.Cos(tet);
-          xyz[1] = mpf_class(Rh2 / 149597870.7) * af.Cos(phi) * af.Sin(tet);
-          xyz[2] = mpf_class(Rv / 149597870.7) * af.Sin(phi);
-          mpf_class result[3];
-          af.rotateXYZ(xyz, 0.0, bet, alf, result);
-          mpf_class Oldx(result[0]);
-          mpf_class Oldy(result[1]);
-          mpf_class Oldz(result[2]);
-          mpf_class Newx, Newy, Newz;
-          if(coordtype == 0)
-            {
-              if(theory == 0)
-                {
-                  Newx = Oldx;
-                  Newy = Oldy;
-                  Newz = Oldz;
-                }
-              if(theory == 1)
-                {
-                  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-              if(theory == 2)
-                {
-                  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-            }
-          if(coordtype == 1)
-            {
-              af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD, theory);
-            }
-          X.push_back(x + Newx.get_d());
-          Y.push_back(y + Newy.get_d());
-          Z.push_back(z + Newz.get_d());
-        }
+	{
+	  mpf_class xyz[3];
+	  xyz[0] = mpf_class(Rh / 149597870.7) * af.Cos(phi) * af.Cos(tet);
+	  xyz[1] = mpf_class(Rh2 / 149597870.7) * af.Cos(phi) * af.Sin(tet);
+	  xyz[2] = mpf_class(Rv / 149597870.7) * af.Sin(phi);
+	  mpf_class result[3];
+	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
+	  mpf_class Oldx(result[0]);
+	  mpf_class Oldy(result[1]);
+	  mpf_class Oldz(result[2]);
+	  mpf_class Newx, Newy, Newz;
+	  if(coordtype == 0)
+	    {
+	      if(theory == 0)
+		{
+		  Newx = Oldx;
+		  Newy = Oldy;
+		  Newz = Oldz;
+		}
+	      if(theory == 1)
+		{
+		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
+		}
+	      if(theory == 2)
+		{
+		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				    JD);
+		}
+	    }
+	  if(coordtype == 1)
+	    {
+	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+			    theory);
+	    }
+	  X.push_back(x + Newx.get_d());
+	  Y.push_back(y + Newy.get_d());
+	  Z.push_back(z + Newz.get_d());
+	}
     }
   mglData Xb(X), Yb(Y), Zb(Z);
   X.clear();
@@ -676,7 +681,7 @@ OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
   X.push_back(x + Rh * 2 / 149597870.7);
   Y.push_back(y + Rh2 * 2 / 149597870.7);
   Y.push_back(y + Rh2 * 2 / 149597870.7);
-  Z.push_back(z  + range);
+  Z.push_back(z + range);
   Z.push_back(z + Rv * 2 / 149597870.7);
   Xb.Rearrange(180, 361);
   Yb.Rearrange(180, 361);
@@ -692,19 +697,22 @@ OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
   if(body == "mercury" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{x999C99}");
-      graph->Puts(p, af.utf8to(gettext("Mercury")).c_str(), "{x999C99}", fontsize);
+      graph->Puts(p, af.utf8to(gettext("Mercury")).c_str(), "{x999C99}",
+		  fontsize);
       graph->Plot(lX, lY, lZ, "{x999C99}");
     }
   if(body == "venus" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xD49B3A}");
-      graph->Puts(p, af.utf8to(gettext("Venus")).c_str(), "{xD49B3A}", fontsize);
+      graph->Puts(p, af.utf8to(gettext("Venus")).c_str(), "{xD49B3A}",
+		  fontsize);
       graph->Plot(lX, lY, lZ, "{xD49B3A}");
     }
   if(body == "earth" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{x5C98C0}");
-      graph->Puts(p, af.utf8to(gettext("Earth")).c_str(), "{x5C98C0}", fontsize);
+      graph->Puts(p, af.utf8to(gettext("Earth")).c_str(), "{x5C98C0}",
+		  fontsize);
       graph->Plot(lX, lY, lZ, "{x5C98C0}");
     }
   if(body == "moon" && (x != 0.0 || y != 0.0 || z != 0.0))
@@ -721,236 +729,248 @@ OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
     {
       graph->Surf(Xb, Yb, Zb, "{xDAD3C3}");
       graph->Puts(p, af.utf8to(gettext("Jupiter")).c_str(), "{xDAD3C3}",
-                  fontsize * 3);
+		  fontsize * 3);
       graph->Plot(lX, lY, lZ, "{xDAD3C3}");
     }
   if(body == "saturn" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xE0B978}");
       graph->Puts(p, af.utf8to(gettext("Saturn")).c_str(), "{xE0B978}",
-                  fontsize * 3);
+		  fontsize * 3);
       graph->Plot(lX, lY, lZ, "{xE0B978}");
 
-      std::vector<double>Xrb1;
-      std::vector<double>Yrb1;
-      std::vector<double>Zrb1;
+      std::vector<double> Xrb1;
+      std::vector<double> Yrb1;
+      std::vector<double> Zrb1;
 
-      std::vector<double>Xre1;
-      std::vector<double>Yre1;
-      std::vector<double>Zre1;
+      std::vector<double> Xre1;
+      std::vector<double> Yre1;
+      std::vector<double> Zre1;
 
-      std::vector<double>Xre2;
-      std::vector<double>Yre2;
-      std::vector<double>Zre2;
+      std::vector<double> Xre2;
+      std::vector<double> Yre2;
+      std::vector<double> Zre2;
 
-      std::vector<double>Xre3;
-      std::vector<double>Yre3;
-      std::vector<double>Zre3;
+      std::vector<double> Xre3;
+      std::vector<double> Yre3;
+      std::vector<double> Zre3;
 
-      std::vector<double>Xrb4;
-      std::vector<double>Yrb4;
-      std::vector<double>Zrb4;
+      std::vector<double> Xrb4;
+      std::vector<double> Yrb4;
+      std::vector<double> Zrb4;
 
-      std::vector<double>Xre4;
-      std::vector<double>Yre4;
-      std::vector<double>Zre4;
+      std::vector<double> Xre4;
+      std::vector<double> Yre4;
+      std::vector<double> Zre4;
 
       for(double fi = 0.0; fi < 2.0 * M_PI; fi = fi + M_PI / 180.0)
-        {
-          mpf_class xyz[3];
-          xyz[0] = 67000.0 * af.Cos(fi) / 149597870.7;
-          xyz[1] = 67000.0 * af.Sin(fi) / 149597870.7;
-          xyz[2] = 0.0;
-          mpf_class result[3];
-          af.rotateXYZ(xyz, 0.0, bet, alf, result);
-          mpf_class Oldx(result[0]);
-          mpf_class Oldy(result[1]);
-          mpf_class Oldz(result[2]);
-          mpf_class Newx, Newy, Newz;
-          if(coordtype == 0)
-            {
-              if(theory == 0)
-                {
-                  Newx = Oldx;
-                  Newy = Oldy;
-                  Newz = Oldz;
-                }
-              if(theory == 1)
-                {
-                  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-              if(theory == 2)
-                {
-                  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-            }
-          if(coordtype == 1)
-            {
-              af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD, theory);
-            }
-          Xrb1.push_back(x + Newx.get_d());
-          Yrb1.push_back(y + Newy.get_d());
-          Zrb1.push_back(z + Newz.get_d());
-          xyz[0] = 74500.0 * af.Cos(fi) / 149597870.7;
-          xyz[1] = 74500.0 * af.Sin(fi) / 149597870.7;
-          xyz[2] = 0.0;
-          af.rotateXYZ(xyz, 0.0, bet, alf, result);
-          Oldx = result[0];
-          Oldy = result[1];
-          Oldz = result[2];
-          if(coordtype == 0)
-            {
-              if(theory == 0)
-                {
-                  Newx = Oldx;
-                  Newy = Oldy;
-                  Newz = Oldz;
-                }
-              if(theory == 1)
-                {
-                  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-              if(theory == 2)
-                {
-                  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-            }
-          if(coordtype == 1)
-            {
-              af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD, theory);
-            }
-          Xre1.push_back(x + Newx.get_d());
-          Yre1.push_back(y + Newy.get_d());
-          Zre1.push_back(z + Newz.get_d());
+	{
+	  mpf_class xyz[3];
+	  xyz[0] = 67000.0 * af.Cos(fi) / 149597870.7;
+	  xyz[1] = 67000.0 * af.Sin(fi) / 149597870.7;
+	  xyz[2] = 0.0;
+	  mpf_class result[3];
+	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
+	  mpf_class Oldx(result[0]);
+	  mpf_class Oldy(result[1]);
+	  mpf_class Oldz(result[2]);
+	  mpf_class Newx, Newy, Newz;
+	  if(coordtype == 0)
+	    {
+	      if(theory == 0)
+		{
+		  Newx = Oldx;
+		  Newy = Oldy;
+		  Newz = Oldz;
+		}
+	      if(theory == 1)
+		{
+		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
+		}
+	      if(theory == 2)
+		{
+		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				    JD);
+		}
+	    }
+	  if(coordtype == 1)
+	    {
+	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+			    theory);
+	    }
+	  Xrb1.push_back(x + Newx.get_d());
+	  Yrb1.push_back(y + Newy.get_d());
+	  Zrb1.push_back(z + Newz.get_d());
+	  xyz[0] = 74500.0 * af.Cos(fi) / 149597870.7;
+	  xyz[1] = 74500.0 * af.Sin(fi) / 149597870.7;
+	  xyz[2] = 0.0;
+	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
+	  Oldx = result[0];
+	  Oldy = result[1];
+	  Oldz = result[2];
+	  if(coordtype == 0)
+	    {
+	      if(theory == 0)
+		{
+		  Newx = Oldx;
+		  Newy = Oldy;
+		  Newz = Oldz;
+		}
+	      if(theory == 1)
+		{
+		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
+		}
+	      if(theory == 2)
+		{
+		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				    JD);
+		}
+	    }
+	  if(coordtype == 1)
+	    {
+	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+			    theory);
+	    }
+	  Xre1.push_back(x + Newx.get_d());
+	  Yre1.push_back(y + Newy.get_d());
+	  Zre1.push_back(z + Newz.get_d());
 
-          xyz[0] = 92000.0 * af.Cos(fi) / 149597870.7;
-          xyz[1] = 92000.0 * af.Sin(fi) / 149597870.7;
-          xyz[2] = 0.0;
-          af.rotateXYZ(xyz, 0.0, bet, alf, result);
-          Oldx = result[0];
-          Oldy = result[1];
-          Oldz = result[2];
-          if(coordtype == 0)
-            {
-              if(theory == 0)
-                {
-                  Newx = Oldx;
-                  Newy = Oldy;
-                  Newz = Oldz;
-                }
-              if(theory == 1)
-                {
-                  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-              if(theory == 2)
-                {
-                  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-            }
-          if(coordtype == 1)
-            {
-              af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD, theory);
-            }
-          Xre2.push_back(x + Newx.get_d());
-          Yre2.push_back(y + Newy.get_d());
-          Zre2.push_back(z + Newz.get_d());
+	  xyz[0] = 92000.0 * af.Cos(fi) / 149597870.7;
+	  xyz[1] = 92000.0 * af.Sin(fi) / 149597870.7;
+	  xyz[2] = 0.0;
+	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
+	  Oldx = result[0];
+	  Oldy = result[1];
+	  Oldz = result[2];
+	  if(coordtype == 0)
+	    {
+	      if(theory == 0)
+		{
+		  Newx = Oldx;
+		  Newy = Oldy;
+		  Newz = Oldz;
+		}
+	      if(theory == 1)
+		{
+		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
+		}
+	      if(theory == 2)
+		{
+		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				    JD);
+		}
+	    }
+	  if(coordtype == 1)
+	    {
+	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+			    theory);
+	    }
+	  Xre2.push_back(x + Newx.get_d());
+	  Yre2.push_back(y + Newy.get_d());
+	  Zre2.push_back(z + Newz.get_d());
 
-          xyz[0] = 117580.0 * af.Cos(fi) / 149597870.7;
-          xyz[1] = 117580.0 * af.Sin(fi) / 149597870.7;
-          xyz[2] = 0.0;
-          af.rotateXYZ(xyz, 0.0, bet, alf, result);
-          Oldx = result[0];
-          Oldy = result[1];
-          Oldz = result[2];
-          if(coordtype == 0)
-            {
-              if(theory == 0)
-                {
-                  Newx = Oldx;
-                  Newy = Oldy;
-                  Newz = Oldz;
-                }
-              if(theory == 1)
-                {
-                  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-              if(theory == 2)
-                {
-                  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-            }
-          if(coordtype == 1)
-            {
-              af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD, theory);
-            }
-          Xre3.push_back(x + Newx.get_d());
-          Yre3.push_back(y + Newy.get_d());
-          Zre3.push_back(z + Newz.get_d());
+	  xyz[0] = 117580.0 * af.Cos(fi) / 149597870.7;
+	  xyz[1] = 117580.0 * af.Sin(fi) / 149597870.7;
+	  xyz[2] = 0.0;
+	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
+	  Oldx = result[0];
+	  Oldy = result[1];
+	  Oldz = result[2];
+	  if(coordtype == 0)
+	    {
+	      if(theory == 0)
+		{
+		  Newx = Oldx;
+		  Newy = Oldy;
+		  Newz = Oldz;
+		}
+	      if(theory == 1)
+		{
+		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
+		}
+	      if(theory == 2)
+		{
+		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				    JD);
+		}
+	    }
+	  if(coordtype == 1)
+	    {
+	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+			    theory);
+	    }
+	  Xre3.push_back(x + Newx.get_d());
+	  Yre3.push_back(y + Newy.get_d());
+	  Zre3.push_back(z + Newz.get_d());
 
-          xyz[0] = 122170.0 * af.Cos(fi) / 149597870.7;
-          xyz[1] = 122170.0 * af.Sin(fi) / 149597870.7;
-          xyz[2] = 0.0;
-          af.rotateXYZ(xyz, 0.0, bet, alf, result);
-          Oldx = result[0];
-          Oldy = result[1];
-          Oldz = result[2];
-          if(coordtype == 0)
-            {
-              if(theory == 0)
-                {
-                  Newx = Oldx;
-                  Newy = Oldy;
-                  Newz = Oldz;
-                }
-              if(theory == 1)
-                {
-                  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-              if(theory == 2)
-                {
-                  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-            }
-          if(coordtype == 1)
-            {
-              af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD, theory);
-            }
-          Xrb4.push_back(x + Newx.get_d());
-          Yrb4.push_back(y + Newy.get_d());
-          Zrb4.push_back(z + Newz.get_d());
+	  xyz[0] = 122170.0 * af.Cos(fi) / 149597870.7;
+	  xyz[1] = 122170.0 * af.Sin(fi) / 149597870.7;
+	  xyz[2] = 0.0;
+	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
+	  Oldx = result[0];
+	  Oldy = result[1];
+	  Oldz = result[2];
+	  if(coordtype == 0)
+	    {
+	      if(theory == 0)
+		{
+		  Newx = Oldx;
+		  Newy = Oldy;
+		  Newz = Oldz;
+		}
+	      if(theory == 1)
+		{
+		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
+		}
+	      if(theory == 2)
+		{
+		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				    JD);
+		}
+	    }
+	  if(coordtype == 1)
+	    {
+	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+			    theory);
+	    }
+	  Xrb4.push_back(x + Newx.get_d());
+	  Yrb4.push_back(y + Newy.get_d());
+	  Zrb4.push_back(z + Newz.get_d());
 
-          xyz[0] = 136775.0 * af.Cos(fi) / 149597870.7;
-          xyz[1] = 136775.0 * af.Sin(fi) / 149597870.7;
-          xyz[2] = 0.0;
-          af.rotateXYZ(xyz, 0.0, bet, alf, result);
-          Oldx = result[0];
-          Oldy = result[1];
-          Oldz = result[2];
-          if(coordtype == 0)
-            {
-              if(theory == 0)
-                {
-                  Newx = Oldx;
-                  Newy = Oldy;
-                  Newz = Oldz;
-                }
-              if(theory == 1)
-                {
-                  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-              if(theory == 2)
-                {
-                  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-            }
-          if(coordtype == 1)
-            {
-              af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD, theory);
-            }
-          Xre4.push_back(x + Newx.get_d());
-          Yre4.push_back(y + Newy.get_d());
-          Zre4.push_back(z + Newz.get_d());
-        }
+	  xyz[0] = 136775.0 * af.Cos(fi) / 149597870.7;
+	  xyz[1] = 136775.0 * af.Sin(fi) / 149597870.7;
+	  xyz[2] = 0.0;
+	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
+	  Oldx = result[0];
+	  Oldy = result[1];
+	  Oldz = result[2];
+	  if(coordtype == 0)
+	    {
+	      if(theory == 0)
+		{
+		  Newx = Oldx;
+		  Newy = Oldy;
+		  Newz = Oldz;
+		}
+	      if(theory == 1)
+		{
+		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
+		}
+	      if(theory == 2)
+		{
+		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				    JD);
+		}
+	    }
+	  if(coordtype == 1)
+	    {
+	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+			    theory);
+	    }
+	  Xre4.push_back(x + Newx.get_d());
+	  Yre4.push_back(y + Newy.get_d());
+	  Zre4.push_back(z + Newz.get_d());
+	}
       mglData xrb1(Xrb1), yrb1(Yrb1), zrb1(Zrb1);
       mglData xre1(Xre1), yre1(Yre1), zre1(Zre1);
       mglData xre2(Xre2), yre2(Yre2), zre2(Zre2);
@@ -972,80 +992,84 @@ OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
     {
       graph->Surf(Xb, Yb, Zb, "{xC9EFF1}");
       graph->Puts(p, af.utf8to(gettext("Uranus")).c_str(), "{xC9EFF1}",
-                  fontsize * 25);
+		  fontsize * 25);
       graph->Plot(lX, lY, lZ, "{xC9EFF1}");
     }
   if(body == "neptune" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{x5389FD}");
       graph->Puts(p, af.utf8to(gettext("Neptune")).c_str(), "{x5389FD}",
-                  fontsize * 25);
+		  fontsize * 25);
       graph->Plot(lX, lY, lZ, "{x5389FD}");
     }
   if(body == "pluto" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xD7B699}");
       graph->Puts(p, af.utf8to(gettext("Pluto")).c_str(), "{xD7B699}",
-                  fontsize * 25);
+		  fontsize * 25);
       graph->Plot(lX, lY, lZ, "{xD7B699}");
     }
   if(body == "ceres" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xABABAB}");
-      graph->Puts(p, af.utf8to(gettext("Ceres")).c_str(), "{xABABAB}", fontsize * 3);
+      graph->Puts(p, af.utf8to(gettext("Ceres")).c_str(), "{xABABAB}",
+		  fontsize * 3);
       graph->Plot(lX, lY, lZ, "{xABABAB}");
     }
   if(body == "pallas" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xD7D7D7}");
-      graph->Puts(p, af.utf8to(gettext("Pallas")).c_str(), "{xD7D7D7}", fontsize * 3);
+      graph->Puts(p, af.utf8to(gettext("Pallas")).c_str(), "{xD7D7D7}",
+		  fontsize * 3);
       graph->Plot(lX, lY, lZ, "{xD7D7D7}");
     }
   if(body == "vesta" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{x9C9686}");
-      graph->Puts(p, af.utf8to(gettext("Vesta")).c_str(), "{x9C9686}", fontsize * 3);
+      graph->Puts(p, af.utf8to(gettext("Vesta")).c_str(), "{x9C9686}",
+		  fontsize * 3);
       graph->Plot(lX, lY, lZ, "{x9C9686}");
     }
   if(body == "erida" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xD1C1A9}");
       graph->Puts(p, af.utf8to(gettext("Erida")).c_str(), "{xD1C1A9}",
-                  fontsize * 50);
+		  fontsize * 50);
       graph->Plot(lX, lY, lZ, "{xD1C1A9}");
     }
   if(body == "haumea" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{x7D675D}");
       graph->Puts(p, af.utf8to(gettext("Haumea")).c_str(), "{x7D675D}",
-                  fontsize * 100);
+		  fontsize * 100);
       graph->Plot(lX, lY, lZ, "{x7D675D}");
     }
   if(body == "makemake" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xB97B5A}");
       graph->Puts(p, af.utf8to(gettext("Makemake")).c_str(), "{xB97B5A}",
-                  fontsize * 50);
+		  fontsize * 50);
       graph->Plot(lX, lY, lZ, "{xB97B5A}");
     }
   if(body == "sedna" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xE89579}");
       graph->Puts(p, af.utf8to(gettext("Sedna")).c_str(), "{xE89579}",
-                  fontsize * 50);
+		  fontsize * 50);
       graph->Plot(lX, lY, lZ, "{xE89579}");
     }
   if(body == "bamberga" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xC8C8C8}");
       graph->Puts(p, af.utf8to(gettext("Bamberga")).c_str(), "{xC8C8C8}",
-                  fontsize * 3);
+		  fontsize * 3);
       graph->Plot(lX, lY, lZ, "{xC8C8C8}");
     }
   if(body == "iris" && (x != 0.0 || y != 0.0 || z != 0.0))
     {
       graph->Surf(Xb, Yb, Zb, "{xC6C6C6}");
-      graph->Puts(p, af.utf8to(gettext("Iris")).c_str(), "{xC6C6C6}", fontsize * 3);
+      graph->Puts(p, af.utf8to(gettext("Iris")).c_str(), "{xC6C6C6}",
+		  fontsize * 3);
       graph->Plot(lX, lY, lZ, "{xC6C6C6}");
     }
 }

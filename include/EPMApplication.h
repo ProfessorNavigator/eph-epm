@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -15,29 +15,28 @@
  see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef EPMAPPLICATION_H_
-#define EPMAPPLICATION_H_
+#ifndef INCLUDE_EPMAPPLICATION_H_
+#define INCLUDE_EPMAPPLICATION_H_
 
 #include <gtkmm.h>
 #include "MainWindow.h"
 
 class EPMApplication : public Gtk::Application
 {
-  protected:
-    EPMApplication();
-  public:
-    static Glib::RefPtr<EPMApplication>
-    create();
-    virtual
-    ~EPMApplication();
-  private:
-    MainWindow*
-    create_appwindow();
-  protected:
-    void
-    on_activate()override;
+protected:
+  EPMApplication();
+public:
+  static Glib::RefPtr<EPMApplication>
+  create();
+  virtual
+  ~EPMApplication();
+private:
+  MainWindow*
+  create_appwindow();
+protected:
+  void
+  on_activate() override;
 };
 
-#endif /* EPMAPPLICATION_H_ */
-
+#endif /* INCLUDE_EPMAPPLICATION_H_ */
 

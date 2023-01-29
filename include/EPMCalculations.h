@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -22,32 +22,31 @@
 #include <fstream>
 #include "AuxFunc.h"
 
-#ifndef EPMCALCULATIONS_H_
-#define EPMCALCULATIONS_H_
+#ifndef INCLUDE_EPMCALCULATIONS_H_
+#define INCLUDE_EPMCALCULATIONS_H_
 
 class EPMCalculations
 {
-  public:
-    EPMCalculations();
-    virtual
-    ~EPMCalculations();
+public:
+  EPMCalculations();
+  virtual
+  ~EPMCalculations();
 
-    mpf_class
-    tdbCalc(std::fstream *f, uint64_t *c_b, uint64_t *c_e, double JD, int type);
+  mpf_class
+  tdbCalc(std::fstream *f, uint64_t *c_b, uint64_t *c_e, double JD, int type);
 
-    mpf_class
-    bodyCalcX(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC, int var,
-              int type, mpf_class *au);
+  mpf_class
+  bodyCalcX(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
+	    int var, int type, mpf_class *au);
 
-    mpf_class
-    bodyCalcY(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC, int var,
-              int type, mpf_class *au);
+  mpf_class
+  bodyCalcY(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
+	    int var, int type, mpf_class *au);
 
-    mpf_class
-    bodyCalcZ(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC, int var,
-              int type, mpf_class *au);
+  mpf_class
+  bodyCalcZ(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
+	    int var, int type, mpf_class *au);
 };
 
-#endif /* EPMCALCULATIONS_H_ */
-
+#endif /* INCLUDE_EPMCALCULATIONS_H_ */
 

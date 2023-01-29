@@ -1,5 +1,5 @@
 /*
- Copyright 2022 Yury Bobylev <bobilev_yury@mail.ru>
+ Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
 
  This file is part of EphEPM.
  EphEPM is free software: you can redistribute it and/or
@@ -15,13 +15,13 @@
  see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef AUXFUNC_H_
-#define AUXFUNC_H_
+#ifndef INCLUDE_AUXFUNC_H_
+#define INCLUDE_AUXFUNC_H_
 
 #ifdef _WIN32
   #define _USE_MATH_DEFINES
   #include <Windows.h>
-#endif // _WIN32
+#endif
 
 #include <iostream>
 #include <string>
@@ -36,49 +36,43 @@
 
 class AuxFunc
 {
-  public:
-    AuxFunc();
-    virtual
-    ~AuxFunc();
-    std::string
-    get_selfpath();
-    double
-    timeTT(int day, int month, int year, int hour, int minut, double sec,
-           int belt);
-    double
-    timeTT(double JDutc);
-    void
-    dateJulian(double JDN, int *day, int *month, int *year, int *hour,
-               int *minut, double *second); //Julian date to calendar date
-    double
-    utcJD(int day, int month, int year, int hour, int minut, double sec);
-    double
-    grigToJuliancal(double JDgr);
-    void
-    toEcliptic(mpf_class *Oldx, mpf_class *Oldy,
-               mpf_class *Oldz, mpf_class *Newx,
-               mpf_class *Newy, mpf_class *Newz, double JD,
-               int ch);
-    void
-    precession(mpf_class *Oldx, mpf_class *Oldy,
-               mpf_class *Oldz, mpf_class *Newx,
-               mpf_class *Newy, mpf_class *Newz,
-               double JD);
-    void
-    precessionNnut(mpf_class *Oldx, mpf_class *Oldy,
-                   mpf_class *Oldz, mpf_class *Newx,
-                   mpf_class *Newy, mpf_class *Newz, double JD);
-    void
-    rotateXYZ(mpf_class xyz[3], mpf_class rx,
-              mpf_class ry, mpf_class rz, mpf_class result[3]);
-    mpf_class
-    Cos(mpf_class x);
-    mpf_class
-    Sin(mpf_class x);
-    std::string
-    utf8to(std::string line);
+public:
+  AuxFunc();
+  virtual
+  ~AuxFunc();
+  std::string
+  get_selfpath();
+  double
+  timeTT(int day, int month, int year, int hour, int minut, double sec,
+	 int belt);
+  double
+  timeTT(double JDutc);
+  void
+  dateJulian(double JDN, int *day, int *month, int *year, int *hour, int *minut,
+	     double *second); //Julian date to calendar date
+  double
+  utcJD(int day, int month, int year, int hour, int minut, double sec);
+  double
+  grigToJuliancal(double JDgr);
+  void
+  toEcliptic(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz, mpf_class *Newx,
+	     mpf_class *Newy, mpf_class *Newz, double JD, int ch);
+  void
+  precession(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz, mpf_class *Newx,
+	     mpf_class *Newy, mpf_class *Newz, double JD);
+  void
+  precessionNnut(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
+		 mpf_class *Newx, mpf_class *Newy, mpf_class *Newz, double JD);
+  void
+  rotateXYZ(mpf_class xyz[3], mpf_class rx, mpf_class ry, mpf_class rz,
+	    mpf_class result[3]);
+  mpf_class
+  Cos(mpf_class x);
+  mpf_class
+  Sin(mpf_class x);
+  std::string
+  utf8to(std::string line);
 };
 
-#endif /* AUXFUNC_H_ */
-
+#endif /* INCLUDE_AUXFUNC_H_ */
 
