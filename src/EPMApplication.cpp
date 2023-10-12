@@ -17,8 +17,8 @@
 
 #include "EPMApplication.h"
 
-EPMApplication::EPMApplication() :
-    Gtk::Application("ru.mail.bobilev_yury.EphEPM")
+EPMApplication::EPMApplication(const std::string &id) :
+    Gtk::Application(id.c_str())
 {
 
 }
@@ -29,9 +29,9 @@ EPMApplication::~EPMApplication()
 }
 
 Glib::RefPtr<EPMApplication>
-EPMApplication::create()
+EPMApplication::create(std::string &id)
 {
-  return Glib::make_refptr_for_instance<EPMApplication>(new EPMApplication());
+  return Glib::make_refptr_for_instance<EPMApplication>(new EPMApplication(id));
 }
 
 MainWindow*
@@ -48,7 +48,7 @@ EPMApplication::create_appwindow()
 	Gtk::Window *win = wv[i];
 	if(win != mw)
 	  {
-	    win->hide();
+	    win->set_visible(false);
 	    delete win;
 	  }
       }

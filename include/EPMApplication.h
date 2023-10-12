@@ -24,10 +24,10 @@
 class EPMApplication : public Gtk::Application
 {
 protected:
-  EPMApplication();
+  EPMApplication(const std::string &id);
 public:
   static Glib::RefPtr<EPMApplication>
-  create();
+  create(std::string &id);
   virtual
   ~EPMApplication();
 private:

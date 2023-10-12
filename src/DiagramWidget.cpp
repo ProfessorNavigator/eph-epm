@@ -276,7 +276,7 @@ DiagramWidget::diagramPlot()
 
   window->signal_close_request().connect([window, this]
   {
-    window->hide();
+    window->set_visible(false);
     if(this->diagram_close)
       {
 	this->diagram_close();
@@ -410,87 +410,67 @@ DiagramWidget::zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
 void
 DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
 {
-  Gtk::FileChooserDialog *fcd = new Gtk::FileChooserDialog(
-      *win, gettext("Save diagram"), Gtk::FileChooser::Action::SAVE, false);
-  fcd->set_application(win->get_application());
-
-  Gtk::Box *box = fcd->get_content_area();
-  box->set_margin(5);
-
-  Gtk::Requisition min, nat;
-  fcd->get_preferred_size(min, nat);
-
-  Gtk::Button *cancel = fcd->add_button(gettext("Cancel"),
-					Gtk::ResponseType::CANCEL);
-  cancel->set_margin(5);
-
-  Gtk::Button *save = fcd->add_button(gettext("Save"),
-				      Gtk::ResponseType::APPLY);
-  save->set_name("open_button");
-  save->set_margin_bottom(5);
-  save->set_margin_end(5);
-  save->set_margin_top(5);
-  save->set_margin_start(nat.get_width() - 15);
-  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_parse_name(
-      Glib::get_home_dir());
-  if(fl)
-    {
-      fcd->set_current_folder(fl);
-    }
-  Glib::ustring cn;
+  Glib::RefPtr<Gtk::FileDialog> fcd = Gtk::FileDialog::create();
+  fcd->set_title(gettext("Save diagram"));
+  fcd->set_modal(true);
+  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  fcd->set_initial_folder(fl);
   if(mode == 0)
     {
-      cn = "diagram.jpg";
+      fcd->set_initial_name("Orbits.jpeg");
     }
   else if(mode == 1)
     {
-      cn = "diagram.png";
+      fcd->set_initial_name("Orbits.png");
     }
   else if(mode == 2)
     {
-      cn = "diagram.svg";
+      fcd->set_initial_name("Orbits.svg");
     }
-  fcd->set_current_name(cn);
-  fcd->signal_response().connect([fcd, graph, mode]
-  (int id)
+  Glib::RefPtr<Gio::Cancellable> cncl = Gio::Cancellable::create();
+  fcd->save(*win, [graph, mode]
+  (const Glib::RefPtr<Gio::AsyncResult> &result)
     {
-      if(id == Gtk::ResponseType::CANCEL)
+      Glib::RefPtr<Gio::File> fl;
+      auto obj = result->get_source_object_base();
+      auto fchd = std::dynamic_pointer_cast<Gtk::FileDialog>(obj);
+      if(!fchd)
 	{
-	  fcd->close();
+	  return void();
 	}
-      else if(id == Gtk::ResponseType::APPLY)
+      try
 	{
-	  Glib::RefPtr<Gio::File> fl = fcd->get_file();
-	  if(fl)
+	  fl = fchd->save_finish(result);
+	}
+      catch(Glib::Error &e)
+	{
+	  if(e.code() != Gtk::DialogError::DISMISSED)
 	    {
-	      std::string filename(fl->get_path());
-	      std::filesystem::path p = std::filesystem::u8path(filename);
-	      if(mode == 0)
-		{
-		  graph->WriteJPEG(p.string().c_str(), "");
-		}
-	      else if(mode == 1)
-		{
-		  graph->WritePNG(p.string().c_str(), "", false);
-		}
-	      else if(mode == 2)
-		{
-		  graph->WriteSVG(p.string().c_str(), "");
-		}
+	      std::cout << "DiagramWidget::saveGraph:" << e.what() << std::endl;
 	    }
-	  fcd->close();
 	}
-    });
-
-  fcd->signal_close_request().connect([fcd]
-  {
-    fcd->hide();
-    delete fcd;
-    return true;
-  },
-				      false);
-
-  fcd->present();
+      if(fl)
+	{
+	  std::string filename(fl->get_path());
+	  std::filesystem::path p = std::filesystem::u8path(filename);
+	  if(mode == 0)
+	    {
+	      p.replace_extension(std::filesystem::u8path(".jpeg"));
+	      graph->WriteJPEG(p.string().c_str(), "");
+	    }
+	  else if(mode == 1)
+	    {
+	      p.replace_extension(std::filesystem::u8path(".png"));
+	      graph->WritePNG(p.string().c_str(), "", false);
+	    }
+	  else if(mode == 2)
+	    {
+	      p.replace_extension(std::filesystem::u8path(".svg"));
+	      graph->WriteSVG(p.string().c_str(), "");
+	    }
+	}
+    },
+	    cncl);
 }
 
 void

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2023 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,22 +15,25 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <gtkmm.h>
-#include <libintl.h>
-#include "EPMApplication.h"
+#include <ModelColumns.h>
 
-int
-main(int argc, char *argv[])
+ModelColumns::ModelColumns(std::string &date, std::string &x, std::string &y,
+			   std::string &z)
 {
-  std::string Sharepath;
-  AuxFunc af;
-  std::filesystem::path p(std::filesystem::u8path(af.get_selfpath()));
-  Sharepath = p.parent_path().u8string() + "/../share/locale";
-  bindtextdomain("ephepm", Sharepath.c_str());
-  bind_textdomain_codeset("ephepm", "UTF-8");
-  textdomain("ephepm");
-  std::string id = "ru.mail.bobilev_yury.EphEPM";
-  auto app = EPMApplication::create(id);
-  return app->run(argc, argv);
+  this->date = Glib::ustring(date);
+  this->x = Glib::ustring(x);
+  this->y = Glib::ustring(y);
+  this->z = Glib::ustring(z);
 }
 
+ModelColumns::~ModelColumns()
+{
+
+}
+
+Glib::RefPtr<ModelColumns>
+ModelColumns::create(std::string &date, std::string &x, std::string &y,
+		     std::string &z)
+{
+  return Glib::make_refptr_for_instance(new ModelColumns(date, x, y, z));
+}

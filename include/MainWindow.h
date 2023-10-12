@@ -36,6 +36,7 @@
 #include "Coordinates.h"
 #include "DAFOperations.h"
 #include "OrbitsDiagram.h"
+#include "ModelColumns.h"
 
 class MainWindow : public Gtk::ApplicationWindow
 {
@@ -49,10 +50,10 @@ private:
   void
   calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
 	    Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-	    Gtk::ComboBoxText *timecomb, Gtk::ComboBoxText *belt,
-	    Gtk::ComboBoxText *objcomb, Gtk::ComboBoxText *coordcomb,
-	    Gtk::ComboBoxText *xyzcomb, Gtk::ComboBoxText *equincomb,
-	    Gtk::ComboBoxText *unitcomb, Gtk::Entry *stepent,
+	    Gtk::DropDown *timecomb, Gtk::DropDown *belt,
+	    Gtk::DropDown *objcomb, Gtk::DropDown *coordcomb,
+	    Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
+	    Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
 	    Gtk::Entry *stepnument, Gtk::Entry *pathent);
   void
   aboutProg();
@@ -60,30 +61,30 @@ private:
   errDialog(int variant);
   void
   resultPresenting(std::vector<std::array<mpf_class, 3>> *result,
-		   Gtk::ComboBoxText *belt, Gtk::ComboBoxText *objcomb,
-		   Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *xyzcomb,
-		   Gtk::ComboBoxText *equincomb, Gtk::ComboBoxText *unitcomb,
+		   Gtk::DropDown *belt, Gtk::DropDown *objcomb,
+		   Gtk::DropDown *coordcomb, Gtk::DropDown *xyzcomb,
+		   Gtk::DropDown *equincomb, Gtk::DropDown *unitcomb,
 		   Glib::Dispatcher *result_win_disp);
   Gtk::Window*
   resultPulseWin(int variant, Gtk::ProgressBar *bar);
   void
   openDialog(Gtk::Entry *pathent);
   void
-  openDialogFunc(int rid, Gtk::FileChooserDialog *fcd, Gtk::Entry *pathent);
-  void
   saveDialog(Gtk::Window *win, Gtk::Label *objlab, Gtk::Label *coordlab,
 	     Gtk::Label *equinlab, Gtk::Label *unitlab, Gtk::Label *beltlab,
-	     Gtk::TreeView *view, Gtk::ComboBoxText *objcomb);
+	     Gtk::ColumnView *view, Gtk::DropDown *objcomb,
+	     std::string header_line);
   void
-  saveDialogFunc(int rid, Gtk::FileChooserDialog *fcd, Gtk::Label *objlab,
+  saveDialogFunc(Glib::RefPtr<Gio::File> fl, Gtk::Label *objlab,
 		 Gtk::Label *coordlab, Gtk::Label *equinlab,
-		 Gtk::Label *unitlab, Gtk::Label *beltlab, Gtk::TreeView *view,
-		 Gtk::ComboBoxText *objcomb);
+		 Gtk::Label *unitlab, Gtk::Label *beltlab,
+		 Gtk::ColumnView *view, Gtk::DropDown *objcomb,
+		 std::string header_line);
   void
   orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
 	      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-	      Gtk::ComboBoxText *timecomb, Gtk::ComboBoxText *belt,
-	      Gtk::ComboBoxText *coordcomb, Gtk::ComboBoxText *equincomb,
+	      Gtk::DropDown *timecomb, Gtk::DropDown *belt,
+	      Gtk::DropDown *coordcomb, Gtk::DropDown *equincomb,
 	      Gtk::Entry *pathent);
 
   std::string Sharepath = "";

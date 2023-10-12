@@ -290,7 +290,8 @@ DAFOperations::bodiesVector(std::fstream *f)
    * 4 - the NAIF integer code for the reference frame
    * 5 - the integer code for the SPK data type
    * 6 - the initial address of the array
-   * 7 - the final address of the array*/
+   * 7 - the final address of the array
+   * */
   std::vector<std::tuple<double, double, int, int, int, int, int, int>> spkbodyv;
   std::vector<char> readv;
   double RNN = -1.0; //The record number of the next Summary Record in the file

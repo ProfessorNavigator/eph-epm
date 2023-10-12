@@ -37,9 +37,3 @@
 	background-image: none;
 	background-color: rgb(61, 155, 194);	
 }
-
-#ResultTable {
-	border: solid;
-	border-width: 1px 1px 1px 1px;
-	border-color: black;		
-}
