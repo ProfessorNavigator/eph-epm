@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EphEPM\n"
-"POT-Creation-Date: 2023-10-12 19:27+0400\n"
-"PO-Revision-Date: 2023-10-12 19:27+0400\n"
+"POT-Creation-Date: 2023-10-14 20:01+0400\n"
+"PO-Revision-Date: 2023-10-14 20:01+0400\n"
 "Last-Translator: \n"
 "Language-Team: Юрий Бобылев <bobilev_yury@mail.ru>\n"
 "Language: ru\n"
@@ -245,7 +245,7 @@ msgstr "Средние на дату (IAU2000)"
 
 #: MainWindow.cpp:294
 msgid "True of the date (IAU2000)"
-msgstr "Истиные на дату (IAU2000)"
+msgstr "Истинные на дату (IAU2000)"
 
 #: MainWindow.cpp:303 MainWindow.cpp:1123
 msgid "Units of measurement: "
