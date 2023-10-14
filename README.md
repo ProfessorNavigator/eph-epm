@@ -16,7 +16,7 @@ You may need superuser privileges to execute last command.
 
 ### Windows
 
-You can build EphEPM from source by MSYS2 project [https://www.msys2.org/](https://www.msys2.org/). Follow installation instructions from their site. Install dependencies from `Dependencies` section and git (mingw packages). Than create folder where you want to download source code (path must not include spaces or non Latin letters). Open mingw console and execute following commands (in example we download code to C:\EphEPM)\
+You can build EphEPM from source by MSYS2 project [https://www.msys2.org/](https://www.msys2.org/). Follow installation instructions from their site. Install dependencies from `Dependencies` section and git (mingw packages). Than create folder where you want to download source code (path must not include spaces or non Latin letters). Open mingw console and execute following commands (in example we download code to C:\EphEPM)
 
 `cd /c/EphEPM`\
 `git clone https://github.com/ProfessorNavigator/eph-epm.git`\
@@ -28,11 +28,14 @@ If everything was correct, you can find ephepm.exe file in `msys_directory/mingw
 
 ## Dependencies
 
-EphEPM uses meson building system, so to build it from source you need meson and ninja.\
-Also you need [gtkmm-4.0](http://www.gtkmm.org/), [icu](https://icu.unicode.org/) (version >= 69), [mathgl](http://mathgl.sourceforge.net/), [SOFA](https://iausofa.org/) and [gmp](https://gmplib.org/) (actually you need its' C++ binding gmpxx). All libraries must have headers (for building), so if you use for example Debian Linux, you need ...-dev versions of packages.
+EphEPM uses meson building system, so to build it from source you need meson and ninja.
+
+Also you need [gtkmm-4.0](http://www.gtkmm.org/), [icu](https://icu.unicode.org/) (version >= 69), [mathgl](http://mathgl.sourceforge.net/), [SOFA](https://iausofa.org/) (in most cases this library is linking statically, so most probably in working process you do not need it) and [gmp](https://gmplib.org/) (actually you need its' C++ binding gmpxx). All libraries must have headers (for building), so if you use for example Debian Linux, you need ...-dev versions of packages.
 
 ## Usage
-First of all you need to download ephemeris files from [here](https://ftp.iaaras.ru/pub/epm/). You need SPICE versions in binary format (.bsp and .bpc extensions, .bpc is needed to calculate Lunar physical libration). 2015 to 2021 versions are supported (both "usual" and "h"). After downloading launch the program and put path to ephemeris file in proper field. Then input all other parameters (to plot orbits inputting of date and time is sufficient) and press "Calculate coordinates" or "Orbits".
+First of all you need to download ephemeris files from [here](https://ftp.iaaras.ru/pub/epm/). You need SPICE versions in binary format (.bsp and .bpc extensions, .bpc is needed to calculate Lunar physical libration). 2015 to 2021 versions are supported (both "usual" and "h"). 
+
+After downloading launch the program and put path to ephemeris file in proper field. Then input all other parameters (to plot orbits inputting of date and time is sufficient) and press "Calculate coordinates" or "Orbits".
 
 ## License
 
