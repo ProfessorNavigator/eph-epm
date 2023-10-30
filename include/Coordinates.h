@@ -42,7 +42,7 @@ class Coordinates
 public:
   Coordinates(std::string body, double JD, int timesc, int coordtype, int xyz,
 	      int theory, int unit, double step, int stepnum,
-	      std::string epmpath, int *cancel);
+	      std::string epmpath, std::string tttdbpath, int *cancel);
   virtual
   ~Coordinates();
   std::vector<std::array<mpf_class, 3>>
@@ -50,7 +50,7 @@ public:
   std::function<void
   ()> pulse_signal;
 private:
-  std::string body = "";
+  std::string body;
   double JD = -1;
   int coordtype = -1;
   int xyz = -1;
@@ -58,7 +58,8 @@ private:
   int unit = -1;
   double step = -1;
   int stepnum = -1;
-  std::string epmpath = "";
+  std::string epmpath;
+  std::string tttdbpath;
   int *cancel = nullptr;
   int timesc = 0;
 };

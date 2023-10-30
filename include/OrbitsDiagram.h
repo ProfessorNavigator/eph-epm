@@ -38,8 +38,9 @@
 class OrbitsDiagram
 {
 public:
-  OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath, double JD,
-		int timesc, int coordtype, int theory, int *cancel);
+  OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
+		std::string tttdbpath, double JD, int timesc, int coordtype,
+		int theory, int *cancel);
   virtual
   ~OrbitsDiagram();
   int
@@ -67,6 +68,8 @@ private:
   Gtk::ApplicationWindow *mw = nullptr;
   DiagramWidget *dw = nullptr;
   std::string ephpath;
+  std::string tttdbpath;
+  std::string modbody;
   std::vector<std::tuple<std::string, double>> bodyv;
   DAFOperations *daf = nullptr;
   double JD = 0.0;

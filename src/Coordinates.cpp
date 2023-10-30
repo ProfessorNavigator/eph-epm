@@ -19,7 +19,8 @@
 
 Coordinates::Coordinates(std::string body, double JD, int timesc, int coordtype,
 			 int xyz, int theory, int unit, double step,
-			 int stepnum, std::string epmpath, int *cancel)
+			 int stepnum, std::string epmpath,
+			 std::string tttdbpath, int *cancel)
 {
   this->body = body;
   this->JD = JD;
@@ -30,6 +31,7 @@ Coordinates::Coordinates(std::string body, double JD, int timesc, int coordtype,
   this->step = step;
   this->stepnum = stepnum;
   this->epmpath = epmpath;
+  this->tttdbpath = tttdbpath;
   this->cancel = cancel;
   this->timesc = timesc;
 }
@@ -52,9 +54,17 @@ Coordinates::calculationsXYZ()
   std::fstream ephfile;
   filepath = std::filesystem::u8path(Sharepath);
   ephfile.open(filepath, std::ios_base::in | std::ios_base::binary);
+  Sharepath = tttdbpath;
+  filepath = std::filesystem::u8path(Sharepath);
+  std::fstream tttdbfile;
+  tttdbfile.open(filepath, std::ios_base::in | std::ios_base::binary);
   if(!ephfile.is_open())
     {
       std::cerr << "Cannot open ephemeris file" << std::endl;
+      if(tttdbfile.is_open())
+	{
+	  tttdbfile.close();
+	}
     }
   else
     {
@@ -77,6 +87,11 @@ Coordinates::calculationsXYZ()
 	{
 	  rho = 81.3005676344 + 1;
 	}
+      n = ephnm.find("SPKMERGE");
+      if(n != std::string::npos)
+	{
+	  rho = 81.3005691;
+	}
       int bodynum = -1;
       int bodymoontype = -1;
       uint64_t moonb, moone;
@@ -95,7 +110,6 @@ Coordinates::calculationsXYZ()
       if(body == "earth")
 	{
 	  bodynum = 3;
-	  bodymoontype = daf.bodyVect(&ephfile, &moonb, &moone, 301);
 	}
       if(body == "earth_m")
 	{
@@ -128,7 +142,6 @@ Coordinates::calculationsXYZ()
       if(body == "moon")
 	{
 	  bodynum = 3;
-	  bodymoontype = daf.bodyVect(&ephfile, &moonb, &moone, 301);
 	}
       if(body == "moongeo")
 	{
@@ -178,12 +191,21 @@ Coordinates::calculationsXYZ()
 	    {
 	      bodynum = 1800302;
 	    }
+	  else
+	    {
+	      n = ephnm.find("test.bps");
+	      if(n != std::string::npos)
+		{
+		  bodynum = 31008;
+		}
+	    }
 	}
       EPMCalculations epm;
       uint64_t tdbb, tdbe;
-      int tdbtype = daf.bodyVect(&ephfile, &tdbb, &tdbe, 1000000001);
+      int tdbtype;
       uint64_t bodyb, bodye;
-      int bodytype = daf.bodyVect(&ephfile, &bodyb, &bodye, bodynum);
+      int bodytype;
+      n = ephnm.find("SPKMERGE");
       for(double i = JD; i < JD + step * stepnum; i = i + step)
 	{
 	  if(*cancel > 0)
@@ -191,14 +213,32 @@ Coordinates::calculationsXYZ()
 	      break;
 	    }
 
+	  if(tttdbfile.is_open())
+	    {
+	      tdbtype = daf.bodyVect(&tttdbfile, &tdbb, &tdbe, 1000000001, i);
+	    }
+	  else
+	    {
+	      tdbtype = daf.bodyVect(&ephfile, &tdbb, &tdbe, 1000000001, i);
+	    }
+
 	  mpf_class JDfin;
 	  double JDcalc = 0.0;
 	  if(timesc == 0)
 	    {
 	      JDcalc = af.timeTT(i);
-	      JDfin = mpf_class(JDcalc)
-		  - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype)
-		      / mpf_class(86400.0);
+	      if(tttdbfile.is_open())
+		{
+		  JDfin = mpf_class(JDcalc)
+		      - epm.tdbCalc(&tttdbfile, &tdbb, &tdbe, JDcalc, tdbtype)
+			  / mpf_class(86400.0);
+		}
+	      else
+		{
+		  JDfin = mpf_class(JDcalc)
+		      - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype)
+			  / mpf_class(86400.0);
+		}
 	    }
 	  if(timesc == 1)
 	    {
@@ -214,9 +254,18 @@ Coordinates::calculationsXYZ()
 		{
 		  JDcalc = af.grigToJuliancal(JDcalc);
 		}
-	      JDfin = mpf_class(JDcalc)
-		  - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype)
-		      / mpf_class(86400.0);
+	      if(tttdbfile.is_open())
+		{
+		  JDfin = mpf_class(JDcalc)
+		      - epm.tdbCalc(&tttdbfile, &tdbb, &tdbe, JDcalc, tdbtype)
+			  / mpf_class(86400.0);
+		}
+	      else
+		{
+		  JDfin = mpf_class(JDcalc)
+		      - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype)
+			  / mpf_class(86400.0);
+		}
 	    }
 	  if(timesc == 2)
 	    {
@@ -232,6 +281,8 @@ Coordinates::calculationsXYZ()
 		    }
 		}
 	    }
+	  bodytype = daf.bodyVect(&ephfile, &bodyb, &bodye, bodynum,
+				  JDfin.get_d());
 	  mpf_class X;
 	  mpf_class Y;
 	  mpf_class Z;
@@ -246,6 +297,8 @@ Coordinates::calculationsXYZ()
 	    }
 	  else
 	    {
+	      bodymoontype = daf.bodyVect(&ephfile, &moonb, &moone, 301,
+					  JDfin.get_d());
 	      if(body == "earth")
 		{
 		  X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
@@ -282,13 +335,20 @@ Coordinates::calculationsXYZ()
 	    {
 	      if(body != "moonlibr")
 		{
+		  if(n != std::string::npos)
+		    {
+		      au = 149597870.7;
+		      X = X / au;
+		      Y = Y / au;
+		      Z = Z / au;
+		    }
 		  if(unit == 1)
 		    {
 		      X = X * au;
 		      Y = Y * au;
 		      Z = Z * au;
 		    }
-		  if(unit == 2)
+		  else if(unit == 2)
 		    {
 		      X = X * au * 1000;
 		      Y = Y * au * 1000;
@@ -309,6 +369,13 @@ Coordinates::calculationsXYZ()
 	    {
 	      if(body != "moonlibr")
 		{
+		  if(n != std::string::npos)
+		    {
+		      au = 149597870.7;
+		      X = X / au;
+		      Y = Y / au;
+		      Z = Z / au;
+		    }
 		  if(unit == 1)
 		    {
 		      X = X * au;
@@ -330,6 +397,12 @@ Coordinates::calculationsXYZ()
 		}
 	      else
 		{
+		  if(n != std::string::npos)
+		    {
+		      X = X * 2;
+		      Y = Y * 2;
+		      Z = Z * 2;
+		    }
 		  if(unit == 1)
 		    {
 		      X = X * 180 / M_PI * 3600;
@@ -377,6 +450,10 @@ Coordinates::calculationsXYZ()
       if(ephfile.is_open())
 	{
 	  ephfile.close();
+	}
+      if(tttdbfile.is_open())
+	{
+	  tttdbfile.close();
 	}
     }
   return result;

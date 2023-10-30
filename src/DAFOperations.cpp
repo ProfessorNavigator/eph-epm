@@ -123,7 +123,7 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
       else
 	{
 	  std::vector<std::tuple<double, double, int, int, int, int, int, int>> spkv;
-	  spkv = this->bodiesVector(&f);
+	  spkv = bodiesVector(&f);
 	  auto itspk = std::find_if(spkv.begin(), spkv.end(), []
 	  (auto &el)
 	    {
@@ -294,57 +294,69 @@ DAFOperations::bodiesVector(std::fstream *f)
    * */
   std::vector<std::tuple<double, double, int, int, int, int, int, int>> spkbodyv;
   std::vector<char> readv;
-  double RNN = -1.0; //The record number of the next Summary Record in the file
-
   f->seekg(8, std::ios_base::beg);
-  readv.clear();
-  readv.resize(4);
-  f->read(&readv[0], readv.size());
-  int ND; //The number of double precision components in each array summary
-  std::memcpy(&ND, &readv[0], sizeof(ND));
 
+  uint32_t ND; //The number of double precision components in each array summary
   readv.clear();
-  readv.resize(4);
-  f->read(&readv[0], readv.size());
-  int NI; // The number of integer components in each array summary
-  std::memcpy(&NI, &readv[0], sizeof(NI));
+  readv.resize(sizeof(ND));
+  f->read(readv.data(), readv.size());
+  std::memcpy(&ND, readv.data(), readv.size());
 
-  while(RNN != 0.0)
+  uint32_t NI; // The number of integer components in each array summary
+  readv.clear();
+  readv.resize(sizeof(NI));
+  f->read(readv.data(), readv.size());
+  std::memcpy(&NI, readv.data(), readv.size());
+
+  f->seekg(60, std::ios_base::cur);
+
+  uint32_t fward; // The record number of the initial summary record in the file
+  readv.clear();
+  readv.resize(sizeof(fward));
+  f->read(readv.data(), readv.size());
+  std::memcpy(&fward, readv.data(), readv.size());
+
+  size_t ss = (ND + (NI + 1) / 2) * 8; // Size of single summary in bytes
+
+  double RNN = -1.0; //The record number of the next Summary Record in the file
+  while(static_cast<int>(RNN) != 0)
     {
       if(RNN < 0)
 	{
-	  f->seekg(1024 * 2, std::ios_base::beg);
+	  f->seekg(static_cast<size_t>((fward - 1) * 1024), std::ios_base::beg);
 	}
       else
 	{
-	  f->seekg(static_cast<size_t>(RNN) * 8 - 1, std::ios_base::beg);
+	  f->seekg(static_cast<size_t>((RNN - 1) * 1024), std::ios_base::beg);
 	}
       readv.clear();
-      readv.resize(8);
-      f->read(&readv[0], readv.size());
-      std::memcpy(&RNN, &readv[0], sizeof(RNN));
+      readv.resize(sizeof(RNN));
+      f->read(readv.data(), readv.size());
+      std::memcpy(&RNN, readv.data(), sizeof(RNN));
 
-      readv.clear();
-      readv.resize(8);
-      f->read(&readv[0], readv.size());
       double RNP; //The record number of the previous Summary Record in the file
-      std::memcpy(&RNP, &readv[0], sizeof(RNP));
-
       readv.clear();
-      readv.resize(8);
-      f->read(&readv[0], readv.size());
+      readv.resize(sizeof(RNP));
+      f->read(readv.data(), readv.size());
+      std::memcpy(&RNP, readv.data(), readv.size());
+
       double NS; //The number of summaries stored in this record
-      std::memcpy(&NS, &readv[0], sizeof(NS));
+      readv.clear();
+      readv.resize(sizeof(NS));
+      f->read(readv.data(), readv.size());
+      std::memcpy(&NS, readv.data(), readv.size());
       for(int j = 0; j < static_cast<int>(NS); j++)
 	{
+	  size_t readbytes = 0;
 	  std::tuple<double, double, int, int, int, int, int, int> spkbodytup;
-	  for(int i = 0; i < ND; i++)
+	  for(uint32_t i = 0; i < ND; i++)
 	    {
 	      readv.clear();
 	      double val;
 	      readv.resize(sizeof(val));
-	      f->read(&readv[0], readv.size());
-	      std::memcpy(&val, &readv[0], sizeof(val));
+	      f->read(readv.data(), readv.size());
+	      readbytes += readv.size();
+	      std::memcpy(&val, readv.data(), sizeof(val));
 	      if(i == 0)
 		{
 		  std::get<0>(spkbodytup) = 2451545.0 + val / 86400;
@@ -354,39 +366,44 @@ DAFOperations::bodiesVector(std::fstream *f)
 		  std::get<1>(spkbodytup) = 2451545.0 + val / 86400;
 		}
 	    }
-	  for(int i = 0; i < NI; i++)
+	  for(uint32_t i = 0; i < NI; i++)
 	    {
 	      readv.clear();
-	      int val;
+	      uint32_t val;
 	      readv.resize(sizeof(val));
-	      f->read(&readv[0], readv.size());
-	      std::memcpy(&val, &readv[0], sizeof(val));
+	      f->read(readv.data(), readv.size());
+	      readbytes += readv.size();
+	      std::memcpy(&val, readv.data(), sizeof(val));
 	      if(i == 0)
 		{
-		  std::get<2>(spkbodytup) = val;
+		  std::get<2>(spkbodytup) = static_cast<int>(val);
 		}
 	      if(i == 1)
 		{
-		  std::get<3>(spkbodytup) = val;
+		  std::get<3>(spkbodytup) = static_cast<int>(val);
 		}
 	      if(i == 2)
 		{
-		  std::get<4>(spkbodytup) = val;
+		  std::get<4>(spkbodytup) = static_cast<int>(val);
 		}
 	      if(i == 3)
 		{
-		  std::get<5>(spkbodytup) = val;
+		  std::get<5>(spkbodytup) = static_cast<int>(val);
 		}
 	      if(i == 4)
 		{
-		  std::get<6>(spkbodytup) = val;
+		  std::get<6>(spkbodytup) = static_cast<int>(val);
 		}
 	      if(i == 5)
 		{
-		  std::get<7>(spkbodytup) = val;
+		  std::get<7>(spkbodytup) = static_cast<int>(val);
 		}
 	    }
 	  spkbodyv.push_back(spkbodytup);
+	  if(ss > readbytes)
+	    {
+	      f->seekg(ss - readbytes, std::ios_base::cur);
+	    }
 	}
     }
   return spkbodyv;
@@ -394,7 +411,7 @@ DAFOperations::bodiesVector(std::fstream *f)
 
 int
 DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
-			int NAIFid)
+			int NAIFid, double JD)
 {
   int type = -1;
   if(!result->is_open())
@@ -404,7 +421,24 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
   else
     {
       std::vector<std::tuple<double, double, int, int, int, int, int, int>> spkv;
-      spkv = bodiesVector(result);
+      auto itfv = std::find_if(filev.begin(), filev.end(), [result]
+      (auto &el)
+	{
+	  return el.getFile() == result;
+	});
+      if(itfv != filev.end())
+	{
+	  spkv = (*itfv).getVect();
+	}
+      else
+	{
+	  spkv = bodiesVector(result);
+	  BodyV bv;
+	  bv.setFile(result);
+	  bv.setVect(spkv);
+	  filev.push_back(bv);
+	}
+
       result->seekg(0, std::ios_base::beg);
       std::string readstr;
       readstr.resize(8);
@@ -421,10 +455,24 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
 	{
 	  ephtype = 2;
 	}
-      auto itspk = std::find_if(spkv.begin(), spkv.end(), [NAIFid]
+      auto itspk = std::find_if(spkv.begin(), spkv.end(), [NAIFid, JD]
       (auto &el)
 	{
-	  return std::get<2>(el) == NAIFid;
+	  if(std::get<2>(el) == NAIFid)
+	    {
+	      if(JD >= std::get<0>(el) && JD <=std::get<1>(el))
+		{
+		  return true;
+		}
+	      else
+		{
+		  return false;
+		}
+	    }
+	  else
+	    {
+	      return false;
+	    }
 	});
       if(itspk != spkv.end())
 	{

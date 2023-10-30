@@ -18,11 +18,12 @@
 #include "OrbitsDiagram.h"
 
 OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
-			     double JD, int timesc, int coordtype, int theory,
-			     int *cancel)
+			     std::string tttdbpath, double JD, int timesc,
+			     int coordtype, int theory, int *cancel)
 {
   this->mw = mw;
   this->ephpath = ephpath;
+  this->tttdbpath = tttdbpath;
   this->JD = JD;
   daf = new DAFOperations();
   gr = new mglGraph;
@@ -35,6 +36,27 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
   this->coordtype = coordtype;
   this->theory = theory;
   this->timesc = timesc;
+  DAFOperations daf;
+  std::string ephnm;
+  std::fstream f;
+  std::filesystem::path ephp = std::filesystem::u8path(ephpath);
+  f.open(ephp, std::ios_base::in | std::ios_base::binary);
+  if(f.is_open())
+    {
+      ephnm = daf.fileVersion(&f);
+      f.close();
+    }
+  std::string::size_type n;
+  n = ephnm.find("epm");
+  if(n != std::string::npos)
+    {
+      modbody = "sedna";
+    }
+  else
+    {
+      modbody = "pluto";
+      plot_factor = 0.00000001;
+    }
 }
 
 OrbitsDiagram::~OrbitsDiagram()
@@ -75,7 +97,16 @@ OrbitsDiagram::calculateSize()
   bodyv.push_back(std::make_tuple("bamberga", 1607.041));
   bodyv.push_back(std::make_tuple("iris", 1345.337));
 
-  bool ch = daf->epochCheckUTC(JD, timesc, &epb, &epe, ephpath);
+  bool ch;
+  if(tttdbpath.empty())
+    {
+      ch = daf->epochCheckUTC(JD, timesc, &epb, &epe, ephpath);
+    }
+  else
+    {
+      ch = daf->epochCheckUTC(JD, timesc, &epb, &epe, tttdbpath);
+    }
+
   if(ch)
     {
       double summa = 1.0 / scale_factor * static_cast<double>(bodyv.size() - 2)
@@ -88,10 +119,11 @@ OrbitsDiagram::calculateSize()
 void
 OrbitsDiagram::calculateOrbits()
 {
-  auto itpl = std::find_if(bodyv.begin(), bodyv.end(), []
+  std::string modbody = this->modbody;
+  auto itpl = std::find_if(bodyv.begin(), bodyv.end(), [modbody]
   (auto &el)
     {
-      return std::get<0>(el) == "sedna";
+      return std::get<0>(el) == modbody;
     });
   if(itpl != bodyv.end())
     {
@@ -147,9 +179,10 @@ OrbitsDiagram::calculateOrbits()
 	    }
 	}
 
-      Coordinates *coord = new Coordinates("sedna", JDbeg, timesc, coordtype, 0,
-					   theory, 0, period * scale_factor,
-					   stepnum, ephpath, cancel);
+      Coordinates *coord = new Coordinates(std::get<0>(*itpl), JDbeg, timesc,
+					   coordtype, 0, theory, 0,
+					   period * scale_factor, stepnum,
+					   ephpath, tttdbpath, cancel);
       coord->pulse_signal = [this]
       {
 	if(this->pulse_signal)
@@ -313,7 +346,7 @@ OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
 
       Coordinates *coord = new Coordinates(bodyc, JDbeg, timesc, coordtype, 0,
 					   theory, 0, period * scale_factor,
-					   stepnum, ephpath, cancel);
+					   stepnum, ephpath, tttdbpath, cancel);
       coord->pulse_signal = [this]
       {
 	if(this->pulse_signal)
@@ -459,7 +492,7 @@ void
 OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
 {
   Coordinates *coord = new Coordinates(body, JD, timesc, coordtype, 0, theory,
-				       0, 1.0, 1, ephpath, cancel);
+				       0, 1.0, 1, ephpath, tttdbpath, cancel);
   coord->pulse_signal = [this]
   {
     if(this->pulse_signal)

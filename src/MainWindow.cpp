@@ -448,35 +448,170 @@ MainWindow::createWindow()
   pathlab->set_text(gettext("Path to ephemerides file:"));
   grid->attach(*pathlab, 0, 10, 2, 1);
 
-  Gtk::Entry *pathent = Gtk::make_managed<Gtk::Entry>();
-  pathent->set_margin_start(5);
-  pathent->set_margin_end(5);
-  pathent->set_margin_bottom(5);
+  /*
+   * pathv types:
+   * 1 - ephemeris file, 2 - TT-TDB file, 3 - Moon libration file
+   */
+  std::vector<std::tuple<uint8_t, std::string>> pathv;
   std::fstream f;
   std::string filename(Glib::get_home_dir());
   filename = filename + "/.config/EphEPM/ephpath";
   std::filesystem::path filepath = std::filesystem::u8path(filename);
-  f.open(filename, std::ios_base::in | std::ios_base::binary);
-  if(f.is_open() && std::filesystem::file_size(filepath) > 0)
+  f.open(filepath, std::ios_base::in | std::ios_base::binary);
+  if(f.is_open())
     {
-      std::string line;
-      line.resize(std::filesystem::file_size(filepath));
-      f.read(&line[0], line.size());
+      uintmax_t fsz = std::filesystem::file_size(filepath);
+      uintmax_t rb = 0;
+      uint64_t entsz;
+      std::string rs;
+      while(rb < fsz)
+	{
+	  rs.clear();
+	  entsz = 0;
+	  rs.resize(sizeof(entsz));
+	  if(rb + static_cast<uintmax_t>(rs.size()) > fsz)
+	    {
+	      break;
+	    }
+	  else
+	    {
+	      f.read(rs.data(), rs.size());
+	      rb += static_cast<uintmax_t>(rs.size());
+	      std::memcpy(&entsz, rs.c_str(), rs.size());
+	    }
+
+	  if(entsz > 0)
+	    {
+	      rs.clear();
+	      rs.resize(static_cast<size_t>(entsz));
+	      if(rb + static_cast<uintmax_t>(rs.size()) > fsz)
+		{
+		  break;
+		}
+	      else
+		{
+		  f.read(rs.data(), rs.size());
+		  rb += static_cast<uintmax_t>(rs.size());
+		  uint8_t type;
+		  std::memcpy(&type, rs.c_str(), sizeof(type));
+		  rs.erase(rs.begin(), rs.begin() + sizeof(type));
+		  pathv.push_back(std::make_tuple(type, rs));
+		}
+	    }
+	}
       f.close();
-      pathent->set_text(Glib::ustring(line));
+    }
+
+  Gtk::Entry *pathent = Gtk::make_managed<Gtk::Entry>();
+  pathent->set_margin(5);
+  auto itpv = std::find_if(pathv.begin(), pathv.end(), []
+  (auto &el)
+    {
+      return std::get<0>(el) == 1;
+    });
+  if(itpv != pathv.end())
+    {
+      pathent->set_text(Glib::ustring(std::get<1>(*itpv)));
     }
   grid->attach(*pathent, 0, 11, 3, 1);
 
   Gtk::Button *openb = Gtk::make_managed<Gtk::Button>();
-  openb->set_margin_start(5);
-  openb->set_margin_end(5);
-  openb->set_margin_bottom(5);
+  openb->set_margin(5);
   openb->set_halign(Gtk::Align::CENTER);
   openb->set_label(gettext("Open"));
   openb->set_name("open_button");
   openb->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), pathent));
   grid->attach(*openb, 3, 11, 1, 1);
+
+  Gtk::Button *clearbut = Gtk::make_managed<Gtk::Button>();
+  clearbut->set_margin(5);
+  clearbut->set_halign(Gtk::Align::CENTER);
+  clearbut->set_name("closeButton");
+  clearbut->set_label(gettext("Clear"));
+  clearbut->signal_clicked().connect([pathent]
+  {
+    pathent->set_text("");
+  });
+  grid->attach(*clearbut, 4, 11, 1, 1);
+
+  pathlab = Gtk::make_managed<Gtk::Label>();
+  pathlab->set_halign(Gtk::Align::START);
+  pathlab->set_margin(5);
+  pathlab->set_text(gettext("Path to TT-TDB file:"));
+  grid->attach(*pathlab, 0, 12, 2, 1);
+
+  Gtk::Entry *tttdbent = Gtk::make_managed<Gtk::Entry>();
+  tttdbent->set_margin(5);
+  itpv = std::find_if(pathv.begin(), pathv.end(), []
+  (auto &el)
+    {
+      return std::get<0>(el) == 2;
+    });
+  if(itpv != pathv.end())
+    {
+      tttdbent->set_text(Glib::ustring(std::get<1>(*itpv)));
+    }
+  grid->attach(*tttdbent, 0, 13, 3, 1);
+
+  openb = Gtk::make_managed<Gtk::Button>();
+  openb->set_margin(5);
+  openb->set_halign(Gtk::Align::CENTER);
+  openb->set_label(gettext("Open"));
+  openb->set_name("open_button");
+  openb->signal_clicked().connect(
+      sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), tttdbent));
+  grid->attach(*openb, 3, 13, 1, 1);
+
+  clearbut = Gtk::make_managed<Gtk::Button>();
+  clearbut->set_margin(5);
+  clearbut->set_halign(Gtk::Align::CENTER);
+  clearbut->set_name("closeButton");
+  clearbut->set_label(gettext("Clear"));
+  clearbut->signal_clicked().connect([tttdbent]
+  {
+    tttdbent->set_text("");
+  });
+  grid->attach(*clearbut, 4, 13, 1, 1);
+
+  pathlab = Gtk::make_managed<Gtk::Label>();
+  pathlab->set_halign(Gtk::Align::START);
+  pathlab->set_margin(5);
+  pathlab->set_text(gettext("Path to Moon libration file:"));
+  grid->attach(*pathlab, 0, 14, 2, 1);
+
+  Gtk::Entry *mlbent = Gtk::make_managed<Gtk::Entry>();
+  mlbent->set_margin(5);
+  itpv = std::find_if(pathv.begin(), pathv.end(), []
+  (auto &el)
+    {
+      return std::get<0>(el) == 3;
+    });
+  if(itpv != pathv.end())
+    {
+      mlbent->set_text(Glib::ustring(std::get<1>(*itpv)));
+    }
+  grid->attach(*mlbent, 0, 15, 3, 1);
+
+  openb = Gtk::make_managed<Gtk::Button>();
+  openb->set_margin(5);
+  openb->set_halign(Gtk::Align::CENTER);
+  openb->set_label(gettext("Open"));
+  openb->set_name("open_button");
+  openb->signal_clicked().connect(
+      sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), mlbent));
+  grid->attach(*openb, 3, 15, 1, 1);
+
+  clearbut = Gtk::make_managed<Gtk::Button>();
+  clearbut->set_margin(5);
+  clearbut->set_halign(Gtk::Align::CENTER);
+  clearbut->set_name("closeButton");
+  clearbut->set_label(gettext("Clear"));
+  clearbut->signal_clicked().connect([mlbent]
+  {
+    mlbent->set_text("");
+  });
+  grid->attach(*clearbut, 4, 15, 1, 1);
 
   Gtk::Button *calc = Gtk::make_managed<Gtk::Button>();
   calc->set_halign(Gtk::Align::CENTER);
@@ -486,8 +621,9 @@ MainWindow::createWindow()
   calc->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &MainWindow::calcCoord), day, month, year,
 		 hour, minut, second, timecomb, belt, objcomb, coordcomb,
-		 xyzcomb, equincomb, unitcomb, stepent, stepnument, pathent));
-  grid->attach(*calc, 0, 12, 2, 1);
+		 xyzcomb, equincomb, unitcomb, stepent, stepnument, pathent,
+		 tttdbent, mlbent));
+  grid->attach(*calc, 0, 16, 2, 1);
 
   Gtk::Button *orb = Gtk::make_managed<Gtk::Button>();
   orb->set_halign(Gtk::Align::CENTER);
@@ -497,8 +633,8 @@ MainWindow::createWindow()
   orb->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &MainWindow::orbitsGraph), day, month,
 		 year, hour, minut, second, timecomb, belt, coordcomb,
-		 equincomb, pathent));
-  grid->attach(*orb, 2, 12, 1, 1);
+		 equincomb, pathent, tttdbent));
+  grid->attach(*orb, 2, 16, 1, 1);
 
   Gtk::Button *about = Gtk::make_managed<Gtk::Button>();
   about->set_halign(Gtk::Align::CENTER);
@@ -506,40 +642,11 @@ MainWindow::createWindow()
   about->set_label(gettext("About"));
   about->set_name("button");
   about->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::aboutProg));
-  grid->attach(*about, 3, 12, 1, 1);
+  grid->attach(*about, 5, 16, 1, 1);
 
-  this->signal_close_request().connect([this, pathent]
-  {
-    std::string savepath(Glib::get_home_dir());
-    savepath = savepath + "/.config/EphEPM/ephpath";
-    std::filesystem::path filepath = std::filesystem::u8path(savepath);
-    if(!std::filesystem::exists(filepath.parent_path()))
-      {
-	std::filesystem::create_directories(filepath.parent_path());
-      }
-    if(std::filesystem::exists(filepath))
-      {
-	std::filesystem::remove_all(filepath);
-      }
-    std::string line(pathent->get_text());
-    if(!line.empty())
-      {
-	std::fstream f;
-	f.open(filepath, std::ios_base::out | std::ios_base::binary);
-	if(f.is_open())
-	  {
-	    f.write(line.c_str(), line.size());
-	    f.close();
-	  }
-	else
-	  {
-	    std::cerr << "Error on saving configuration" << std::endl;
-	  }
-      }
-    this->set_visible(false);
-    return true;
-  },
-				       false);
+  this->signal_close_request().connect(
+      std::bind(&MainWindow::closeFunc, this, pathent, tttdbent, mlbent),
+      false);
 }
 
 void
@@ -588,7 +695,8 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
 		      Gtk::DropDown *objcomb, Gtk::DropDown *coordcomb,
 		      Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
 		      Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
-		      Gtk::Entry *stepnument, Gtk::Entry *pathent)
+		      Gtk::Entry *stepnument, Gtk::Entry *pathent,
+		      Gtk::Entry *tttdbent, Gtk::Entry *mlbent)
 {
   std::string daystr(day->get_text());
   std::string monthstr(month->get_text());
@@ -603,6 +711,7 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   std::string stepstr(stepent->get_text());
   std::string stepnumberstr(stepnument->get_text());
   std::string pathstr(pathent->get_text());
+  std::string tttdbstr(tttdbent->get_text());
   int objnum = static_cast<int>(objcomb->get_selected());
   int coordtype = coordcomb->get_selected();
   int xyz = static_cast<int>(xyzcomb->get_selected());
@@ -696,6 +805,7 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   else if(objnum == 21)
     {
       objname = "moonlibr";
+      pathstr = std::string(mlbent->get_text());
     }
 
   int daynum = -1;
@@ -905,10 +1015,21 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   mpf_set_default_prec(512);
   JDshow = af.utcJD(daynum, monthnum, yearnum, hournum, minutnum, secondnum);
   DAFOperations daf;
-  bool datech = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-				  secondnum,
-				  static_cast<int>(timecomb->get_selected()),
-				  beltnum, pathstr);
+  bool datech;
+  if(!tttdbstr.empty())
+    {
+      datech = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
+				 secondnum,
+				 static_cast<int>(timecomb->get_selected()),
+				 beltnum, tttdbstr);
+    }
+  else
+    {
+      datech = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
+				 secondnum,
+				 static_cast<int>(timecomb->get_selected()),
+				 beltnum, pathstr);
+    }
   if(!datech)
     {
       info_win->close();
@@ -929,7 +1050,8 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
     }
   Coordinates *calc = new Coordinates(
       objname, JDcalc, static_cast<int>(timecomb->get_selected()), coordtype,
-      xyz, theory, unit, stepnum, stepnumbernum, pathstr, &orbits_cancel);
+      xyz, theory, unit, stepnum, stepnumbernum, pathstr, tttdbstr,
+      &orbits_cancel);
   std::vector<std::array<mpf_class, 3>> *result = new std::vector<
       std::array<mpf_class, 3>>;
   Glib::Dispatcher *result_win_disp = new Glib::Dispatcher;
@@ -1578,7 +1700,7 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
 			Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
 			Gtk::DropDown *timecomb, Gtk::DropDown *belt,
 			Gtk::DropDown *coordcomb, Gtk::DropDown *equincomb,
-			Gtk::Entry *pathent)
+			Gtk::Entry *pathent, Gtk::Entry *tttdbent)
 {
   std::string daystr(day->get_text());
   std::string monthstr(month->get_text());
@@ -1591,6 +1713,7 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       std::dynamic_pointer_cast<Gtk::StringList>(lmodel);
   std::string beltstr(strl->get_string(belt->get_selected()));
   std::string pathstr(pathent->get_text());
+  std::string tttdbstr(tttdbent->get_text());
 
   int daynum = -1;
   int monthnum = -1;
@@ -1769,17 +1892,28 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       JDcalc = JDcalc + k;
     }
   DAFOperations daf;
-  bool chtm = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-				secondnum,
-				static_cast<int>(timecomb->get_selected()),
-				beltnum, pathstr);
+  bool chtm;
+  if(tttdbstr.empty())
+    {
+      chtm = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
+			       secondnum,
+			       static_cast<int>(timecomb->get_selected()),
+			       beltnum, pathstr);
+    }
+  else
+    {
+      chtm = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
+			       secondnum,
+			       static_cast<int>(timecomb->get_selected()),
+			       beltnum, tttdbstr);
+    }
   if(chtm)
     {
       Gtk::ProgressBar *bar = Gtk::make_managed<Gtk::ProgressBar>();
       bar->set_fraction(0.0);
-
       OrbitsDiagram *od = new OrbitsDiagram(
-	  this, pathstr, JDcalc, static_cast<int>(timecomb->get_selected()),
+	  this, pathstr, tttdbstr, JDcalc,
+	  static_cast<int>(timecomb->get_selected()),
 	  static_cast<int>(coordcomb->get_selected()),
 	  static_cast<int>(equincomb->get_selected()), &orbits_cancel);
 
@@ -1857,7 +1991,7 @@ MainWindow::aboutProg()
   aboutd->set_application(this->get_application());
   aboutd->set_name("mainWindow");
   aboutd->set_program_name("EphEPM");
-  aboutd->set_version("1.1");
+  aboutd->set_version("2.0");
   aboutd->set_copyright(
       "Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>");
   AuxFunc af;
@@ -1914,5 +2048,76 @@ MainWindow::aboutProg()
   },
 					 false);
   aboutd->present();
+}
+
+bool
+MainWindow::closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent,
+		      Gtk::Entry *mlbent)
+{
+  std::string savepath(Glib::get_home_dir());
+  savepath = savepath + "/.config/EphEPM/ephpath";
+  std::filesystem::path filepath = std::filesystem::u8path(savepath);
+  if(!std::filesystem::exists(filepath.parent_path()))
+    {
+      std::filesystem::create_directories(filepath.parent_path());
+    }
+  if(std::filesystem::exists(filepath))
+    {
+      std::filesystem::remove_all(filepath);
+    }
+  std::vector<std::tuple<uint8_t, std::string>> pathv;
+  std::string line(pathent->get_text());
+  if(!line.empty())
+    {
+      pathv.push_back(std::make_tuple(1, line));
+    }
+
+  line.clear();
+  line = std::string(tttdbent->get_text());
+  if(!line.empty())
+    {
+      pathv.push_back(std::make_tuple(2, line));
+    }
+
+  line.clear();
+  line = std::string(mlbent->get_text());
+  if(!line.empty())
+    {
+      pathv.push_back(std::make_tuple(3, line));
+    }
+  if(pathv.size() > 0)
+    {
+      std::fstream f;
+      f.open(filepath, std::ios_base::out | std::ios_base::binary);
+      if(f.is_open())
+	{
+	  std::string wstr;
+	  for(auto it = pathv.begin(); it != pathv.end(); it++)
+	    {
+	      wstr.clear();
+	      std::tuple<uint8_t, std::string> ttup = *it;
+	      uint8_t type = std::get<0>(*it);
+	      std::string path = std::get<1>(*it);
+	      wstr.resize(sizeof(type));
+	      std::memcpy(&wstr[0], &type, sizeof(type));
+
+	      std::copy(path.begin(), path.end(), std::back_inserter(wstr));
+	      uint64_t esz = static_cast<uint64_t>(wstr.size());
+	      std::vector<char> wv;
+	      wv.resize(sizeof(esz));
+	      std::memcpy(&wv[0], &esz, sizeof(esz));
+	      std::copy(wstr.begin(), wstr.end(), std::back_inserter(wv));
+	      f.write(wv.data(), wv.size());
+	    }
+	  f.close();
+	}
+      else
+	{
+	  std::cerr << "Error on saving configuration" << std::endl;
+	}
+    }
+  this->set_visible(false);
+
+  return true;
 }
 

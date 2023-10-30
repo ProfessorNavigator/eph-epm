@@ -54,7 +54,8 @@ private:
 	    Gtk::DropDown *objcomb, Gtk::DropDown *coordcomb,
 	    Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
 	    Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
-	    Gtk::Entry *stepnument, Gtk::Entry *pathent);
+	    Gtk::Entry *stepnument, Gtk::Entry *pathent, Gtk::Entry *tttdbent,
+	    Gtk::Entry *mlbent);
   void
   aboutProg();
   void
@@ -85,7 +86,9 @@ private:
 	      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
 	      Gtk::DropDown *timecomb, Gtk::DropDown *belt,
 	      Gtk::DropDown *coordcomb, Gtk::DropDown *equincomb,
-	      Gtk::Entry *pathent);
+	      Gtk::Entry *pathent, Gtk::Entry *tttdbent);
+  bool
+  closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *mlbent);
 
   std::string Sharepath = "";
 
