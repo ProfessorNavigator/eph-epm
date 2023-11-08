@@ -15,8 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_DIAGRAMWIDGET_H
-#define INCLUDE_DIAGRAMWIDGET_H
+#ifndef INCLUDE_DIAGRAMWIDGET_H_
+#define INCLUDE_DIAGRAMWIDGET_H_
 
 #include <gtkmm.h>
 #include <string>
@@ -35,29 +35,39 @@ public:
   DiagramWidget(Gtk::ApplicationWindow *mw, mglGraph *gr);
   virtual
   ~DiagramWidget();
+
   void
   diagramPlot();
+
   std::function<void
   ()> diagram_close;
+
 private:
   void
   planetOrbCalc(std::tuple<std::string, double> planettup);
+
   void
   on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int width, int height);
+
   bool
   scrollEvent(double x, double y, Gtk::Entry *entx, Gtk::Entry *enty,
 	      Gtk::Entry *entz, Gtk::DrawingArea *drar);
+
   void
   dragOperation(double x, double y, Gtk::Entry *entx, Gtk::Entry *enty,
 		Gtk::Entry *entz, Gtk::DrawingArea *drar);
+
   void
   zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
 	    Gtk::DrawingArea *drar, int id);
+
   void
   saveGraph(mglGraph *gr, Gtk::Window *win, int mode);
+
   void
   rotationFunc(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
 	       Gtk::DrawingArea *drar);
+
   Gdk::Rectangle
   screenRes();
 
@@ -72,4 +82,4 @@ private:
   double scale_val2 = 1143584.890685;
 };
 
-#endif /* INCLUDE_DIAGRAMWIDGET_H */
+#endif /* INCLUDE_DIAGRAMWIDGET_H_ */

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <BodyV.h>
+#include "BodyV.h"
 
 BodyV::BodyV()
 {
@@ -65,4 +65,3 @@ BodyV::getVect()
 {
   return bodyv;
 }
-

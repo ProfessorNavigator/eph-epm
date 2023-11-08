@@ -1,1 +1,1 @@
-srcbuild = files(['AuxFunc.cpp', 'BodyV.cpp', 'Coordinates.cpp', 'DAFOperations.cpp', 'DiagramWidget.cpp', 'EphemerisEPM.cpp', 'EPMApplication.cpp', 'EPMCalculations.cpp', 'MainWindow.cpp', 'ModelColumns.cpp', 'OrbitsDiagram.cpp'])
+srcbuild = files(['AuxFunc.cpp', 'BodyListItem.cpp', 'BodyV.cpp', 'Coordinates.cpp', 'DAFOperations.cpp', 'DiagramWidget.cpp', 'EphemerisEPM.cpp', 'EPMApplication.cpp', 'EPMCalculations.cpp', 'MainWindow.cpp', 'ModelColumns.cpp', 'OrbitsDiagram.cpp'])

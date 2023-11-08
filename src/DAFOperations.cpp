@@ -41,7 +41,7 @@ DAFOperations::fileVersion(std::fstream *f)
     {
       std::vector<char> readv;
       readv.resize(8);
-      f->read(&readv[0], readv.size());
+      f->read(readv.data(), readv.size());
       std::string chstr(readv.begin(), readv.end());
       std::string::size_type n;
       n = chstr.find("DAF/SPK");
@@ -59,7 +59,7 @@ DAFOperations::fileVersion(std::fstream *f)
 	  f->seekg(16, std::ios_base::beg);
 	  readv.clear();
 	  readv.resize(60);
-	  f->read(&readv[0], readv.size());
+	  f->read(readv.data(), readv.size());
 	  for(size_t i = 0; i < readv.size(); i++)
 	    {
 	      char ch = readv[i];
@@ -101,14 +101,15 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
   f.open(filepath, std::ios_base::in | std::ios_base::binary);
   if(!f.is_open())
     {
-      std::cerr << "Ephemeris file not opened!" << std::endl;
+      std::cerr << "DAFOperations::epochCheckUTC: Ephemeris file not opened!"
+	  << std::endl;
       result = false;
     }
   else
     {
       std::vector<char> readv;
       readv.resize(8);
-      f.read(&readv[0], readv.size());
+      f.read(readv.data(), readv.size());
       std::string chstr(readv.begin(), readv.end());
       std::string::size_type n;
       n = chstr.find("DAF/SPK");
@@ -118,21 +119,22 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
 	}
       if(n == std::string::npos)
 	{
-	  std::cout << "Not epehemeris file" << std::endl;
+	  std::cout << "DAFOperations::epochCheckUTC: Not epehemeris file"
+	      << std::endl;
 	}
       else
 	{
 	  std::vector<std::tuple<double, double, int, int, int, int, int, int>> spkv;
 	  spkv = bodiesVector(&f);
 	  auto itspk = std::find_if(spkv.begin(), spkv.end(), []
-	  (auto &el)
+	  (auto &el) 
 	    {
 	      return std::get<2>(el) == 1000000001;
 	    });
 	  if(timesc == 2)
 	    {
 	      itspk = std::find_if(spkv.begin(), spkv.end(), []
-	      (auto &el)
+	      (auto &el) 
 		{
 		  return std::get<2>(el) == 1;
 		});
@@ -147,7 +149,7 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
 	  else
 	    {
 	      itspk = std::find_if(spkv.begin(), spkv.end(), []
-	      (auto &el)
+	      (auto &el) 
 		{
 		  return std::get<2>(el) == 1800303;
 		});
@@ -161,7 +163,7 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
 	      else
 		{
 		  itspk = std::find_if(spkv.begin(), spkv.end(), []
-		  (auto &el)
+		  (auto &el) 
 		    {
 		      return std::get<2>(el) == 1800302;
 		    });
@@ -194,14 +196,14 @@ DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
   f.open(filepath, std::ios_base::in | std::ios_base::binary);
   if(!f.is_open())
     {
-      std::cerr << "Ephemeris file not opened!" << std::endl;
+      std::cerr << "DAFOperations::epochCheckUTC: Ephemeris file not opened!" << std::endl;
       result = false;
     }
   else
     {
       std::vector<char> readv;
       readv.resize(8);
-      f.read(&readv[0], readv.size());
+      f.read(readv.data(), readv.size());
       std::string chstr(readv.begin(), readv.end());
       std::string::size_type n;
       n = chstr.find("DAF/SPK");
@@ -211,7 +213,7 @@ DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
 	}
       if(n == std::string::npos)
 	{
-	  std::cout << "Not ephemeris file" << std::endl;
+	  std::cout << "DAFOperations::epochCheckUTC: Not ephemeris file" << std::endl;
 	  result = false;
 	}
       else
@@ -219,14 +221,14 @@ DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
 	  std::vector<std::tuple<double, double, int, int, int, int, int, int>> spkv;
 	  spkv = this->bodiesVector(&f);
 	  auto itspk = std::find_if(spkv.begin(), spkv.end(), []
-	  (auto &el)
+	  (auto &el) 
 	    {
 	      return std::get<2>(el) == 1000000001;
 	    });
 	  if(timesc == 2)
 	    {
 	      itspk = std::find_if(spkv.begin(), spkv.end(), []
-	      (auto &el)
+	      (auto &el) 
 		{
 		  return std::get<2>(el) == 1;
 		});
@@ -243,7 +245,7 @@ DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
 	  else
 	    {
 	      itspk = std::find_if(spkv.begin(), spkv.end(), []
-	      (auto &el)
+	      (auto &el) 
 		{
 		  return std::get<2>(el) == 1800303;
 		});
@@ -257,7 +259,7 @@ DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
 	      else
 		{
 		  itspk = std::find_if(spkv.begin(), spkv.end(), []
-		  (auto &el)
+		  (auto &el) 
 		    {
 		      return std::get<2>(el) == 1800302;
 		    });
@@ -422,7 +424,7 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
     {
       std::vector<std::tuple<double, double, int, int, int, int, int, int>> spkv;
       auto itfv = std::find_if(filev.begin(), filev.end(), [result]
-      (auto &el)
+      (auto &el) 
 	{
 	  return el.getFile() == result;
 	});
@@ -442,7 +444,7 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
       result->seekg(0, std::ios_base::beg);
       std::string readstr;
       readstr.resize(8);
-      result->read(&readstr[0], readstr.size());
+      result->read(readstr.data(), readstr.size());
       int ephtype = 0;
       std::string::size_type n;
       n = readstr.find("DAF/SPK");
@@ -456,11 +458,11 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
 	  ephtype = 2;
 	}
       auto itspk = std::find_if(spkv.begin(), spkv.end(), [NAIFid, JD]
-      (auto &el)
+      (auto &el) 
 	{
 	  if(std::get<2>(el) == NAIFid)
 	    {
-	      if(JD >= std::get<0>(el) && JD <=std::get<1>(el))
+	      if(JD >= std::get<0>(el) && JD <= std::get<1>(el))
 		{
 		  return true;
 		}
@@ -494,4 +496,3 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
     }
   return type;
 }
-

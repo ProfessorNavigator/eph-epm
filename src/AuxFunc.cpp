@@ -40,7 +40,7 @@ AuxFunc::get_selfpath()
   GetModuleFileNameA(NULL, pth, MAX_PATH);
   p = std::filesystem::path(pth);
   return p.u8string();
-  #endif
+#endif
 }
 
 double

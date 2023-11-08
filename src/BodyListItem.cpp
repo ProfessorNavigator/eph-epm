@@ -15,39 +15,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_BODYV_H_
-#define INCLUDE_BODYV_H_
+#include "BodyListItem.h"
 
-#include <fstream>
-#include <vector>
-#include <tuple>
-
-class BodyV
+BodyListItem::BodyListItem(Glib::ustring &bodyname, int &id)
 {
-public:
-  BodyV();
-  virtual
-  ~BodyV();
-  BodyV(const BodyV &other);
-  BodyV&
-  operator =(const BodyV &other);
+  this->bodyname = bodyname;
+  this->naifid = id;
+}
 
-  void
-  setFile(std::fstream *f);
+BodyListItem::~BodyListItem()
+{
 
-  std::fstream*
-  getFile();
+}
 
-  void
-  setVect(
-      std::vector<std::tuple<double, double, int, int, int, int, int, int>> &boydv);
-
-  std::vector<std::tuple<double, double, int, int, int, int, int, int>>
-  getVect();
-
-private:
-  std::fstream *file = nullptr;
-  std::vector<std::tuple<double, double, int, int, int, int, int, int>> bodyv;
-};
-
-#endif /* INCLUDE_BODYV_H_ */
+Glib::RefPtr<BodyListItem>
+BodyListItem::create(std::string &bodyname, int &id)
+{
+  Glib::ustring bnm(bodyname);
+  BodyListItem *bli = new BodyListItem(bnm, id);
+  return Glib::make_refptr_for_instance(bli);
+}

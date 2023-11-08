@@ -15,39 +15,24 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_BODYV_H_
-#define INCLUDE_BODYV_H_
+#ifndef INCLUDE_BODYLISTITEM_H_
+#define INCLUDE_BODYLISTITEM_H_
 
-#include <fstream>
-#include <vector>
-#include <tuple>
+#include <gtkmm.h>
 
-class BodyV
+class BodyListItem : public Glib::Object
 {
 public:
-  BodyV();
   virtual
-  ~BodyV();
-  BodyV(const BodyV &other);
-  BodyV&
-  operator =(const BodyV &other);
+  ~BodyListItem();
 
-  void
-  setFile(std::fstream *f);
+  static Glib::RefPtr<BodyListItem>
+  create(std::string &bodyname, int &id);
 
-  std::fstream*
-  getFile();
-
-  void
-  setVect(
-      std::vector<std::tuple<double, double, int, int, int, int, int, int>> &boydv);
-
-  std::vector<std::tuple<double, double, int, int, int, int, int, int>>
-  getVect();
-
+  Glib::ustring bodyname;
+  int naifid = -1;
 private:
-  std::fstream *file = nullptr;
-  std::vector<std::tuple<double, double, int, int, int, int, int, int>> bodyv;
+  BodyListItem(Glib::ustring &bodyname, int &id);
 };
 
-#endif /* INCLUDE_BODYV_H_ */
+#endif /* INCLUDE_BODYLISTITEM_H_ */

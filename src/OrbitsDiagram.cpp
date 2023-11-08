@@ -18,12 +18,14 @@
 #include "OrbitsDiagram.h"
 
 OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
-			     std::string tttdbpath, double JD, int timesc,
-			     int coordtype, int theory, int *cancel)
+			     std::string tttdbpath, std::string smlpath,
+			     double JD, int timesc, int coordtype, int theory,
+			     double plot_factor, int *cancel)
 {
   this->mw = mw;
   this->ephpath = ephpath;
   this->tttdbpath = tttdbpath;
+  this->smlpath = smlpath;
   this->JD = JD;
   daf = new DAFOperations();
   gr = new mglGraph;
@@ -36,27 +38,68 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
   this->coordtype = coordtype;
   this->theory = theory;
   this->timesc = timesc;
-  DAFOperations daf;
-  std::string ephnm;
   std::fstream f;
   std::filesystem::path ephp = std::filesystem::u8path(ephpath);
+  std::vector<std::tuple<double, double, int, int, int, int, int, int>> chv;
   f.open(ephp, std::ios_base::in | std::ios_base::binary);
   if(f.is_open())
     {
-      ephnm = daf.fileVersion(&f);
+      std::string ephtype = daf->fileVersion(&f);
+      std::string::size_type n;
+      n = ephtype.find("epm");
+      if(n != std::string::npos)
+	{
+	  EPM = true;
+	}
+      chv = daf->bodiesVector(&f);
       f.close();
     }
-  std::string::size_type n;
-  n = ephnm.find("epm");
-  if(n != std::string::npos)
+  auto itchv = std::find_if(chv.begin(), chv.end(), []
+  (auto &el)
     {
-      modbody = "sedna";
+      return std::get<2>(el) == 2090377;
+    });
+  if(itchv != chv.end())
+    {
+      modbody = 2090377;
     }
   else
     {
-      modbody = "pluto";
-      plot_factor = 0.00000001;
+      ephp = std::filesystem::u8path(smlpath);
+      f.clear();
+      f.open(ephp, std::ios_base::in | std::ios_base::binary);
+      if(f.is_open())
+	{
+	  chv = daf->bodiesVector(&f);
+	  f.close();
+	}
+      itchv = std::find_if(chv.begin(), chv.end(), []
+      (auto &el)
+	{
+	  return std::get<2>(el) == 2090377;
+	});
+      if(itchv != chv.end())
+	{
+	  modbody = 2090377;
+	}
+      else
+	{
+	  itchv = std::find_if(chv.begin(), chv.end(), []
+	  (auto &el)
+	    {
+	      return std::get<2>(el) == 9;
+	    });
+	  if(itchv != chv.end())
+	    {
+	      modbody = 9;
+	    }
+	  else
+	    {
+	      *cancel = 1;
+	    }
+	}
     }
+  this->plot_factor = plot_factor;
 }
 
 OrbitsDiagram::~OrbitsDiagram()
@@ -76,26 +119,28 @@ int
 OrbitsDiagram::calculateSize()
 {
   int result = 0;
-  bodyv.push_back(std::make_tuple("sun", 0.0));
-  bodyv.push_back(std::make_tuple("mercury", 88.0));
-  bodyv.push_back(std::make_tuple("venus", 224.7));
-  bodyv.push_back(std::make_tuple("earth", 365.2));
-  bodyv.push_back(std::make_tuple("moon", 0.0));
-  bodyv.push_back(std::make_tuple("mars", 687.0));
-  bodyv.push_back(std::make_tuple("jupiter", 4331.0));
-  bodyv.push_back(std::make_tuple("saturn", 10747.0));
-  bodyv.push_back(std::make_tuple("uranus", 30589.0));
-  bodyv.push_back(std::make_tuple("neptune", 59800.0));
-  bodyv.push_back(std::make_tuple("pluto", 90560.0));
-  bodyv.push_back(std::make_tuple("ceres", 1680.5));
-  bodyv.push_back(std::make_tuple("pallas", 1686.643));
-  bodyv.push_back(std::make_tuple("vesta", 1325.081));
-  bodyv.push_back(std::make_tuple("erida", 203830.0));
-  bodyv.push_back(std::make_tuple("haumea", 104025.0));
-  bodyv.push_back(std::make_tuple("makemake", 111867.0));
-  bodyv.push_back(std::make_tuple("sedna", 4404480.0));
-  bodyv.push_back(std::make_tuple("bamberga", 1607.041));
-  bodyv.push_back(std::make_tuple("iris", 1345.337));
+  bodyv.push_back(std::make_tuple(10, 0.0));
+  bodyv.push_back(std::make_tuple(1, 88.0));
+  bodyv.push_back(std::make_tuple(2, 224.7));
+  bodyv.push_back(std::make_tuple(3, 365.2));
+  bodyv.push_back(std::make_tuple(-3, 0.0));
+  bodyv.push_back(std::make_tuple(4, 687.0));
+  bodyv.push_back(std::make_tuple(5, 4331.0));
+  bodyv.push_back(std::make_tuple(6, 10747.0));
+  bodyv.push_back(std::make_tuple(7, 30589.0));
+  bodyv.push_back(std::make_tuple(8, 59800.0));
+  bodyv.push_back(std::make_tuple(9, 90560.0));
+  bodyv.push_back(std::make_tuple(2000001, 1680.5));
+  bodyv.push_back(std::make_tuple(2000002, 1686.643));
+  bodyv.push_back(std::make_tuple(2000004, 1325.081));
+  bodyv.push_back(std::make_tuple(2136199, 203830.0));
+  bodyv.push_back(std::make_tuple(2136108, 104025.0));
+  bodyv.push_back(std::make_tuple(2136472, 111867.0));
+  bodyv.push_back(std::make_tuple(2090377, 4404480.0));
+  bodyv.push_back(std::make_tuple(2000324, 1607.041));
+  bodyv.push_back(std::make_tuple(2000007, 1345.337));
+  bodyv.push_back(std::make_tuple(2225088, 202238.0));
+  bodyv.push_back(std::make_tuple(2050000, 105495.0));
 
   bool ch;
   if(tttdbpath.empty())
@@ -119,9 +164,9 @@ OrbitsDiagram::calculateSize()
 void
 OrbitsDiagram::calculateOrbits()
 {
-  std::string modbody = this->modbody;
+  int modbody = this->modbody;
   auto itpl = std::find_if(bodyv.begin(), bodyv.end(), [modbody]
-  (auto &el)
+  (auto &el) 
     {
       return std::get<0>(el) == modbody;
     });
@@ -182,7 +227,7 @@ OrbitsDiagram::calculateOrbits()
       Coordinates *coord = new Coordinates(std::get<0>(*itpl), JDbeg, timesc,
 					   coordtype, 0, theory, 0,
 					   period * scale_factor, stepnum,
-					   ephpath, tttdbpath, cancel);
+					   ephpath, tttdbpath, smlpath, cancel);
       coord->pulse_signal = [this]
       {
 	if(this->pulse_signal)
@@ -198,7 +243,7 @@ OrbitsDiagram::calculateOrbits()
 	{
 	  auto minmaxel = std::minmax_element(resultsed.begin(),
 					      resultsed.end(), [i]
-					      (auto el1, auto &el2)
+					      (auto el1, auto &el2) 
 						{
 						  return el1.at(i) > el2.at(i);
 						});
@@ -238,7 +283,7 @@ OrbitsDiagram::calculateOrbits()
 	  threadvmtx->unlock();
 	  if(thrnum < std::thread::hardware_concurrency())
 	    {
-	      std::tuple<std::string, double> planettup;
+	      std::tuple<int, double> planettup;
 	      planettup = bodyv[i];
 	      std::thread *thr = new std::thread(
 		  std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
@@ -251,7 +296,7 @@ OrbitsDiagram::calculateOrbits()
 	  else
 	    {
 	      cyclemtx.lock();
-	      std::tuple<std::string, double> planettup;
+	      std::tuple<int, double> planettup;
 	      planettup = bodyv[i];
 	      std::thread *thr = new std::thread(
 		  std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
@@ -275,22 +320,12 @@ OrbitsDiagram::calculateOrbits()
 }
 
 void
-OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
+OrbitsDiagram::planetOrbCalc(std::tuple<int, double> planettup)
 {
-  std::string body = std::get<0>(planettup);
-  std::string bodyc;
-  if(body == "earth")
-    {
-      bodyc = "earth_m";
-    }
-  else
-    {
-      bodyc = body;
-    }
-
+  int body = std::get<0>(planettup);
   std::vector<std::array<mpf_class, 3>> result;
 
-  if(body != "sedna")
+  if(body != 2090377)
     {
       double period = std::get<1>(planettup);
       double JDbeg;
@@ -344,9 +379,10 @@ OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
 	    }
 	}
 
-      Coordinates *coord = new Coordinates(bodyc, JDbeg, timesc, coordtype, 0,
+      Coordinates *coord = new Coordinates(body, JDbeg, timesc, coordtype, 0,
 					   theory, 0, period * scale_factor,
-					   stepnum, ephpath, tttdbpath, cancel);
+					   stepnum, ephpath, tttdbpath, smlpath,
+					   cancel);
       coord->pulse_signal = [this]
       {
 	if(this->pulse_signal)
@@ -373,78 +409,112 @@ OrbitsDiagram::planetOrbCalc(std::tuple<std::string, double> planettup)
     }
   mglData x(X), y(Y), z(Z);
 
-  if(body == "mercury")
+  switch (body)
     {
-      gr->Plot(x, y, z, "{x999C99}");
+    case 1:
+      {
+	gr->Plot(x, y, z, "{x999C99}");
+	break;
+      }
+    case 2:
+      {
+	gr->Plot(x, y, z, "{xD49B3A}");
+	break;
+      }
+    case 3:
+      {
+	gr->Plot(x, y, z, "{x5C98C0}");
+	break;
+      }
+    case 4:
+      {
+	gr->Plot(x, y, z, "{xA07C65}");
+	break;
+      }
+    case 5:
+      {
+	gr->Plot(x, y, z, "{xDAD3C3}");
+	break;
+      }
+    case 6:
+      {
+	gr->Plot(x, y, z, "{xE0B978}");
+	break;
+      }
+    case 7:
+      {
+	gr->Plot(x, y, z, "{xC9EFF1}");
+	break;
+      }
+    case 8:
+      {
+	gr->Plot(x, y, z, "{x5389FD}");
+	break;
+      }
+    case 9:
+      {
+	gr->Plot(x, y, z, "{xD7B699}");
+	break;
+      }
+    case 2000001:
+      {
+	gr->Plot(x, y, z, "{xABABAB}");
+	break;
+      }
+    case 2000002:
+      {
+	gr->Plot(x, y, z, "{xD7D7D7}");
+	break;
+      }
+    case 2000004:
+      {
+	gr->Plot(x, y, z, "{x9C9686}");
+	break;
+      }
+    case 2136199:
+      {
+	gr->Plot(x, y, z, "{xD1C1A9}");
+	break;
+      }
+    case 2136108:
+      {
+	gr->Plot(x, y, z, "{x7D675D}");
+	break;
+      }
+    case 2136472:
+      {
+	gr->Plot(x, y, z, "{xB97B5A}");
+	break;
+      }
+    case 2090377:
+      {
+	gr->Plot(x, y, z, "{xE89579}");
+	break;
+      }
+    case 2000324:
+      {
+	gr->Plot(x, y, z, "{xC8C8C8}");
+	break;
+      }
+    case 2000007:
+      {
+	gr->Plot(x, y, z, "{xC6C6C6}");
+	break;
+      }
+    case 2225088:
+      {
+	gr->Plot(x, y, z, "{xF21515}");
+	break;
+      }
+    case 2050000:
+      {
+	gr->Plot(x, y, z, "{x41C95A}");
+	break;
+      }
+    default:
+      break;
     }
-  if(body == "venus")
-    {
-      gr->Plot(x, y, z, "{xD49B3A}");
-    }
-  if(body == "earth")
-    {
-      gr->Plot(x, y, z, "{x5C98C0}");
-    }
-  if(body == "mars")
-    {
-      gr->Plot(x, y, z, "{xA07C65}");
-    }
-  if(body == "jupiter")
-    {
-      gr->Plot(x, y, z, "{xDAD3C3}");
-    }
-  if(body == "saturn")
-    {
-      gr->Plot(x, y, z, "{xE0B978}");
-    }
-  if(body == "uranus")
-    {
-      gr->Plot(x, y, z, "{xC9EFF1}");
-    }
-  if(body == "neptune")
-    {
-      gr->Plot(x, y, z, "{x5389FD}");
-    }
-  if(body == "pluto")
-    {
-      gr->Plot(x, y, z, "{xD7B699}");
-    }
-  if(body == "ceres")
-    {
-      gr->Plot(x, y, z, "{xABABAB}");
-    }
-  if(body == "pallas")
-    {
-      gr->Plot(x, y, z, "{xD7D7D7}");
-    }
-  if(body == "vesta")
-    {
-      gr->Plot(x, y, z, "{x9C9686}");
-    }
-  if(body == "erida")
-    {
-      gr->Plot(x, y, z, "{xD1C1A9}");
-    }
-  if(body == "haumea")
-    {
-      gr->Plot(x, y, z, "{x7D675D}");
-    }
-  if(body == "makemake")
-    {
-      gr->Plot(x, y, z, "{xB97B5A}");
-    }
-  if(body == "sedna")
-    {
-      gr->Plot(x, y, z, "{xE89579}");
-    }
-  if(body == "bamberga")
-    {
-      gr->Plot(x, y, z, "{xC8C8C8}");
-    }
-  if(body == "iris")
-    {
-      gr->Plot(x, y, z, "{xC6C6C6}");
-    }
+
   bodyBuilding(body, gr);
   threadvmtx->lock();
   threadv.erase(std::remove(threadv.begin(), threadv.end(), body),
@@ -489,10 +559,11 @@ OrbitsDiagram::diagramPlot()
 }
 
 void
-OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
+OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
 {
   Coordinates *coord = new Coordinates(body, JD, timesc, coordtype, 0, theory,
-				       0, 1.0, 1, ephpath, tttdbpath, cancel);
+				       0, 1.0, 1, ephpath, tttdbpath, smlpath,
+				       cancel);
   coord->pulse_signal = [this]
   {
     if(this->pulse_signal)
@@ -506,9 +577,9 @@ OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
   std::vector<double> X;
   std::vector<double> Y;
   std::vector<double> Z;
-  double Rv;
-  double Rh2;
-  double Rh;
+  double Rv = 0.0;
+  double Rh2 = 0.0;
+  double Rh = 0.0;
   double alf = 0.0;
   double bet = 0.0;
   double T = 2451545.0;
@@ -523,156 +594,196 @@ OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
       y = std::get<1>(result[0]).get_d();
       z = std::get<2>(result[0]).get_d();
     }
-  if(body == "sun")
+  switch (body)
     {
-      alf = 286.13 * M_PI / 180.0;
-      bet = M_PI * 0.5 - 63.87 * M_PI / 180.0;
-      Rh = 695510.0;
-      Rh2 = Rh;
-      Rv = 695510.0 - 695510.0 * 0.000009;
+    case 10:
+      {
+	alf = 286.13 * M_PI / 180.0;
+	bet = M_PI * 0.5 - 63.87 * M_PI / 180.0;
+	Rh = 695510.0;
+	Rh2 = Rh;
+	Rv = 695510.0 - 695510.0 * 0.000009;
+	break;
+      }
+    case 1:
+      {
+	alf = 281.01 - 0.033 * T;
+	alf = alf * M_PI / 180.0;
+	bet = 61.414 - 0.005 * T;
+	bet = M_PI * 0.5 - bet * M_PI / 180.0;
+	Rh = 2440.5;
+	Rh2 = Rh;
+	Rv = 2438.3;
+	break;
+      }
+    case 2:
+      {
+	alf = 272.76 * M_PI / 180.0;
+	bet = M_PI * 0.5 - 67.16 * M_PI / 180.0;
+	Rh = 6051.8;
+	Rh2 = Rh;
+	Rv = 6051.8;
+	break;
+      }
+    case 3:
+      {
+	Rh = 6378.137;
+	Rh2 = Rh;
+	Rv = 6356.752;
+	break;
+      }
+    case -3:
+      {
+	Rh = 1738.1;
+	Rh2 = Rh;
+	Rv = 1736.0;
+	break;
+      }
+    case 4:
+      {
+	alf = 317.681 - 0.106 * T;
+	alf = alf * M_PI / 180;
+	bet = 52.887 - 0.061 * T;
+	bet = M_PI * 0.5 - bet * M_PI / 180.0;
+	Rh = 3396.2;
+	Rh2 = Rh;
+	Rv = 3376.2;
+	break;
+      }
+    case 5:
+      {
+	alf = 268.057 - 0.006 * T;
+	alf = alf * M_PI / 180.0;
+	bet = 64.495 + 0.002 * T;
+	bet = M_PI * 0.5 - bet * M_PI / 180.0;
+	Rh = 71492.0;
+	Rh2 = Rh;
+	Rv = 66854.0;
+	break;
+      }
+    case 6:
+      {
+	alf = 40.589 - 0.036 * T;
+	alf = alf * M_PI / 180;
+	bet = 83.537 - 0.004 * T;
+	bet = M_PI * 0.5 - bet * M_PI / 180;
+	Rh = 60268.0;
+	Rh2 = Rh;
+	Rv = 54364.0;
+	break;
+      }
+    case 7:
+      {
+	alf = 257.311 * M_PI / 180.0;
+	bet = M_PI * 0.5 + 15.175 * M_PI / 180.0;
+	Rh = 25559.0;
+	Rh2 = Rh;
+	Rv = 24973.0;
+	break;
+      }
+    case 8:
+      {
+	double N = 357.85 + 52.316 * T;
+	N = N * M_PI / 180.0;
+	alf = 299.36 + 0.7 * af.Sin(N).get_d();
+	alf = alf * M_PI / 180.0;
+	bet = 43.46 + 0.51 * af.Cos(N).get_d();
+	bet = M_PI * 0.5 - bet * M_PI / 180.0;
+	Rh = 24764.0;
+	Rh2 = Rh;
+	Rv = 24341.0;
+	break;
+      }
+    case 9:
+      {
+	alf = 132.99 * M_PI / 180.0;
+	bet = M_PI * 0.5 + 6.16 * M_PI / 180.0;
+	Rh = 1188.0;
+	Rh2 = Rh;
+	Rv = 1188.0;
+	break;
+      }
+    case 2000001:
+      {
+	Rh = 965.0 * 0.5;
+	Rh2 = 961.0 * 0.5;
+	Rv = 891.0 * 0.5;
+	break;
+      }
+    case 2000002:
+      {
+	Rh = 582.0 * 0.5;
+	Rh2 = 556.0 * 0.5;
+	Rv = 500.0 * 0.5;
+	break;
+      }
+    case 2000004:
+      {
+	Rh = 569.0 * 0.5;
+	Rh2 = 555.0 * 0.5;
+	Rv = 453.0 * 0.5;
+	break;
+      }
+    case 2136199:
+      {
+	Rh = 1163.0;
+	Rh2 = 1163.0;
+	Rv = 1163.0;
+	break;
+      }
+    case 2136108:
+      {
+	Rh = 2322.0;
+	Rh2 = 1704.0;
+	Rv = 1138.0;
+	break;
+      }
+    case 2136472:
+      {
+	Rh = 751.0;
+	Rh2 = 751.0;
+	Rv = 715.0;
+	break;
+      }
+    case 2090377:
+      {
+	Rh = 995.0;
+	Rh2 = 995.0;
+	Rv = 995.0;
+	break;
+      }
+    case 2000324:
+      {
+	Rh = 114.72;
+	Rh2 = 114.72;
+	Rv = 114.72;
+	break;
+      }
+    case 2000007:
+      {
+	Rh = 99.915;
+	Rh2 = 99.915;
+	Rv = 99.915;
+	break;
+      }
+    case 2225088:
+      {
+	Rh = 1532;
+	Rh2 = 1280;
+	Rv = 1280;
+	break;
+      }
+    case 2050000:
+      {
+	Rh = 1086;
+	Rh2 = 1036;
+	Rv = 1086;
+	break;
+      }
+    default:
+      break;
     }
-  if(body == "mercury")
-    {
-      alf = 281.01 - 0.033 * T;
-      alf = alf * M_PI / 180.0;
-      bet = 61.414 - 0.005 * T;
-      bet = M_PI * 0.5 - bet * M_PI / 180.0;
-      Rh = 2440.5;
-      Rh2 = Rh;
-      Rv = 2438.3;
-    }
-  if(body == "venus")
-    {
-      alf = 272.76 * M_PI / 180.0;
-      bet = M_PI * 0.5 - 67.16 * M_PI / 180.0;
-      Rh = 6051.8;
-      Rh2 = Rh;
-      Rv = 6051.8;
-    }
-  if(body == "earth")
-    {
-      Rh = 6378.137;
-      Rh2 = Rh;
-      Rv = 6356.752;
-    }
-  if(body == "moon")
-    {
-      Rh = 1738.1;
-      Rh2 = Rh;
-      Rv = 1736.0;
-    }
-  if(body == "mars")
-    {
-      alf = 317.681 - 0.106 * T;
-      alf = alf * M_PI / 180;
-      bet = 52.887 - 0.061 * T;
-      bet = M_PI * 0.5 - bet * M_PI / 180.0;
-      Rh = 3396.2;
-      Rh2 = Rh;
-      Rv = 3376.2;
-    }
-  if(body == "jupiter")
-    {
-      alf = 268.057 - 0.006 * T;
-      alf = alf * M_PI / 180.0;
-      bet = 64.495 + 0.002 * T;
-      bet = M_PI * 0.5 - bet * M_PI / 180.0;
-      Rh = 71492.0;
-      Rh2 = Rh;
-      Rv = 66854.0;
-    }
-  if(body == "saturn")
-    {
-      alf = 40.589 - 0.036 * T;
-      alf = alf * M_PI / 180;
-      bet = 83.537 - 0.004 * T;
-      bet = M_PI * 0.5 - bet * M_PI / 180;
-      Rh = 60268.0;
-      Rh2 = Rh;
-      Rv = 54364.0;
-    }
-  if(body == "uranus")
-    {
-      alf = 257.311 * M_PI / 180.0;
-      bet = M_PI * 0.5 + 15.175 * M_PI / 180.0;
-      Rh = 25559.0;
-      Rh2 = Rh;
-      Rv = 24973.0;
-    }
-  if(body == "neptune")
-    {
-      double N = 357.85 + 52.316 * T;
-      N = N * M_PI / 180.0;
-      alf = 299.36 + 0.7 * af.Sin(N).get_d();
-      alf = alf * M_PI / 180.0;
-      bet = 43.46 + 0.51 * af.Cos(N).get_d();
-      bet = M_PI * 0.5 - bet * M_PI / 180.0;
-      Rh = 24764.0;
-      Rh2 = Rh;
-      Rv = 24341.0;
-    }
-  if(body == "pluto")
-    {
-      alf = 132.99 * M_PI / 180.0;
-      bet = M_PI * 0.5 + 6.16 * M_PI / 180.0;
-      Rh = 1188.0;
-      Rh2 = Rh;
-      Rv = 1188.0;
-    }
-  if(body == "сeres")
-    {
-      Rh = 965.0 * 0.5;
-      Rh2 = 961.0 * 0.5;
-      Rv = 891.0 * 0.5;
-    }
-  if(body == "pallas")
-    {
-      Rh = 582.0 * 0.5;
-      Rh2 = 556.0 * 0.5;
-      Rv = 500.0 * 0.5;
-    }
-  if(body == "vesta")
-    {
-      Rh = 569.0 * 0.5;
-      Rh2 = 555.0 * 0.5;
-      Rv = 453.0 * 0.5;
-    }
-  if(body == "erida")
-    {
-      Rh = 1163.0;
-      Rh2 = 1163.0;
-      Rv = 1163.0;
-    }
-  if(body == "haumea")
-    {
-      Rh = 2322.0;
-      Rh2 = 1704.0;
-      Rv = 1138.0;
-    }
-  if(body == "makemake")
-    {
-      Rh = 751.0;
-      Rh2 = 751.0;
-      Rv = 715.0;
-    }
-  if(body == "sedna")
-    {
-      Rh = 995.0;
-      Rh2 = 995.0;
-      Rv = 995.0;
-    }
-  if(body == "bamberga")
-    {
-      Rh = 114.72;
-      Rh2 = 114.72;
-      Rv = 114.72;
-    }
-  if(body == "iris")
-    {
-      Rh = 99.915;
-      Rh2 = 99.915;
-      Rv = 99.915;
-    }
+
   for(double phi = -M_PI / 2.0; phi <= M_PI / 2.0; phi = phi + M_PI / 180.0)
     {
       for(double tet = 0.0; tet <= 2.0 * M_PI; tet = tet + M_PI / 180.0)
@@ -733,387 +844,438 @@ OrbitsDiagram::bodyBuilding(std::string body, mglGraph *graph)
   mglPoint p(X[0], Y[0], Z[0]);
   mglData lX(X), lY(Y), lZ(Z);
   double fontsize = plot_factor * 5 * 1000000;
-  if(body == "sun" && (x != 0.0 || y != 0.0 || z != 0.0))
+  if(x != 0.0 || y != 0.0 || z != 0.0)
     {
-      graph->Surf(Xb, Yb, Zb, "{xF27825}");
-    }
-  if(body == "mercury" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{x999C99}");
-      graph->Puts(p, af.utf8to(gettext("Mercury")).c_str(), "{x999C99}",
-		  fontsize);
-      graph->Plot(lX, lY, lZ, "{x999C99}");
-    }
-  if(body == "venus" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xD49B3A}");
-      graph->Puts(p, af.utf8to(gettext("Venus")).c_str(), "{xD49B3A}",
-		  fontsize);
-      graph->Plot(lX, lY, lZ, "{xD49B3A}");
-    }
-  if(body == "earth" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{x5C98C0}");
-      graph->Puts(p, af.utf8to(gettext("Earth")).c_str(), "{x5C98C0}",
-		  fontsize);
-      graph->Plot(lX, lY, lZ, "{x5C98C0}");
-    }
-  if(body == "moon" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{x838383}");
-    }
-  if(body == "mars" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xA07C65}");
-      graph->Puts(p, af.utf8to(gettext("Mars")).c_str(), "{xA07C65}", fontsize);
-      graph->Plot(lX, lY, lZ, "{xA07C65}");
-    }
-  if(body == "jupiter" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xDAD3C3}");
-      graph->Puts(p, af.utf8to(gettext("Jupiter")).c_str(), "{xDAD3C3}",
-		  fontsize * 3);
-      graph->Plot(lX, lY, lZ, "{xDAD3C3}");
-    }
-  if(body == "saturn" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xE0B978}");
-      graph->Puts(p, af.utf8to(gettext("Saturn")).c_str(), "{xE0B978}",
-		  fontsize * 3);
-      graph->Plot(lX, lY, lZ, "{xE0B978}");
-
-      std::vector<double> Xrb1;
-      std::vector<double> Yrb1;
-      std::vector<double> Zrb1;
-
-      std::vector<double> Xre1;
-      std::vector<double> Yre1;
-      std::vector<double> Zre1;
-
-      std::vector<double> Xre2;
-      std::vector<double> Yre2;
-      std::vector<double> Zre2;
-
-      std::vector<double> Xre3;
-      std::vector<double> Yre3;
-      std::vector<double> Zre3;
-
-      std::vector<double> Xrb4;
-      std::vector<double> Yrb4;
-      std::vector<double> Zrb4;
-
-      std::vector<double> Xre4;
-      std::vector<double> Yre4;
-      std::vector<double> Zre4;
-
-      for(double fi = 0.0; fi < 2.0 * M_PI; fi = fi + M_PI / 180.0)
+      switch (body)
 	{
-	  mpf_class xyz[3];
-	  xyz[0] = 67000.0 * af.Cos(fi) / 149597870.7;
-	  xyz[1] = 67000.0 * af.Sin(fi) / 149597870.7;
-	  xyz[2] = 0.0;
-	  mpf_class result[3];
-	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
-	  mpf_class Oldx(result[0]);
-	  mpf_class Oldy(result[1]);
-	  mpf_class Oldz(result[2]);
-	  mpf_class Newx, Newy, Newz;
-	  if(coordtype == 0)
-	    {
-	      if(theory == 0)
-		{
-		  Newx = Oldx;
-		  Newy = Oldy;
-		  Newz = Oldz;
-		}
-	      if(theory == 1)
-		{
-		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-		}
-	      if(theory == 2)
-		{
-		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-				    JD);
-		}
-	    }
-	  if(coordtype == 1)
-	    {
-	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-			    theory);
-	    }
-	  Xrb1.push_back(x + Newx.get_d());
-	  Yrb1.push_back(y + Newy.get_d());
-	  Zrb1.push_back(z + Newz.get_d());
-	  xyz[0] = 74500.0 * af.Cos(fi) / 149597870.7;
-	  xyz[1] = 74500.0 * af.Sin(fi) / 149597870.7;
-	  xyz[2] = 0.0;
-	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
-	  Oldx = result[0];
-	  Oldy = result[1];
-	  Oldz = result[2];
-	  if(coordtype == 0)
-	    {
-	      if(theory == 0)
-		{
-		  Newx = Oldx;
-		  Newy = Oldy;
-		  Newz = Oldz;
-		}
-	      if(theory == 1)
-		{
-		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-		}
-	      if(theory == 2)
-		{
-		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-				    JD);
-		}
-	    }
-	  if(coordtype == 1)
-	    {
-	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-			    theory);
-	    }
-	  Xre1.push_back(x + Newx.get_d());
-	  Yre1.push_back(y + Newy.get_d());
-	  Zre1.push_back(z + Newz.get_d());
+	case 10:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xF27825}");
+	    break;
+	  }
+	case 1:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{x999C99}");
+	    graph->Puts(p, af.utf8to(gettext("Mercury")).c_str(), "{x999C99}",
+			fontsize);
+	    graph->Plot(lX, lY, lZ, "{x999C99}");
+	    break;
+	  }
+	case 2:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xD49B3A}");
+	    graph->Puts(p, af.utf8to(gettext("Venus")).c_str(), "{xD49B3A}",
+			fontsize);
+	    graph->Plot(lX, lY, lZ, "{xD49B3A}");
+	    break;
+	  }
+	case 3:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{x5C98C0}");
+	    graph->Puts(p, af.utf8to(gettext("Earth")).c_str(), "{x5C98C0}",
+			fontsize);
+	    graph->Plot(lX, lY, lZ, "{x5C98C0}");
+	    break;
+	  }
+	case -3:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{x838383}");
+	    break;
+	  }
+	case 4:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xA07C65}");
+	    graph->Puts(p, af.utf8to(gettext("Mars")).c_str(), "{xA07C65}",
+			fontsize);
+	    graph->Plot(lX, lY, lZ, "{xA07C65}");
+	    break;
+	  }
+	case 5:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xDAD3C3}");
+	    graph->Puts(p, af.utf8to(gettext("Jupiter")).c_str(), "{xDAD3C3}",
+			fontsize * 3);
+	    graph->Plot(lX, lY, lZ, "{xDAD3C3}");
+	    break;
+	  }
+	case 6:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xE0B978}");
+	    graph->Puts(p, af.utf8to(gettext("Saturn")).c_str(), "{xE0B978}",
+			fontsize * 3);
+	    graph->Plot(lX, lY, lZ, "{xE0B978}");
 
-	  xyz[0] = 92000.0 * af.Cos(fi) / 149597870.7;
-	  xyz[1] = 92000.0 * af.Sin(fi) / 149597870.7;
-	  xyz[2] = 0.0;
-	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
-	  Oldx = result[0];
-	  Oldy = result[1];
-	  Oldz = result[2];
-	  if(coordtype == 0)
-	    {
-	      if(theory == 0)
-		{
-		  Newx = Oldx;
-		  Newy = Oldy;
-		  Newz = Oldz;
-		}
-	      if(theory == 1)
-		{
-		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-		}
-	      if(theory == 2)
-		{
-		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-				    JD);
-		}
-	    }
-	  if(coordtype == 1)
-	    {
-	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-			    theory);
-	    }
-	  Xre2.push_back(x + Newx.get_d());
-	  Yre2.push_back(y + Newy.get_d());
-	  Zre2.push_back(z + Newz.get_d());
+	    std::vector<double> Xrb1;
+	    std::vector<double> Yrb1;
+	    std::vector<double> Zrb1;
 
-	  xyz[0] = 117580.0 * af.Cos(fi) / 149597870.7;
-	  xyz[1] = 117580.0 * af.Sin(fi) / 149597870.7;
-	  xyz[2] = 0.0;
-	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
-	  Oldx = result[0];
-	  Oldy = result[1];
-	  Oldz = result[2];
-	  if(coordtype == 0)
-	    {
-	      if(theory == 0)
-		{
-		  Newx = Oldx;
-		  Newy = Oldy;
-		  Newz = Oldz;
-		}
-	      if(theory == 1)
-		{
-		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-		}
-	      if(theory == 2)
-		{
-		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-				    JD);
-		}
-	    }
-	  if(coordtype == 1)
-	    {
-	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-			    theory);
-	    }
-	  Xre3.push_back(x + Newx.get_d());
-	  Yre3.push_back(y + Newy.get_d());
-	  Zre3.push_back(z + Newz.get_d());
+	    std::vector<double> Xre1;
+	    std::vector<double> Yre1;
+	    std::vector<double> Zre1;
 
-	  xyz[0] = 122170.0 * af.Cos(fi) / 149597870.7;
-	  xyz[1] = 122170.0 * af.Sin(fi) / 149597870.7;
-	  xyz[2] = 0.0;
-	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
-	  Oldx = result[0];
-	  Oldy = result[1];
-	  Oldz = result[2];
-	  if(coordtype == 0)
-	    {
-	      if(theory == 0)
-		{
-		  Newx = Oldx;
-		  Newy = Oldy;
-		  Newz = Oldz;
-		}
-	      if(theory == 1)
-		{
-		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-		}
-	      if(theory == 2)
-		{
-		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-				    JD);
-		}
-	    }
-	  if(coordtype == 1)
-	    {
-	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-			    theory);
-	    }
-	  Xrb4.push_back(x + Newx.get_d());
-	  Yrb4.push_back(y + Newy.get_d());
-	  Zrb4.push_back(z + Newz.get_d());
+	    std::vector<double> Xre2;
+	    std::vector<double> Yre2;
+	    std::vector<double> Zre2;
 
-	  xyz[0] = 136775.0 * af.Cos(fi) / 149597870.7;
-	  xyz[1] = 136775.0 * af.Sin(fi) / 149597870.7;
-	  xyz[2] = 0.0;
-	  af.rotateXYZ(xyz, 0.0, bet, alf, result);
-	  Oldx = result[0];
-	  Oldy = result[1];
-	  Oldz = result[2];
-	  if(coordtype == 0)
-	    {
-	      if(theory == 0)
-		{
-		  Newx = Oldx;
-		  Newy = Oldy;
-		  Newz = Oldz;
-		}
-	      if(theory == 1)
-		{
-		  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-		}
-	      if(theory == 2)
-		{
-		  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-				    JD);
-		}
-	    }
-	  if(coordtype == 1)
-	    {
-	      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-			    theory);
-	    }
-	  Xre4.push_back(x + Newx.get_d());
-	  Yre4.push_back(y + Newy.get_d());
-	  Zre4.push_back(z + Newz.get_d());
+	    std::vector<double> Xre3;
+	    std::vector<double> Yre3;
+	    std::vector<double> Zre3;
+
+	    std::vector<double> Xrb4;
+	    std::vector<double> Yrb4;
+	    std::vector<double> Zrb4;
+
+	    std::vector<double> Xre4;
+	    std::vector<double> Yre4;
+	    std::vector<double> Zre4;
+
+	    for(double fi = 0.0; fi < 2.0 * M_PI; fi = fi + M_PI / 180.0)
+	      {
+		mpf_class xyz[3];
+		xyz[0] = 67000.0 * af.Cos(fi) / 149597870.7;
+		xyz[1] = 67000.0 * af.Sin(fi) / 149597870.7;
+		xyz[2] = 0.0;
+		mpf_class result[3];
+		af.rotateXYZ(xyz, 0.0, bet, alf, result);
+		mpf_class Oldx(result[0]);
+		mpf_class Oldy(result[1]);
+		mpf_class Oldz(result[2]);
+		mpf_class Newx, Newy, Newz;
+		if(coordtype == 0)
+		  {
+		    if(theory == 0)
+		      {
+			Newx = Oldx;
+			Newy = Oldy;
+			Newz = Oldz;
+		      }
+		    if(theory == 1)
+		      {
+			af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				      JD);
+		      }
+		    if(theory == 2)
+		      {
+			af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+					  &Newz, JD);
+		      }
+		  }
+		if(coordtype == 1)
+		  {
+		    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+				  theory);
+		  }
+		Xrb1.push_back(x + Newx.get_d());
+		Yrb1.push_back(y + Newy.get_d());
+		Zrb1.push_back(z + Newz.get_d());
+		xyz[0] = 74500.0 * af.Cos(fi) / 149597870.7;
+		xyz[1] = 74500.0 * af.Sin(fi) / 149597870.7;
+		xyz[2] = 0.0;
+		af.rotateXYZ(xyz, 0.0, bet, alf, result);
+		Oldx = result[0];
+		Oldy = result[1];
+		Oldz = result[2];
+		if(coordtype == 0)
+		  {
+		    if(theory == 0)
+		      {
+			Newx = Oldx;
+			Newy = Oldy;
+			Newz = Oldz;
+		      }
+		    if(theory == 1)
+		      {
+			af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				      JD);
+		      }
+		    if(theory == 2)
+		      {
+			af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+					  &Newz, JD);
+		      }
+		  }
+		if(coordtype == 1)
+		  {
+		    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+				  theory);
+		  }
+		Xre1.push_back(x + Newx.get_d());
+		Yre1.push_back(y + Newy.get_d());
+		Zre1.push_back(z + Newz.get_d());
+
+		xyz[0] = 92000.0 * af.Cos(fi) / 149597870.7;
+		xyz[1] = 92000.0 * af.Sin(fi) / 149597870.7;
+		xyz[2] = 0.0;
+		af.rotateXYZ(xyz, 0.0, bet, alf, result);
+		Oldx = result[0];
+		Oldy = result[1];
+		Oldz = result[2];
+		if(coordtype == 0)
+		  {
+		    if(theory == 0)
+		      {
+			Newx = Oldx;
+			Newy = Oldy;
+			Newz = Oldz;
+		      }
+		    if(theory == 1)
+		      {
+			af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				      JD);
+		      }
+		    if(theory == 2)
+		      {
+			af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+					  &Newz, JD);
+		      }
+		  }
+		if(coordtype == 1)
+		  {
+		    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+				  theory);
+		  }
+		Xre2.push_back(x + Newx.get_d());
+		Yre2.push_back(y + Newy.get_d());
+		Zre2.push_back(z + Newz.get_d());
+
+		xyz[0] = 117580.0 * af.Cos(fi) / 149597870.7;
+		xyz[1] = 117580.0 * af.Sin(fi) / 149597870.7;
+		xyz[2] = 0.0;
+		af.rotateXYZ(xyz, 0.0, bet, alf, result);
+		Oldx = result[0];
+		Oldy = result[1];
+		Oldz = result[2];
+		if(coordtype == 0)
+		  {
+		    if(theory == 0)
+		      {
+			Newx = Oldx;
+			Newy = Oldy;
+			Newz = Oldz;
+		      }
+		    if(theory == 1)
+		      {
+			af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				      JD);
+		      }
+		    if(theory == 2)
+		      {
+			af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+					  &Newz, JD);
+		      }
+		  }
+		if(coordtype == 1)
+		  {
+		    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+				  theory);
+		  }
+		Xre3.push_back(x + Newx.get_d());
+		Yre3.push_back(y + Newy.get_d());
+		Zre3.push_back(z + Newz.get_d());
+
+		xyz[0] = 122170.0 * af.Cos(fi) / 149597870.7;
+		xyz[1] = 122170.0 * af.Sin(fi) / 149597870.7;
+		xyz[2] = 0.0;
+		af.rotateXYZ(xyz, 0.0, bet, alf, result);
+		Oldx = result[0];
+		Oldy = result[1];
+		Oldz = result[2];
+		if(coordtype == 0)
+		  {
+		    if(theory == 0)
+		      {
+			Newx = Oldx;
+			Newy = Oldy;
+			Newz = Oldz;
+		      }
+		    if(theory == 1)
+		      {
+			af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				      JD);
+		      }
+		    if(theory == 2)
+		      {
+			af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+					  &Newz, JD);
+		      }
+		  }
+		if(coordtype == 1)
+		  {
+		    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+				  theory);
+		  }
+		Xrb4.push_back(x + Newx.get_d());
+		Yrb4.push_back(y + Newy.get_d());
+		Zrb4.push_back(z + Newz.get_d());
+
+		xyz[0] = 136775.0 * af.Cos(fi) / 149597870.7;
+		xyz[1] = 136775.0 * af.Sin(fi) / 149597870.7;
+		xyz[2] = 0.0;
+		af.rotateXYZ(xyz, 0.0, bet, alf, result);
+		Oldx = result[0];
+		Oldy = result[1];
+		Oldz = result[2];
+		if(coordtype == 0)
+		  {
+		    if(theory == 0)
+		      {
+			Newx = Oldx;
+			Newy = Oldy;
+			Newz = Oldz;
+		      }
+		    if(theory == 1)
+		      {
+			af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+				      JD);
+		      }
+		    if(theory == 2)
+		      {
+			af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+					  &Newz, JD);
+		      }
+		  }
+		if(coordtype == 1)
+		  {
+		    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+				  theory);
+		  }
+		Xre4.push_back(x + Newx.get_d());
+		Yre4.push_back(y + Newy.get_d());
+		Zre4.push_back(z + Newz.get_d());
+	      }
+	    mglData xrb1(Xrb1), yrb1(Yrb1), zrb1(Zrb1);
+	    mglData xre1(Xre1), yre1(Yre1), zre1(Zre1);
+	    mglData xre2(Xre2), yre2(Yre2), zre2(Zre2);
+	    mglData xre3(Xre3), yre3(Yre3), zre3(Zre3);
+	    mglData xrb4(Xrb4), yrb4(Yrb4), zrb4(Zrb4);
+	    mglData xre4(Xre4), yre4(Yre4), zre4(Zre4);
+	    graph->Plot(xrb1, yrb1, zrb1, "{x564D48}");
+	    graph->Plot(xre1, yre1, zre1, "{x564D48}");
+	    graph->Region(xrb1, yrb1, zrb1, xre1, yre1, zre1, "{x564D48}");
+	    graph->Plot(xre2, yre2, zre2, "{xAC977E}");
+	    graph->Region(xre1, yre1, zre1, xre2, yre2, zre2, "{xAC977E}");
+	    graph->Plot(xre3, yre3, zre3, "{xC6AC8E}");
+	    graph->Region(xre2, yre2, zre2, xre3, yre3, zre3, "{xC6AC8E}");
+	    graph->Plot(xrb4, yrb4, zrb4, "{xE3C8AA}");
+	    graph->Plot(xre4, yre4, zre4, "{xE3C8AA}");
+	    graph->Region(xrb4, yrb4, zrb4, xre4, yre4, zre4, "{xE3C8AA}");
+	    break;
+	  }
+	case 7:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xC9EFF1}");
+	    graph->Puts(p, af.utf8to(gettext("Uranus")).c_str(), "{xC9EFF1}",
+			fontsize * 25);
+	    graph->Plot(lX, lY, lZ, "{xC9EFF1}");
+	    break;
+	  }
+	case 8:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{x5389FD}");
+	    graph->Puts(p, af.utf8to(gettext("Neptune")).c_str(), "{x5389FD}",
+			fontsize * 25);
+	    graph->Plot(lX, lY, lZ, "{x5389FD}");
+	    break;
+	  }
+	case 9:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xD7B699}");
+	    graph->Puts(p, af.utf8to(gettext("Pluto")).c_str(), "{xD7B699}",
+			fontsize * 25);
+	    graph->Plot(lX, lY, lZ, "{xD7B699}");
+	    break;
+	  }
+	case 2000001:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xABABAB}");
+	    graph->Puts(p, af.utf8to(gettext("Ceres")).c_str(), "{xABABAB}",
+			fontsize * 3);
+	    graph->Plot(lX, lY, lZ, "{xABABAB}");
+	    break;
+	  }
+	case 2000002:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xD7D7D7}");
+	    graph->Puts(p, af.utf8to(gettext("Pallas")).c_str(), "{xD7D7D7}",
+			fontsize * 3);
+	    graph->Plot(lX, lY, lZ, "{xD7D7D7}");
+	    break;
+	  }
+	case 2000004:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{x9C9686}");
+	    graph->Puts(p, af.utf8to(gettext("Vesta")).c_str(), "{x9C9686}",
+			fontsize * 3);
+	    graph->Plot(lX, lY, lZ, "{x9C9686}");
+	    break;
+	  }
+	case 2136199:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xD1C1A9}");
+	    graph->Puts(p, af.utf8to(gettext("Erida")).c_str(), "{xD1C1A9}",
+			fontsize * 50);
+	    graph->Plot(lX, lY, lZ, "{xD1C1A9}");
+	    break;
+	  }
+	case 2136108:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{x7D675D}");
+	    graph->Puts(p, af.utf8to(gettext("Haumea")).c_str(), "{x7D675D}",
+			fontsize * 100);
+	    graph->Plot(lX, lY, lZ, "{x7D675D}");
+	    break;
+	  }
+	case 2136472:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xB97B5A}");
+	    graph->Puts(p, af.utf8to(gettext("Makemake")).c_str(), "{xB97B5A}",
+			fontsize * 50);
+	    graph->Plot(lX, lY, lZ, "{xB97B5A}");
+	    break;
+	  }
+	case 2090377:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xE89579}");
+	    graph->Puts(p, af.utf8to(gettext("Sedna")).c_str(), "{xE89579}",
+			fontsize * 50);
+	    graph->Plot(lX, lY, lZ, "{xE89579}");
+	    break;
+	  }
+	case 2000324:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xC8C8C8}");
+	    graph->Puts(p, af.utf8to(gettext("Bamberga")).c_str(), "{xC8C8C8}",
+			fontsize * 3);
+	    graph->Plot(lX, lY, lZ, "{xC8C8C8}");
+	    break;
+	  }
+	case 2000007:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xC6C6C6}");
+	    graph->Puts(p, af.utf8to(gettext("Iris")).c_str(), "{xC6C6C6}",
+			fontsize * 3);
+	    graph->Plot(lX, lY, lZ, "{xC6C6C6}");
+	    break;
+	  }
+	case 2225088:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{xF21515}");
+	    graph->Puts(p, af.utf8to(gettext("Gonggong")).c_str(), "{xF21515}",
+			fontsize * 50);
+	    graph->Plot(lX, lY, lZ, "{xF21515}");
+	    break;
+	  }
+	case 2050000:
+	  {
+	    graph->Surf(Xb, Yb, Zb, "{x41C95A}");
+	    graph->Puts(p, af.utf8to(gettext("Quaoar")).c_str(), "{x41C95A}",
+			fontsize * 50);
+	    graph->Plot(lX, lY, lZ, "{x41C95A}");
+	    break;
+	  }
+	default:
+	  break;
 	}
-      mglData xrb1(Xrb1), yrb1(Yrb1), zrb1(Zrb1);
-      mglData xre1(Xre1), yre1(Yre1), zre1(Zre1);
-      mglData xre2(Xre2), yre2(Yre2), zre2(Zre2);
-      mglData xre3(Xre3), yre3(Yre3), zre3(Zre3);
-      mglData xrb4(Xrb4), yrb4(Yrb4), zrb4(Zrb4);
-      mglData xre4(Xre4), yre4(Yre4), zre4(Zre4);
-      graph->Plot(xrb1, yrb1, zrb1, "{x564D48}");
-      graph->Plot(xre1, yre1, zre1, "{x564D48}");
-      graph->Region(xrb1, yrb1, zrb1, xre1, yre1, zre1, "{x564D48}");
-      graph->Plot(xre2, yre2, zre2, "{xAC977E}");
-      graph->Region(xre1, yre1, zre1, xre2, yre2, zre2, "{xAC977E}");
-      graph->Plot(xre3, yre3, zre3, "{xC6AC8E}");
-      graph->Region(xre2, yre2, zre2, xre3, yre3, zre3, "{xC6AC8E}");
-      graph->Plot(xrb4, yrb4, zrb4, "{xE3C8AA}");
-      graph->Plot(xre4, yre4, zre4, "{xE3C8AA}");
-      graph->Region(xrb4, yrb4, zrb4, xre4, yre4, zre4, "{xE3C8AA}");
-    }
-  if(body == "uranus" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xC9EFF1}");
-      graph->Puts(p, af.utf8to(gettext("Uranus")).c_str(), "{xC9EFF1}",
-		  fontsize * 25);
-      graph->Plot(lX, lY, lZ, "{xC9EFF1}");
-    }
-  if(body == "neptune" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{x5389FD}");
-      graph->Puts(p, af.utf8to(gettext("Neptune")).c_str(), "{x5389FD}",
-		  fontsize * 25);
-      graph->Plot(lX, lY, lZ, "{x5389FD}");
-    }
-  if(body == "pluto" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xD7B699}");
-      graph->Puts(p, af.utf8to(gettext("Pluto")).c_str(), "{xD7B699}",
-		  fontsize * 25);
-      graph->Plot(lX, lY, lZ, "{xD7B699}");
-    }
-  if(body == "ceres" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xABABAB}");
-      graph->Puts(p, af.utf8to(gettext("Ceres")).c_str(), "{xABABAB}",
-		  fontsize * 3);
-      graph->Plot(lX, lY, lZ, "{xABABAB}");
-    }
-  if(body == "pallas" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xD7D7D7}");
-      graph->Puts(p, af.utf8to(gettext("Pallas")).c_str(), "{xD7D7D7}",
-		  fontsize * 3);
-      graph->Plot(lX, lY, lZ, "{xD7D7D7}");
-    }
-  if(body == "vesta" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{x9C9686}");
-      graph->Puts(p, af.utf8to(gettext("Vesta")).c_str(), "{x9C9686}",
-		  fontsize * 3);
-      graph->Plot(lX, lY, lZ, "{x9C9686}");
-    }
-  if(body == "erida" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xD1C1A9}");
-      graph->Puts(p, af.utf8to(gettext("Erida")).c_str(), "{xD1C1A9}",
-		  fontsize * 50);
-      graph->Plot(lX, lY, lZ, "{xD1C1A9}");
-    }
-  if(body == "haumea" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{x7D675D}");
-      graph->Puts(p, af.utf8to(gettext("Haumea")).c_str(), "{x7D675D}",
-		  fontsize * 100);
-      graph->Plot(lX, lY, lZ, "{x7D675D}");
-    }
-  if(body == "makemake" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xB97B5A}");
-      graph->Puts(p, af.utf8to(gettext("Makemake")).c_str(), "{xB97B5A}",
-		  fontsize * 50);
-      graph->Plot(lX, lY, lZ, "{xB97B5A}");
-    }
-  if(body == "sedna" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xE89579}");
-      graph->Puts(p, af.utf8to(gettext("Sedna")).c_str(), "{xE89579}",
-		  fontsize * 50);
-      graph->Plot(lX, lY, lZ, "{xE89579}");
-    }
-  if(body == "bamberga" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xC8C8C8}");
-      graph->Puts(p, af.utf8to(gettext("Bamberga")).c_str(), "{xC8C8C8}",
-		  fontsize * 3);
-      graph->Plot(lX, lY, lZ, "{xC8C8C8}");
-    }
-  if(body == "iris" && (x != 0.0 || y != 0.0 || z != 0.0))
-    {
-      graph->Surf(Xb, Yb, Zb, "{xC6C6C6}");
-      graph->Puts(p, af.utf8to(gettext("Iris")).c_str(), "{xC6C6C6}",
-		  fontsize * 3);
-      graph->Plot(lX, lY, lZ, "{xC6C6C6}");
     }
 }
 

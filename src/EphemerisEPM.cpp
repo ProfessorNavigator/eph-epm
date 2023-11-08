@@ -17,6 +17,7 @@
 
 #include <gtkmm.h>
 #include <libintl.h>
+#include <iostream>
 #include "EPMApplication.h"
 
 int
@@ -31,6 +32,12 @@ main(int argc, char *argv[])
   textdomain("ephepm");
   std::string id = "ru.mail.bobilev_yury.EphEPM";
   auto app = EPMApplication::create(id);
-  return app->run(argc, argv);
+  int exitstat = 0;
+  exitstat = app->run(argc, argv);
+  if(exitstat != 0)
+    {
+      std::cerr << "EphEPM exit status is not 0: " << exitstat << std::endl;
+    }
+  return exitstat;
 }
 

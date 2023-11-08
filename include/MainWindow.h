@@ -18,25 +18,26 @@
 #ifndef INCLUDE_MAINWINDOW_H_
 #define INCLUDE_MAINWINDOW_H_
 
-#include <gtkmm.h>
-#include <vector>
-#include <string>
-#include <sstream>
 #include <fstream>
+#include <functional>
+#include <gmpxx.h>
+#include <gtkmm.h>
 #include <iostream>
 #include <libintl.h>
-#include <gmpxx.h>
+#include <mutex>
+#include <sstream>
+#include <string>
 #include <thread>
 #include <tuple>
-#include <functional>
-#include <mutex>
+#include <vector>
 
 #include "AuxFunc.h"
-#include "EPMCalculations.h"
 #include "Coordinates.h"
 #include "DAFOperations.h"
-#include "OrbitsDiagram.h"
+#include "EPMCalculations.h"
 #include "ModelColumns.h"
+#include "OrbitsDiagram.h"
+#include "BodyListItem.h"
 
 class MainWindow : public Gtk::ApplicationWindow
 {
@@ -44,9 +45,14 @@ public:
   MainWindow();
   virtual
   ~MainWindow();
+
 private:
   void
   createWindow();
+
+  Glib::RefPtr<Gio::ListStore<BodyListItem>>
+  createBodyList();
+
   void
   calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
 	    Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
@@ -55,42 +61,53 @@ private:
 	    Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
 	    Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
 	    Gtk::Entry *stepnument, Gtk::Entry *pathent, Gtk::Entry *tttdbent,
-	    Gtk::Entry *mlbent);
+	    Gtk::Entry *mlbent, Gtk::Entry *smlent);
+
   void
   aboutProg();
+
   void
   errDialog(int variant);
+
   void
-  resultPresenting(std::vector<std::array<mpf_class, 3>> *result,
+  resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
 		   Gtk::DropDown *belt, Gtk::DropDown *objcomb,
 		   Gtk::DropDown *coordcomb, Gtk::DropDown *xyzcomb,
 		   Gtk::DropDown *equincomb, Gtk::DropDown *unitcomb,
 		   Glib::Dispatcher *result_win_disp);
+
   Gtk::Window*
   resultPulseWin(int variant, Gtk::ProgressBar *bar);
+
   void
   openDialog(Gtk::Entry *pathent);
+
   void
   saveDialog(Gtk::Window *win, Gtk::Label *objlab, Gtk::Label *coordlab,
 	     Gtk::Label *equinlab, Gtk::Label *unitlab, Gtk::Label *beltlab,
 	     Gtk::ColumnView *view, Gtk::DropDown *objcomb,
 	     std::string header_line);
+
   void
   saveDialogFunc(Glib::RefPtr<Gio::File> fl, Gtk::Label *objlab,
 		 Gtk::Label *coordlab, Gtk::Label *equinlab,
 		 Gtk::Label *unitlab, Gtk::Label *beltlab,
 		 Gtk::ColumnView *view, Gtk::DropDown *objcomb,
 		 std::string header_line);
+
   void
   orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
 	      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
 	      Gtk::DropDown *timecomb, Gtk::DropDown *belt,
 	      Gtk::DropDown *coordcomb, Gtk::DropDown *equincomb,
-	      Gtk::Entry *pathent, Gtk::Entry *tttdbent);
-  bool
-  closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *mlbent);
+	      Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *smlent,
+	      Gtk::Entry *scale_ent);
 
-  std::string Sharepath = "";
+  bool
+  closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *mlbent,
+	    Gtk::Entry *smlent, Gtk::Entry *scale_ent);
+
+  std::string Sharepath;
 
   int orbits_cancel = 0;
   double JDshow = 0.0;
@@ -98,4 +115,3 @@ private:
 };
 
 #endif /* INCLUDE_MAINWINDOW_H_ */
-

@@ -25,12 +25,15 @@ class ModelColumns : public Glib::Object
 public:
   virtual
   ~ModelColumns();
+
+  static Glib::RefPtr<ModelColumns>
+  create(std::string &date, std::string &x, std::string &y, std::string &z);
+
   Glib::ustring date;
   Glib::ustring x;
   Glib::ustring y;
   Glib::ustring z;
-  static Glib::RefPtr<ModelColumns>
-  create(std::string &date, std::string &x, std::string &y, std::string &z);
+
 private:
   ModelColumns(std::string &date, std::string &x, std::string &y,
 	       std::string &z);

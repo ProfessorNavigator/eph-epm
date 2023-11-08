@@ -64,7 +64,7 @@ DiagramWidget::diagramPlot()
 
   Glib::RefPtr<Gtk::GestureDrag> drag = Gtk::GestureDrag::create();
   drag->signal_drag_end().connect([this]
-  (double x, double y)
+  (double x, double y) 
     {
       this->X = 0;
       this->Y = 0;
@@ -429,7 +429,7 @@ DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
     }
   Glib::RefPtr<Gio::Cancellable> cncl = Gio::Cancellable::create();
   fcd->save(*win, [graph, mode]
-  (const Glib::RefPtr<Gio::AsyncResult> &result)
+  (const Glib::RefPtr<Gio::AsyncResult> &result) 
     {
       Glib::RefPtr<Gio::File> fl;
       auto obj = result->get_source_object_base();

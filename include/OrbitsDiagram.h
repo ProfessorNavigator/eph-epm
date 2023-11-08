@@ -15,8 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_ORBITSDIAGRAM_H
-#define INCLUDE_ORBITSDIAGRAM_H
+#ifndef INCLUDE_ORBITSDIAGRAM_H_
+#define INCLUDE_ORBITSDIAGRAM_H_
 
 #include <gtkmm.h>
 #include <vector>
@@ -39,29 +39,40 @@ class OrbitsDiagram
 {
 public:
   OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
-		std::string tttdbpath, double JD, int timesc, int coordtype,
-		int theory, int *cancel);
+		std::string tttdbpath, std::string smlpath, double JD,
+		int timesc, int coordtype, int theory, double plot_factor,
+		int *cancel);
   virtual
   ~OrbitsDiagram();
+
   int
   calculateSize();
+
   std::function<void
   ()> pulse_signal;
+
   std::function<void
   ()> calc_completed;
+
   std::function<void
   ()> canceled_signal;
+
   std::function<void
   ()> diagram_close;
+
   void
   calculateOrbits();
+
   void
   diagramPlot();
+
 private:
   void
-  planetOrbCalc(std::tuple<std::string, double> planettup);
+  planetOrbCalc(std::tuple<int, double> planettup);
+
   void
-  bodyBuilding(std::string body, mglGraph *graph);
+  bodyBuilding(int body, mglGraph *graph);
+
   Gdk::Rectangle
   screenRes();
 
@@ -69,8 +80,9 @@ private:
   DiagramWidget *dw = nullptr;
   std::string ephpath;
   std::string tttdbpath;
-  std::string modbody;
-  std::vector<std::tuple<std::string, double>> bodyv;
+  std::string smlpath;
+  int modbody = -1;
+  std::vector<std::tuple<int, double>> bodyv;
   DAFOperations *daf = nullptr;
   double JD = 0.0;
   int timesc = 0;
@@ -78,7 +90,7 @@ private:
   double epe = 0.0;
   mglGraph *gr = nullptr;
   std::mutex *grmtx = nullptr;
-  std::vector<std::string> threadv;
+  std::vector<int> threadv;
   std::mutex *threadvmtx = nullptr;
   std::mutex cyclemtx;
   double scale_factor = 0.001;
@@ -89,7 +101,7 @@ private:
   int coordtype = 0;
   int theory = 0;
   std::vector<std::array<mpf_class, 3>> resultsed;
+  bool EPM = false;
 };
 
-#endif /* INCLUDE_ORBITSDIAGRAM_H */
-
+#endif /* INCLUDE_ORBITSDIAGRAM_H_ */

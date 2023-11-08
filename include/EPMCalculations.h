@@ -15,15 +15,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef INCLUDE_EPMCALCULATIONS_H_
+#define INCLUDE_EPMCALCULATIONS_H_
+
 #include <vector>
 #include <cmath>
 #include <math.h>
 #include <gmpxx.h>
 #include <fstream>
 #include "AuxFunc.h"
-
-#ifndef INCLUDE_EPMCALCULATIONS_H_
-#define INCLUDE_EPMCALCULATIONS_H_
 
 class EPMCalculations
 {
@@ -49,4 +49,3 @@ public:
 };
 
 #endif /* INCLUDE_EPMCALCULATIONS_H_ */
-

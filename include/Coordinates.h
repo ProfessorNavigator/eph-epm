@@ -40,17 +40,21 @@
 class Coordinates
 {
 public:
-  Coordinates(std::string body, double JD, int timesc, int coordtype, int xyz,
+  Coordinates(int body, double JD, int timesc, int coordtype, int xyz,
 	      int theory, int unit, double step, int stepnum,
-	      std::string epmpath, std::string tttdbpath, int *cancel);
+	      std::string epmpath, std::string tttdbpath, std::string smlbpath,
+	      int *cancel);
   virtual
   ~Coordinates();
+
   std::vector<std::array<mpf_class, 3>>
   calculationsXYZ();
+
   std::function<void
   ()> pulse_signal;
+
 private:
-  std::string body;
+  int body = -1;
   double JD = -1;
   int coordtype = -1;
   int xyz = -1;
@@ -60,9 +64,9 @@ private:
   int stepnum = -1;
   std::string epmpath;
   std::string tttdbpath;
+  std::string smlbpath;
   int *cancel = nullptr;
   int timesc = 0;
 };
 
 #endif /* INCLUDE_COORDINATES_H_ */
-

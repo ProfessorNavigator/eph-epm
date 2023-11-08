@@ -19,6 +19,8 @@
 #define INCLUDE_EPMAPPLICATION_H_
 
 #include <gtkmm.h>
+
+#include <gtkmm.h>
 #include "MainWindow.h"
 
 class EPMApplication : public Gtk::Application
@@ -26,10 +28,10 @@ class EPMApplication : public Gtk::Application
 protected:
   EPMApplication(const std::string &id);
 public:
-  static Glib::RefPtr<EPMApplication>
-  create(std::string &id);
   virtual
   ~EPMApplication();
+  static Glib::RefPtr<EPMApplication>
+  create(std::string &id);
 private:
   MainWindow*
   create_appwindow();
@@ -39,4 +41,3 @@ protected:
 };
 
 #endif /* INCLUDE_EPMAPPLICATION_H_ */
-
