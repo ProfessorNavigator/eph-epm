@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,72 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "MainWindow.h"
+#include <AuxFunc.h>
+#include <Coordinates.h>
+#include <DAFOperations.h>
+#include <gdkmm/display.h>
+#include <gdkmm/monitor.h>
+#include <gdkmm/rectangle.h>
+#include <gdkmm/surface.h>
+#include <gdkmm/texture.h>
+#include <glib/gtypes.h>
+#include <glibmm/miscutils.h>
+#include <glibmm/propertyproxy.h>
+#include <glibmm/propertyproxy_base.h>
+#include <glibmm/signalproxy.h>
+#include <glibmm/ustring.h>
+#include <gmp.h>
+#include <gtkmm/aboutdialog.h>
+#include <gtkmm/application.h>
+#include <gtkmm/button.h>
+#include <gtkmm/columnviewcolumn.h>
+#include <gtkmm/cssprovider.h>
+#include <gtkmm/enums.h>
+#include <gtkmm/expression.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/listitem.h>
+#include <gtkmm/noselection.h>
+#include <gtkmm/object.h>
+#include <gtkmm/requisition.h>
+#include <gtkmm/scrolledwindow.h>
+#include <gtkmm/signallistitemfactory.h>
+#include <gtkmm/stringlist.h>
+#include <gtkmm/stylecontext.h>
+#include <libintl.h>
+#include <MainWindow.h>
+#include <ModelColumns.h>
+#include <OrbitsDiagram.h>
+#include <sigc++/adaptors/bind.h>
+#include <sigc++/connection.h>
+#include <sigc++/functors/mem_fun.h>
+#include <stddef.h>
+#include <algorithm>
+#include <clocale>
+#include <cstdint>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <locale>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <thread>
+#include <tuple>
+
+#ifndef EPH_GTK_OLD
+#include <giomm/asyncresult.h>
+#include <giomm/cancellable.h>
+#include <gtkmm/error.h>
+#include <gtkmm/filedialog.h>
+#endif
+
+#ifdef EPH_GTK_OLD
+#include <gtkmm/filechooserdialog.h>
+#endif
 
 MainWindow::MainWindow()
 {
@@ -52,6 +117,7 @@ MainWindow::MainWindow()
   Glib::RefPtr<Gdk::Display> disp = this->get_display();
   Gtk::StyleContext::add_provider_for_display(disp, css_provider,
   GTK_STYLE_PROVIDER_PRIORITY_USER);
+  orbits_cancel.store(0);
   createWindow();
 }
 
@@ -493,7 +559,7 @@ MainWindow::createWindow()
 	  rs.resize(sizeof(entsz));
 	  if(rb + static_cast<uintmax_t>(rs.size()) > fsz)
 	    {
-	      std::cerr << "MainWindow::createWindow: wrong ephpath file size"
+	      std::cout << "MainWindow::createWindow: wrong ephpath file size"
 		  << std::endl;
 	      err = true;
 	      break;
@@ -510,7 +576,7 @@ MainWindow::createWindow()
 	      rs.clear();
 	      if(rb + static_cast<uintmax_t>(entsz) > fsz)
 		{
-		  std::cerr << "MainWindow::createWindow: wrong entry size"
+		  std::cout << "MainWindow::createWindow: wrong entry size"
 		      << std::endl;
 		  err = true;
 		  break;
@@ -797,7 +863,7 @@ MainWindow::createBodyList()
     }
   else
     {
-      std::cerr << "MainWindow::createBodyList: list not opened" << std::endl;
+      std::cout << "MainWindow::createBodyList: list not opened" << std::endl;
     }
 
   if(listv.size() > 0)
@@ -865,6 +931,7 @@ MainWindow::createBodyList()
 void
 MainWindow::openDialog(Gtk::Entry *pathent)
 {
+#ifndef EPH_GTK_OLD
   Glib::RefPtr<Gtk::FileDialog> fcd = Gtk::FileDialog::create();
   fcd->set_modal(true);
   fcd->set_title(gettext("Ephemeris file selection"));
@@ -900,6 +967,44 @@ MainWindow::openDialog(Gtk::Entry *pathent)
 	}
     },
 	    cncl);
+#endif
+#ifdef EPH_GTK_OLD
+  Gtk::FileChooserDialog *fcd = new Gtk::FileChooserDialog(
+      *this, gettext("Ephemeris file selection"),
+      Gtk::FileChooser::Action::OPEN, true);
+  fcd->set_application(this->get_application());
+  fcd->set_modal(true);
+
+  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  fcd->set_current_folder(fl);
+
+  fcd->add_button(gettext("Cancel"), Gtk::ResponseType::CANCEL);
+  fcd->add_button(gettext("Open"), Gtk::ResponseType::ACCEPT);
+
+  fcd->signal_response().connect([fcd, pathent]
+  (int resp_id)
+    {
+      if(resp_id == Gtk::ResponseType::ACCEPT)
+	{
+	  Glib::RefPtr<Gio::File> fl = fcd->get_file();
+	  if(fl)
+	    {
+	      pathent->set_text(fl->get_path());
+	    }
+	}
+      fcd->close();
+    });
+
+  fcd->signal_close_request().connect([fcd]
+  {
+    std::shared_ptr<Gtk::FileChooserDialog> fd(fcd);
+    fd->set_visible(false);
+    return true;
+  },
+				      false);
+
+  fcd->present();
+#endif
 }
 
 void
@@ -1266,15 +1371,45 @@ MainWindow::errDialog(int variant)
       msgtxt = gettext("Incorrect ephemeris file!");
     }
 
-  Glib::RefPtr<Gtk::AlertDialog> msg = Gtk::AlertDialog::create(msgtxt);
-  msg->set_modal(true);
-  msg->show(*this);
+  Gtk::Window *window = new Gtk::Window;
+  window->set_application(this->get_application());
+  window->set_title(gettext("Error!"));
+  window->set_transient_for(*this);
+  window->set_modal(true);
+
+  Gtk::Grid *grid = Gtk::make_managed<Gtk::Grid>();
+  grid->set_halign(Gtk::Align::FILL);
+  grid->set_valign(Gtk::Align::FILL);
+  window->set_child(*grid);
+
+  Gtk::Label *lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_margin(5);
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_text(msgtxt);
+  grid->attach(*lab, 0, 0, 1, 1);
+
+  Gtk::Button *close = Gtk::make_managed<Gtk::Button>();
+  close->set_margin(5);
+  close->set_halign(Gtk::Align::CENTER);
+  close->set_label(gettext("Close"));
+  close->signal_clicked().connect(std::bind(&Gtk::Window::close, window));
+  grid->attach(*close, 0, 1, 1, 1);
+
+  window->signal_close_request().connect([window]
+  {
+    std::shared_ptr<Gtk::Window> win(window);
+    win->set_visible(false);
+    return true;
+  },
+					 false);
+
+  window->present();
 }
 
 Gtk::Window*
 MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
 {
-  orbits_cancel = 0;
+  orbits_cancel.store(0);
   Gtk::Window *window = new Gtk::Window;
   window->set_application(this->get_application());
   window->set_name("mainWindow");
@@ -1315,17 +1450,20 @@ MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
       cancel->set_halign(Gtk::Align::CENTER);
       cancel->set_margin(5);
       cancel->set_label(gettext("Cancel"));
-      cancel->signal_clicked().connect([this]
+      cancel->signal_clicked().connect([this, cancel, calclab, bar]
       {
-	this->orbits_cancel = 1;
+	this->orbits_cancel.store(1);
+	cancel->set_visible(false);
+	bar->set_visible(false);
+	calclab->set_text(gettext("Canceling..."));
       });
       grid->attach(*cancel, 0, 2, 1, 1);
     }
 
   window->signal_close_request().connect([window]
   {
-    window->set_visible(false);
-    delete window;
+    std::shared_ptr<Gtk::Window> win(window);
+    win->set_visible(false);
     return true;
   },
 					 false);
@@ -1749,6 +1887,7 @@ MainWindow::saveDialog(Gtk::Window *win, Gtk::Label *objlab,
 		       Gtk::ColumnView *view, Gtk::DropDown *objcomb,
 		       std::string header_line)
 {
+#ifndef EPH_GTK_OLD
   Glib::RefPtr<Gtk::FileDialog> fcd = Gtk::FileDialog::create();
   fcd->set_title(gettext("Save result"));
   fcd->set_modal(true);
@@ -1788,6 +1927,47 @@ MainWindow::saveDialog(Gtk::Window *win, Gtk::Label *objlab,
 	    }
 	},
       cancel);
+#endif
+#ifdef EPH_GTK_OLD
+  Gtk::FileChooserDialog *fcd = new Gtk::FileChooserDialog(
+      *win, gettext("Save result"), Gtk::FileChooser::Action::SAVE, true);
+  fcd->set_application(win->get_application());
+  fcd->set_modal(true);
+
+  fcd->add_button(gettext("Cancel"), Gtk::ResponseType::CANCEL);
+  fcd->add_button(gettext("Save"), Gtk::ResponseType::ACCEPT);
+
+  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  fcd->set_current_folder(fl);
+  fcd->set_current_name("result.csv");
+
+  fcd->signal_response().connect(
+      [fcd, this, objlab, coordlab, equinlab, unitlab, beltlab, view, objcomb,
+       header_line]
+      (int resp_id)
+	{
+	  if(resp_id == Gtk::ResponseType::ACCEPT)
+	    {
+	      Glib::RefPtr<Gio::File> fl = fcd->get_file();
+	      if(fl)
+		{
+		  this->saveDialogFunc(fl, objlab, coordlab, equinlab, unitlab,
+		      beltlab, view, objcomb, header_line);
+		}
+	    }
+	  fcd->close();
+	});
+
+  fcd->signal_close_request().connect([fcd]
+  {
+    std::shared_ptr<Gtk::FileChooserDialog> fd(fcd);
+    fd->set_visible(false);
+    return true;
+  },
+				      false);
+
+  fcd->present();
+#endif
 }
 
 void
@@ -1805,7 +1985,7 @@ MainWindow::saveDialogFunc(Glib::RefPtr<Gio::File> fl, Gtk::Label *objlab,
   f.open(filepath, std::ios_base::out | std::ios_base::binary);
   if(!f.is_open())
     {
-      std::cerr << "Cannot open file for saving" << std::endl;
+      std::cout << "Cannot open file for saving" << std::endl;
     }
   else
     {
@@ -2106,11 +2286,11 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
 	  static_cast<int>(coordcomb->get_selected()),
 	  static_cast<int>(equincomb->get_selected()), plot_fact,
 	  &orbits_cancel);
-      if(orbits_cancel != 0)
+      if(orbits_cancel.load() != 0)
 	{
 	  delete od;
 	  errDialog(11);
-	  orbits_cancel = 0;
+	  orbits_cancel.store(0);
 	  return void();
 	}
 
@@ -2188,9 +2368,9 @@ MainWindow::aboutProg()
   aboutd->set_application(this->get_application());
   aboutd->set_name("mainWindow");
   aboutd->set_program_name("EphEPM");
-  aboutd->set_version("2.0");
+  aboutd->set_version("2.1");
   aboutd->set_copyright(
-      "Copyright 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>");
+      "Copyright 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>");
   AuxFunc af;
   std::filesystem::path p = std::filesystem::u8path(af.get_selfpath());
   std::string filename = Sharepath + "/COPYING";
@@ -2209,7 +2389,7 @@ MainWindow::aboutProg()
     }
   else
     {
-      std::cerr << "Licence file not found" << std::endl;
+      std::cout << "Licence file not found" << std::endl;
     }
 
   if(abbuf.size() == 0)
@@ -2324,7 +2504,7 @@ MainWindow::closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent,
 	}
       else
 	{
-	  std::cerr << "Error on saving configuration" << std::endl;
+	  std::cout << "Error on saving configuration" << std::endl;
 	}
     }
   this->set_visible(false);

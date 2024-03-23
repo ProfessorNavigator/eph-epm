@@ -9,6 +9,13 @@ cpp = meson.get_compiler ('cpp')
 mathgl = cpp.find_library ('mgl2', has_headers: ['mgl2/mgl.h'], required: true)
 sofa = cpp.find_library ('sofa_c', has_headers: ['sofa.h'], required: true)
 thread_dep = dependency ('threads')
+
+gtkmm_version = gtkmm.version()
+gtkmm_new = gtkmm_version.version_compare ('>=4.10')
+if not gtkmm_new
+	add_project_arguments('-DEPH_GTK_OLD', language : 'cpp')
+endif
+
 executable ('ephepm', sources : [srcbuild], include_directories: [includes], dependencies : [gmp, gtkmm, icu, mathgl, sofa], install : true, win_subsystem : 'windows')
 install_subdir ('EphEPM', install_dir : 'share')
 if host_machine.system() == 'linux'

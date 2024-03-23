@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,16 +18,17 @@
 #ifndef INCLUDE_DIAGRAMWIDGET_H_
 #define INCLUDE_DIAGRAMWIDGET_H_
 
-#include <gtkmm.h>
-#include <string>
-#include <filesystem>
-#include <vector>
-#include <sstream>
-#include <functional>
+#include <cairomm-1.16/cairomm/context.h>
+#include <cairomm-1.16/cairomm/refptr.h>
+#include <gtkmm-4.0/gdkmm/rectangle.h>
+#include <gtkmm-4.0/gtkmm/applicationwindow.h>
+#include <gtkmm-4.0/gtkmm/drawingarea.h>
+#include <gtkmm-4.0/gtkmm/entry.h>
 #include <mgl2/mgl.h>
-#include <libintl.h>
-
-#include "AuxFunc.h"
+#include <functional>
+#include <string>
+#include <tuple>
+#include <vector>
 
 class DiagramWidget
 {

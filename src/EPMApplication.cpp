@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "EPMApplication.h"
+#include <EPMApplication.h>
+#include <glibmm/signalproxy.h>
+#include <sigc++/connection.h>
+#include <stddef.h>
+#include <vector>
 
 EPMApplication::EPMApplication(const std::string &id) :
     Gtk::Application(id.c_str())

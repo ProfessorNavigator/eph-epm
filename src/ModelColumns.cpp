@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "ModelColumns.h"
+#include <ModelColumns.h>
 
 ModelColumns::ModelColumns(std::string &date, std::string &x, std::string &y,
 			   std::string &z)

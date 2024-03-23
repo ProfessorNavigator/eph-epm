@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,26 +18,22 @@
 #ifndef INCLUDE_MAINWINDOW_H_
 #define INCLUDE_MAINWINDOW_H_
 
-#include <fstream>
-#include <functional>
+#include <BodyListItem.h>
+#include <giomm-2.68/giomm/file.h>
+#include <giomm-2.68/giomm/liststore.h>
+#include <glibmm-2.68/glibmm/dispatcher.h>
+#include <glibmm-2.68/glibmm/refptr.h>
 #include <gmpxx.h>
-#include <gtkmm.h>
-#include <iostream>
-#include <libintl.h>
-#include <mutex>
-#include <sstream>
+#include <gtkmm-4.0/gtkmm/applicationwindow.h>
+#include <gtkmm-4.0/gtkmm/columnview.h>
+#include <gtkmm-4.0/gtkmm/dropdown.h>
+#include <gtkmm-4.0/gtkmm/entry.h>
+#include <gtkmm-4.0/gtkmm/label.h>
+#include <gtkmm-4.0/gtkmm/progressbar.h>
+#include <array>
+#include <atomic>
 #include <string>
-#include <thread>
-#include <tuple>
 #include <vector>
-
-#include "AuxFunc.h"
-#include "Coordinates.h"
-#include "DAFOperations.h"
-#include "EPMCalculations.h"
-#include "ModelColumns.h"
-#include "OrbitsDiagram.h"
-#include "BodyListItem.h"
 
 class MainWindow : public Gtk::ApplicationWindow
 {
@@ -109,7 +105,7 @@ private:
 
   std::string Sharepath;
 
-  int orbits_cancel = 0;
+  std::atomic<int> orbits_cancel;
   double JDshow = 0.0;
   double stepnum = -1;
 };

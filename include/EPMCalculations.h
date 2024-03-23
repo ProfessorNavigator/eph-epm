@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,12 +18,9 @@
 #ifndef INCLUDE_EPMCALCULATIONS_H_
 #define INCLUDE_EPMCALCULATIONS_H_
 
-#include <vector>
-#include <cmath>
-#include <math.h>
 #include <gmpxx.h>
+#include <cstdint>
 #include <fstream>
-#include "AuxFunc.h"
 
 class EPMCalculations
 {

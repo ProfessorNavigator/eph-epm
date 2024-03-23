@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2023-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,10 @@
 #ifndef INCLUDE_BODYLISTITEM_H_
 #define INCLUDE_BODYLISTITEM_H_
 
-#include <gtkmm.h>
+#include <glibmm-2.68/glibmm/object.h>
+#include <glibmm-2.68/glibmm/refptr.h>
+#include <glibmm-2.68/glibmm/ustring.h>
+#include <string>
 
 class BodyListItem : public Glib::Object
 {

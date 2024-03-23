@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,24 +18,16 @@
 #ifndef INCLUDE_COORDINATES_H_
 #define INCLUDE_COORDINATES_H_
 
+#include <gmpxx.h>
+#include <array>
+#include <atomic>
+#include <functional>
+#include <string>
+#include <vector>
+
 #ifdef _WIN32
 #define _USE_MATH_DEFINES
 #endif
-
-#include <iostream>
-#include <string>
-#include <vector>
-#include <tuple>
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <gmpxx.h>
-#include <cmath>
-#include <functional>
-
-#include "AuxFunc.h"
-#include "EPMCalculations.h"
-#include "DAFOperations.h"
 
 class Coordinates
 {
@@ -43,7 +35,7 @@ public:
   Coordinates(int body, double JD, int timesc, int coordtype, int xyz,
 	      int theory, int unit, double step, int stepnum,
 	      std::string epmpath, std::string tttdbpath, std::string smlbpath,
-	      int *cancel);
+	      std::atomic<int> *cancel);
   virtual
   ~Coordinates();
 
@@ -65,7 +57,7 @@ private:
   std::string epmpath;
   std::string tttdbpath;
   std::string smlbpath;
-  int *cancel = nullptr;
+  std::atomic<int> *cancel = nullptr;
   int timesc = 0;
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,10 +18,10 @@
 #ifndef INCLUDE_EPMAPPLICATION_H_
 #define INCLUDE_EPMAPPLICATION_H_
 
-#include <gtkmm.h>
-
-#include <gtkmm.h>
-#include "MainWindow.h"
+#include <glibmm-2.68/glibmm/refptr.h>
+#include <gtkmm-4.0/gtkmm/application.h>
+#include <MainWindow.h>
+#include <string>
 
 class EPMApplication : public Gtk::Application
 {

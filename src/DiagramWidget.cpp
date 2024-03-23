@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,49 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "DiagramWidget.h"
+#include <DiagramWidget.h>
+#include <gdkmm/display.h>
+#include <gdkmm/general.h>
+#include <gdkmm/monitor.h>
+#include <gdkmm/pixbuf.h>
+#include <gdkmm/surface.h>
+#include <giomm/file.h>
+#include <glibconfig.h>
+#include <glibmm/miscutils.h>
+#include <glibmm/refptr.h>
+#include <glibmm/signalproxy.h>
+#include <glibmm/ustring.h>
+#include <gtkmm/application.h>
+#include <gtkmm/button.h>
+#include <gtkmm/dialog.h>
+#include <gtkmm/enums.h>
+#include <gtkmm/eventcontrollerscroll.h>
+#include <gtkmm/filechooser.h>
+#include <gtkmm/gesturedrag.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/label.h>
+#include <gtkmm/object.h>
+#include <gtkmm/overlay.h>
+#include <libintl.h>
+#include <pangomm/layout.h>
+#include <sigc++/adaptors/bind.h>
+#include <sigc++/connection.h>
+#include <sigc++/functors/mem_fun.h>
+#include <filesystem>
+#include <locale>
+#include <memory>
+#include <sstream>
+
+#ifndef EPH_GTK_OLD
+#include <giomm/asyncresult.h>
+#include <giomm/cancellable.h>
+#include <gtkmm/error.h>
+#include <gtkmm/filedialog.h>
+#include <iostream>
+#endif
+#ifdef EPH_GTK_OLD
+#include <gtkmm/filechooserdialog.h>
+#endif
 
 DiagramWidget::DiagramWidget(Gtk::ApplicationWindow *mw, mglGraph *gr)
 {
@@ -410,6 +452,7 @@ DiagramWidget::zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
 void
 DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
 {
+#ifndef EPH_GTK_OLD
   Glib::RefPtr<Gtk::FileDialog> fcd = Gtk::FileDialog::create();
   fcd->set_title(gettext("Save diagram"));
   fcd->set_modal(true);
@@ -471,6 +514,73 @@ DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
 	}
     },
 	    cncl);
+#endif
+#ifdef EPH_GTK_OLD
+  Gtk::FileChooserDialog *fd = new Gtk::FileChooserDialog(
+      *win, gettext("Save diagram"), Gtk::FileChooser::Action::SAVE, true);
+  fd->set_application(win->get_application());
+  fd->set_modal(true);
+
+  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  fd->set_current_folder(fl);
+
+  fd->add_button(gettext("Cancel"), Gtk::ResponseType::CANCEL);
+
+  fd->add_button(gettext("Save"), Gtk::ResponseType::ACCEPT);
+
+  if(mode == 0)
+    {
+      fd->set_current_name("Orbits.jpeg");
+    }
+  else if(mode == 1)
+    {
+      fd->set_current_name("Orbits.png");
+    }
+  else if(mode == 2)
+    {
+      fd->set_current_name("Orbits.svg");
+    }
+
+  fd->signal_response().connect([graph, mode, fd]
+  (int resp_id)
+    {
+      if(resp_id == Gtk::ResponseType::ACCEPT)
+	{
+	  Glib::RefPtr<Gio::File> fl = fd->get_file();
+	  if(fl)
+	    {
+	      std::string filename(fl->get_path());
+	      std::filesystem::path p = std::filesystem::u8path(filename);
+	      if(mode == 0)
+		{
+		  p.replace_extension(std::filesystem::u8path(".jpeg"));
+		  graph->WriteJPEG(p.string().c_str(), "");
+		}
+	      else if(mode == 1)
+		{
+		  p.replace_extension(std::filesystem::u8path(".png"));
+		  graph->WritePNG(p.string().c_str(), "", false);
+		}
+	      else if(mode == 2)
+		{
+		  p.replace_extension(std::filesystem::u8path(".svg"));
+		  graph->WriteSVG(p.string().c_str(), "");
+		}
+	    }
+	}
+      fd->close();
+    });
+
+  fd->signal_close_request().connect([fd]
+  {
+    std::shared_ptr<Gtk::FileChooserDialog> fchd(fd);
+    fchd->set_visible(false);
+    return true;
+  },
+				     false);
+
+  fd->present();
+#endif
 }
 
 void

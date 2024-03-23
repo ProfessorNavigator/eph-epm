@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,21 +18,12 @@
 #ifndef INCLUDE_AUXFUNC_H_
 #define INCLUDE_AUXFUNC_H_
 
+#include <gmpxx.h>
+#include <string>
+
 #ifdef _WIN32
 #define _USE_MATH_DEFINES
-#include <Windows.h>
 #endif
-
-#include <iostream>
-#include <string>
-#include <vector>
-#include <filesystem>
-#include <sofa.h>
-#include <gmpxx.h>
-#include <cmath>
-#include <ctime>
-#include <unicode/ucnv.h>
-#include <unicode/unistr.h>
 
 class AuxFunc
 {

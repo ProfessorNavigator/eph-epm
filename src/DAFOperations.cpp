@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "DAFOperations.h"
+#include <AuxFunc.h>
+#include <DAFOperations.h>
+#include <stddef.h>
+#include <algorithm>
+#include <cstring>
+#include <filesystem>
+#include <iostream>
+#include <iterator>
 
 DAFOperations::DAFOperations()
 {

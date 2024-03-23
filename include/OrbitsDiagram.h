@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,22 +18,20 @@
 #ifndef INCLUDE_ORBITSDIAGRAM_H_
 #define INCLUDE_ORBITSDIAGRAM_H_
 
-#include <gtkmm.h>
-#include <vector>
-#include <algorithm>
-#include <tuple>
-#include <filesystem>
-#include <string>
-#include <cmath>
-#include <thread>
+#include <DAFOperations.h>
+#include <DiagramWidget.h>
+#include <gmpxx.h>
+#include <gtkmm-4.0/gdkmm/rectangle.h>
+#include <gtkmm-4.0/gtkmm/applicationwindow.h>
+#include <mgl2/mgl.h>
+#include <array>
+#include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <mutex>
-#include <mgl2/mgl.h>
-#include <gmpxx.h>
-
-#include "DAFOperations.h"
-#include "Coordinates.h"
-#include "DiagramWidget.h"
+#include <string>
+#include <tuple>
+#include <vector>
 
 class OrbitsDiagram
 {
@@ -41,7 +39,7 @@ public:
   OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
 		std::string tttdbpath, std::string smlpath, double JD,
 		int timesc, int coordtype, int theory, double plot_factor,
-		int *cancel);
+		std::atomic<int> *cancel);
   virtual
   ~OrbitsDiagram();
 
@@ -90,11 +88,13 @@ private:
   double epe = 0.0;
   mglGraph *gr = nullptr;
   std::mutex *grmtx = nullptr;
-  std::vector<int> threadv;
-  std::mutex *threadvmtx = nullptr;
+
   std::mutex cyclemtx;
+  std::condition_variable thread_reg;
+  unsigned int thrnum = 0;
+
   double scale_factor = 0.001;
-  int *cancel = nullptr;
+  std::atomic<int> *cancel = nullptr;
   int Width = 0;
   int Height = 0;
   double plot_factor = 0.000000001;

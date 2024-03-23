@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "AuxFunc.h"
+#include <AuxFunc.h>
+#include <gmp.h>
+#include <sofa.h>
+#include <stddef.h>
+#include <unicode/ucnv.h>
+#include <unicode/unistr.h>
+#include <unicode/urename.h>
+#include <unicode/utypes.h>
+#include <unicode/uversion.h>
+#include <cmath>
+#include <filesystem>
+#include <iostream>
+#include <vector>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 AuxFunc::AuxFunc()
 {
@@ -35,7 +51,7 @@ AuxFunc::get_selfpath()
   p = std::filesystem::u8path("/proc/self/exe");
   return std::filesystem::read_symlink(p).u8string();
 #endif
-#ifdef __WIN32
+#ifdef _WIN32
   char pth [MAX_PATH];
   GetModuleFileNameA(NULL, pth, MAX_PATH);
   p = std::filesystem::path(pth);
@@ -637,7 +653,7 @@ AuxFunc::utf8to(std::string line)
   UConverter *c = ucnv_open(NULL, &status);
   if(!U_SUCCESS(status))
     {
-      std::cerr << u_errorName(status) << std::endl;
+      std::cout << u_errorName(status) << std::endl;
     }
   status = U_ZERO_ERROR;
   std::vector<char> target2;
@@ -661,12 +677,12 @@ AuxFunc::utf8to(std::string line)
 	  ucnv_fromUChars(c, target2.data(), cb, data, ustr.length(), &status);
 	  if(!U_SUCCESS(status))
 	    {
-	      std::cerr << u_errorName(status) << std::endl;
+	      std::cout << u_errorName(status) << std::endl;
 	    }
 	}
       else
 	{
-	  std::cerr << u_errorName(status) << std::endl;
+	  std::cout << u_errorName(status) << std::endl;
 	}
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,13 +15,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Coordinates.h"
+#include <AuxFunc.h>
+#include <Coordinates.h>
+#include <DAFOperations.h>
+#include <EPMCalculations.h>
+#include <gmp.h>
+#include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
 Coordinates::Coordinates(int body, double JD, int timesc, int coordtype,
 			 int xyz, int theory, int unit, double step,
 			 int stepnum, std::string epmpath,
 			 std::string tttdbpath, std::string smlbpath,
-			 int *cancel)
+			 std::atomic<int> *cancel)
 {
   this->body = body;
   this->JD = JD;
@@ -138,7 +146,7 @@ Coordinates::calculationsXYZ()
 
       for(double i = JD; i < JD + step * stepnum; i = i + step)
 	{
-	  if(*cancel > 0)
+	  if(cancel->load() > 0)
 	    {
 	      break;
 	    }

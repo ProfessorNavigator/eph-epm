@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,12 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "OrbitsDiagram.h"
+#include <AuxFunc.h>
+#include <bits/std_abs.h>
+#include <Coordinates.h>
+#include <gdkmm/display.h>
+#include <gdkmm/monitor.h>
+#include <gdkmm/surface.h>
+#include <glibmm/refptr.h>
+#include <libintl.h>
+#include <mgl2/data.h>
+#include <mgl2/type.h>
+#include <OrbitsDiagram.h>
+#include <stddef.h>
+#include <algorithm>
+#include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <thread>
+#include <utility>
 
 OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
 			     std::string tttdbpath, std::string smlpath,
 			     double JD, int timesc, int coordtype, int theory,
-			     double plot_factor, int *cancel)
+			     double plot_factor, std::atomic<int> *cancel)
 {
   this->mw = mw;
   this->ephpath = ephpath;
@@ -30,7 +48,6 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
   daf = new DAFOperations();
   gr = new mglGraph;
   grmtx = new std::mutex;
-  threadvmtx = new std::mutex;
   this->cancel = cancel;
   Gdk::Rectangle req = screenRes();
   Height = req.get_height();
@@ -95,7 +112,7 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
 	    }
 	  else
 	    {
-	      *cancel = 1;
+	      this->cancel->store(1);
 	    }
 	}
     }
@@ -107,11 +124,8 @@ OrbitsDiagram::~OrbitsDiagram()
   delete daf;
   gr->SetPlotFactor(0);
   gr->Zoom(0.0, 0.0, 1.0, 1.0);
-  threadvmtx->lock();
-  threadvmtx->unlock();
   delete gr;
   delete grmtx;
-  delete threadvmtx;
   delete dw;
 }
 
@@ -274,49 +288,46 @@ OrbitsDiagram::calculateOrbits()
 
       for(size_t i = 0; i < bodyv.size(); i++)
 	{
-	  if(*cancel > 0)
+	  if(cancel->load() > 0)
 	    {
 	      break;
 	    }
-	  threadvmtx->lock();
-	  size_t thrnum = threadv.size();
-	  threadvmtx->unlock();
-	  if(thrnum < std::thread::hardware_concurrency())
-	    {
-	      std::tuple<int, double> planettup;
-	      planettup = bodyv[i];
-	      std::thread *thr = new std::thread(
-		  std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
-	      threadvmtx->lock();
-	      threadv.push_back(std::get<0>(planettup));
-	      threadvmtx->unlock();
-	      thr->detach();
-	      delete thr;
-	    }
-	  else
-	    {
-	      cyclemtx.lock();
-	      std::tuple<int, double> planettup;
-	      planettup = bodyv[i];
-	      std::thread *thr = new std::thread(
-		  std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
-	      threadvmtx->lock();
-	      threadv.push_back(std::get<0>(planettup));
-	      threadvmtx->unlock();
-	      thr->detach();
-	      delete thr;
-	    }
+	  std::unique_lock<std::mutex> ulock(cyclemtx);
+	  thrnum++;
+	  thread_reg.wait(ulock, [this]
+	  {
+	    return this->thrnum < std::thread::hardware_concurrency();
+	  });
+	  std::tuple<int, double> planettup;
+	  planettup = bodyv[i];
+	  std::thread *thr = new std::thread(
+	      std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
+	  thr->detach();
+	  delete thr;
 	}
     }
-  threadvmtx->lock();
-  if(threadv.size() == 0 && *cancel > 0)
+
+  std::unique_lock<std::mutex> ulock(cyclemtx);
+  thread_reg.wait(ulock, [this]
+  {
+    return this->thrnum == 0;
+  });
+
+  if(cancel->load() > 0)
     {
       if(canceled_signal)
 	{
 	  canceled_signal();
+	  cancel->store(0);
 	}
     }
-  threadvmtx->unlock();
+  else
+    {
+      if(calc_completed)
+	{
+	  calc_completed();
+	}
+    }
 }
 
 void
@@ -409,7 +420,7 @@ OrbitsDiagram::planetOrbCalc(std::tuple<int, double> planettup)
     }
   mglData x(X), y(Y), z(Z);
 
-  switch (body)
+  switch(body)
     {
     case 1:
       {
@@ -516,38 +527,10 @@ OrbitsDiagram::planetOrbCalc(std::tuple<int, double> planettup)
     }
 
   bodyBuilding(body, gr);
-  threadvmtx->lock();
-  threadv.erase(std::remove(threadv.begin(), threadv.end(), body),
-		threadv.end());
-  size_t ch = threadv.size();
-  threadvmtx->unlock();
-  if(cyclemtx.try_lock())
-    {
-      cyclemtx.unlock();
-    }
-  else
-    {
-      cyclemtx.unlock();
-    }
-  if(ch == 0 && *cancel == 0)
-    {
-      std::string mgl_warn(gr->Message());
-      if(!mgl_warn.empty())
-	{
-	  std::cerr << "MathGL warning: " << mgl_warn << std::endl;
-	}
-      if(calc_completed)
-	{
-	  calc_completed();
-	}
-    }
-  else
-    {
-      if(ch == 0 && canceled_signal)
-	{
-	  canceled_signal();
-	}
-    }
+
+  std::lock_guard<std::mutex> lglock(cyclemtx);
+  thrnum--;
+  thread_reg.notify_one();
 }
 
 void
@@ -594,7 +577,7 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
       y = std::get<1>(result[0]).get_d();
       z = std::get<2>(result[0]).get_d();
     }
-  switch (body)
+  switch(body)
     {
     case 10:
       {
@@ -846,7 +829,7 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
   double fontsize = plot_factor * 5 * 1000000;
   if(x != 0.0 || y != 0.0 || z != 0.0)
     {
-      switch (body)
+      switch(body)
 	{
 	case 10:
 	  {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +18,12 @@
 #ifndef INCLUDE_DAFOPERATIONS_H_
 #define INCLUDE_DAFOPERATIONS_H_
 
-#include <iostream>
+#include <BodyV.h>
+#include <cstdint>
 #include <fstream>
 #include <string>
-#include <filesystem>
-#include <vector>
 #include <tuple>
-#include <gmpxx.h>
-#include "AuxFunc.h"
-#include "BodyV.h"
+#include <vector>
 
 class DAFOperations
 {
