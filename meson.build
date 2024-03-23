@@ -16,7 +16,7 @@ if not gtkmm_new
 	add_project_arguments('-DEPH_GTK_OLD', language : 'cpp')
 endif
 
-executable ('ephepm', sources : [srcbuild], include_directories: [includes], dependencies : [gmp, gtkmm, icu, mathgl, sofa], install : true, win_subsystem : 'windows')
+executable ('ephepm', sources : [srcbuild], include_directories: [includes], dependencies : [gmp, gtkmm, icu, mathgl, sofa, thread_dep], install : true, win_subsystem : 'windows')
 install_subdir ('EphEPM', install_dir : 'share')
 if host_machine.system() == 'linux'
 	install_data ('ephepm.png', install_dir : 'share/icons/hicolor/256x256/apps')
