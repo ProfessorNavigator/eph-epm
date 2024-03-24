@@ -296,7 +296,7 @@ OrbitsDiagram::calculateOrbits()
 	  thrnum++;
 	  thread_reg.wait(ulock, [this]
 	  {
-	    return this->thrnum < std::thread::hardware_concurrency();
+	    return this->thrnum <= std::thread::hardware_concurrency();
 	  });
 	  std::tuple<int, double> planettup;
 	  planettup = bodyv[i];
