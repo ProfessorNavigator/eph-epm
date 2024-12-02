@@ -1,1 +1,0 @@
-includes = include_directories ('.')

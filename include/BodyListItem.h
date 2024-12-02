@@ -26,14 +26,12 @@
 class BodyListItem : public Glib::Object
 {
 public:
-  virtual
-  ~BodyListItem();
-
   static Glib::RefPtr<BodyListItem>
   create(std::string &bodyname, int &id);
 
   Glib::ustring bodyname;
   int naifid = -1;
+
 private:
   BodyListItem(Glib::ustring &bodyname, int &id);
 };

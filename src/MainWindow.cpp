@@ -18,6 +18,16 @@
 #include <AuxFunc.h>
 #include <Coordinates.h>
 #include <DAFOperations.h>
+#include <MainWindow.h>
+#include <ModelColumns.h>
+#include <OrbitsDiagram.h>
+#include <algorithm>
+#include <clocale>
+#include <cstdint>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <functional>
 #include <gdkmm/display.h>
 #include <gdkmm/monitor.h>
 #include <gdkmm/rectangle.h>
@@ -46,27 +56,16 @@
 #include <gtkmm/signallistitemfactory.h>
 #include <gtkmm/stringlist.h>
 #include <gtkmm/stylecontext.h>
-#include <libintl.h>
-#include <MainWindow.h>
-#include <ModelColumns.h>
-#include <OrbitsDiagram.h>
-#include <sigc++/adaptors/bind.h>
-#include <sigc++/connection.h>
-#include <sigc++/functors/mem_fun.h>
-#include <stddef.h>
-#include <algorithm>
-#include <clocale>
-#include <cstdint>
-#include <cstring>
-#include <filesystem>
-#include <fstream>
-#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <libintl.h>
 #include <locale>
 #include <memory>
 #include <mutex>
+#include <sigc++/adaptors/bind.h>
+#include <sigc++/connection.h>
+#include <sigc++/functors/mem_fun.h>
 #include <sstream>
 #include <thread>
 #include <tuple>
@@ -115,15 +114,10 @@ MainWindow::MainWindow()
     }
   css_provider->load_from_data(styles);
   Glib::RefPtr<Gdk::Display> disp = this->get_display();
-  Gtk::StyleContext::add_provider_for_display(disp, css_provider,
-  GTK_STYLE_PROVIDER_PRIORITY_USER);
+  Gtk::StyleContext::add_provider_for_display(
+      disp, css_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
   orbits_cancel.store(0);
   createWindow();
-}
-
-MainWindow::~MainWindow()
-{
-
 }
 
 void
@@ -265,13 +259,13 @@ MainWindow::createWindow()
       strm << i;
       Glib::ustring wstr;
       if(i > 0)
-	{
-	  wstr = "+" + Glib::ustring(strm.str());
-	}
+        {
+          wstr = "+" + Glib::ustring(strm.str());
+        }
       else
-	{
-	  wstr = Glib::ustring(strm.str());
-	}
+        {
+          wstr = Glib::ustring(strm.str());
+        }
       list.push_back(wstr);
     }
   Gtk::DropDown *belt = Gtk::make_managed<Gtk::DropDown>(list);
@@ -294,47 +288,46 @@ MainWindow::createWindow()
 
   Glib::RefPtr<Gio::ListStore<BodyListItem>> bodylist;
   bodylist = createBodyList();
-  Glib::RefPtr<Gtk::SignalListItemFactory> bodyfact =
-      Gtk::SignalListItemFactory::create();
-  bodyfact->signal_setup().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &list_item)
-    {
-      Gtk::Label *lab = Gtk::make_managed<Gtk::Label>();
-      lab->set_halign(Gtk::Align::CENTER);
-      list_item->set_child(*lab);
-    });
-  bodyfact->signal_bind().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &list_item)
-    {
-      Glib::RefPtr<BodyListItem> bli =
-      std::dynamic_pointer_cast<BodyListItem>(list_item->get_item());
-      if(bli)
-	{
-	  Gtk::Label *lab = dynamic_cast<Gtk::Label*>(list_item->get_child());
-	  if(lab)
-	    {
-	      lab->set_text(bli->bodyname);
-	    }
-	}
-    });
+  Glib::RefPtr<Gtk::SignalListItemFactory> bodyfact
+      = Gtk::SignalListItemFactory::create();
+  bodyfact->signal_setup().connect(
+      [](const Glib::RefPtr<Gtk::ListItem> &list_item) {
+        Gtk::Label *lab = Gtk::make_managed<Gtk::Label>();
+        lab->set_halign(Gtk::Align::CENTER);
+        list_item->set_child(*lab);
+      });
+  bodyfact->signal_bind().connect(
+      [](const Glib::RefPtr<Gtk::ListItem> &list_item) {
+        Glib::RefPtr<BodyListItem> bli
+            = std::dynamic_pointer_cast<BodyListItem>(list_item->get_item());
+        if(bli)
+          {
+            Gtk::Label *lab
+                = dynamic_cast<Gtk::Label *>(list_item->get_child());
+            if(lab)
+              {
+                lab->set_text(bli->bodyname);
+              }
+          }
+      });
 
-  Glib::RefPtr<Gtk::ClosureExpression<Glib::ustring>> body_exp =
-      Gtk::ClosureExpression<Glib::ustring>::create([]
-      (const Glib::RefPtr<Glib::ObjectBase> &item)
-	{
-	  Glib::RefPtr<BodyListItem>bli =
-	  std::dynamic_pointer_cast<BodyListItem>(item);
-	  if(bli)
-	    {
-	      return bli->bodyname;
-	    }
-	  else
-	    {
-	      return Glib::ustring("");
-	    }
-	});
+  Glib::RefPtr<Gtk::ClosureExpression<Glib::ustring>> body_exp
+      = Gtk::ClosureExpression<Glib::ustring>::create(
+          [](const Glib::RefPtr<Glib::ObjectBase> &item) {
+            Glib::RefPtr<BodyListItem> bli
+                = std::dynamic_pointer_cast<BodyListItem>(item);
+            if(bli)
+              {
+                return bli->bodyname;
+              }
+            else
+              {
+                return Glib::ustring("");
+              }
+          });
 
-  Gtk::DropDown *objcomb = Gtk::make_managed<Gtk::DropDown>(bodylist, body_exp);
+  Gtk::DropDown *objcomb
+      = Gtk::make_managed<Gtk::DropDown>(bodylist, body_exp);
   objcomb->set_factory(bodyfact);
   objcomb->set_halign(Gtk::Align::START);
   objcomb->set_margin(5);
@@ -403,100 +396,98 @@ MainWindow::createWindow()
   grid->attach(*unitcomb, 2, 8, 3, 1);
   Glib::PropertyProxy<guint> sel = objcomb->property_selected();
   sel.signal_changed().connect(
-      [objcomb, xyzcomb, unitcomb, coord, coordcomb, equin, equincomb]
-      {
-	std::vector<Glib::ustring> list;
-	if(objcomb->get_selected() == 21)
-	  {
-	    list.push_back("φ, θ, ψ");
-	    list.push_back("φ', θ', ψ'");
-	    Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
-	    xyzcomb->set_model(strl);
-	    xyzcomb->set_selected(0);
-	    list.clear();
-	    list.push_back(gettext("rad"));
-	    list.push_back(gettext("degrees"));
-	    strl = Gtk::StringList::create(list);
-	    unitcomb->set_model(strl);
-	    unitcomb->set_selected(0);
-	    coord->set_opacity(0);
-	    coordcomb->set_opacity(0);
-	    equin->set_opacity(0);
-	    equincomb->set_opacity(0);
-	  }
-	else
-	  {
-	    list.push_back("X, Y, Z");
-	    list.push_back("Vx, Vy, Vz");
-	    Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
-	    xyzcomb->set_model(strl);
-	    xyzcomb->set_selected(0);
-	    list.clear();
-	    list.push_back(gettext("Astronomical units"));
-	    list.push_back(gettext("Kilometers"));
-	    list.push_back(gettext("Meters"));
-	    strl = Gtk::StringList::create(list);
-	    unitcomb->set_model(strl);
-	    unitcomb->set_selected(0);
-	    coord->set_opacity(1);
-	    coordcomb->set_opacity(1);
-	    equin->set_opacity(1);
-	    equincomb->set_opacity(1);
-	  }
-	xyzcomb->set_selected(0);
-	unitcomb->set_selected(0);
+      [objcomb, xyzcomb, unitcomb, coord, coordcomb, equin, equincomb] {
+        std::vector<Glib::ustring> list;
+        if(objcomb->get_selected() == 21)
+          {
+            list.push_back("φ, θ, ψ");
+            list.push_back("φ', θ', ψ'");
+            Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
+            xyzcomb->set_model(strl);
+            xyzcomb->set_selected(0);
+            list.clear();
+            list.push_back(gettext("rad"));
+            list.push_back(gettext("degrees"));
+            strl = Gtk::StringList::create(list);
+            unitcomb->set_model(strl);
+            unitcomb->set_selected(0);
+            coord->set_opacity(0);
+            coordcomb->set_opacity(0);
+            equin->set_opacity(0);
+            equincomb->set_opacity(0);
+          }
+        else
+          {
+            list.push_back("X, Y, Z");
+            list.push_back("Vx, Vy, Vz");
+            Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
+            xyzcomb->set_model(strl);
+            xyzcomb->set_selected(0);
+            list.clear();
+            list.push_back(gettext("Astronomical units"));
+            list.push_back(gettext("Kilometers"));
+            list.push_back(gettext("Meters"));
+            strl = Gtk::StringList::create(list);
+            unitcomb->set_model(strl);
+            unitcomb->set_selected(0);
+            coord->set_opacity(1);
+            coordcomb->set_opacity(1);
+            equin->set_opacity(1);
+            equincomb->set_opacity(1);
+          }
+        xyzcomb->set_selected(0);
+        unitcomb->set_selected(0);
       });
 
   Glib::PropertyProxy<guint> sel2 = xyzcomb->property_selected();
-  sel2.signal_changed().connect([xyzcomb, unitcomb, objcomb]
-  {
+  sel2.signal_changed().connect([xyzcomb, unitcomb, objcomb] {
     std::vector<Glib::ustring> list;
     if(objcomb->get_selected() != 21)
       {
-	if(xyzcomb->get_selected() == 0)
-	  {
-	    list.clear();
-	    list.push_back(gettext("Astronomical units"));
-	    list.push_back(gettext("Kilometers"));
-	    list.push_back(gettext("Meters"));
-	    Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
-	    unitcomb->set_model(strl);
-	    unitcomb->set_selected(0);
-	  }
-	else if(xyzcomb->get_selected() == 1)
-	  {
-	    list.clear();
-	    list.push_back(gettext("AU/day"));
-	    list.push_back(gettext("km/day"));
-	    list.push_back(gettext("km/s"));
-	    list.push_back(gettext("m/s"));
-	    Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
-	    unitcomb->set_model(strl);
-	    unitcomb->set_selected(0);
-	  }
-	unitcomb->set_selected(0);
+        if(xyzcomb->get_selected() == 0)
+          {
+            list.clear();
+            list.push_back(gettext("Astronomical units"));
+            list.push_back(gettext("Kilometers"));
+            list.push_back(gettext("Meters"));
+            Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
+            unitcomb->set_model(strl);
+            unitcomb->set_selected(0);
+          }
+        else if(xyzcomb->get_selected() == 1)
+          {
+            list.clear();
+            list.push_back(gettext("AU/day"));
+            list.push_back(gettext("km/day"));
+            list.push_back(gettext("km/s"));
+            list.push_back(gettext("m/s"));
+            Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
+            unitcomb->set_model(strl);
+            unitcomb->set_selected(0);
+          }
+        unitcomb->set_selected(0);
       }
     else
       {
-	if(xyzcomb->get_selected() == 0)
-	  {
-	    list.clear();
-	    list.push_back(gettext("rad"));
-	    list.push_back(gettext("degrees"));
-	    Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
-	    unitcomb->set_model(strl);
-	    unitcomb->set_selected(0);
-	  }
-	if(xyzcomb->get_selected() == 1)
-	  {
-	    list.clear();
-	    list.push_back(gettext("rad/day"));
-	    list.push_back(gettext("\"/day"));
-	    Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
-	    unitcomb->set_model(strl);
-	    unitcomb->set_selected(0);
-	  }
-	unitcomb->set_selected(0);
+        if(xyzcomb->get_selected() == 0)
+          {
+            list.clear();
+            list.push_back(gettext("rad"));
+            list.push_back(gettext("degrees"));
+            Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
+            unitcomb->set_model(strl);
+            unitcomb->set_selected(0);
+          }
+        if(xyzcomb->get_selected() == 1)
+          {
+            list.clear();
+            list.push_back(gettext("rad/day"));
+            list.push_back(gettext("\"/day"));
+            Glib::RefPtr<Gtk::StringList> strl = Gtk::StringList::create(list);
+            unitcomb->set_model(strl);
+            unitcomb->set_selected(0);
+          }
+        unitcomb->set_selected(0);
       }
   });
 
@@ -539,7 +530,7 @@ MainWindow::createWindow()
    * 1 - ephemeris file, 2 - TT-TDB file, 3 - Moon libration file, 4 - scale
    * factor, 5 - path to small bodies file
    */
-  std::vector<std::tuple<uint8_t, std::string> > pathv;
+  std::vector<std::tuple<uint8_t, std::string>> pathv;
   bool err = false;
   std::string filename(Glib::get_home_dir());
   filename = filename + "/.config/EphEPM/ephpath";
@@ -553,46 +544,46 @@ MainWindow::createWindow()
       uint64_t entsz;
       std::string rs;
       while(rb < fsz)
-	{
-	  rs.clear();
-	  entsz = 0;
-	  rs.resize(sizeof(entsz));
-	  if(rb + static_cast<uintmax_t>(rs.size()) > fsz)
-	    {
-	      std::cout << "MainWindow::createWindow: wrong ephpath file size"
-		  << std::endl;
-	      err = true;
-	      break;
-	    }
-	  else
-	    {
-	      f.read(rs.data(), rs.size());
-	      rb += static_cast<uintmax_t>(rs.size());
-	      std::memcpy(&entsz, rs.c_str(), rs.size());
-	    }
+        {
+          rs.clear();
+          entsz = 0;
+          rs.resize(sizeof(entsz));
+          if(rb + static_cast<uintmax_t>(rs.size()) > fsz)
+            {
+              std::cout << "MainWindow::createWindow: wrong ephpath file size"
+                        << std::endl;
+              err = true;
+              break;
+            }
+          else
+            {
+              f.read(rs.data(), rs.size());
+              rb += static_cast<uintmax_t>(rs.size());
+              std::memcpy(&entsz, rs.c_str(), rs.size());
+            }
 
-	  if(entsz > 0)
-	    {
-	      rs.clear();
-	      if(rb + static_cast<uintmax_t>(entsz) > fsz)
-		{
-		  std::cout << "MainWindow::createWindow: wrong entry size"
-		      << std::endl;
-		  err = true;
-		  break;
-		}
-	      else
-		{
-		  rs.resize(static_cast<size_t>(entsz));
-		  f.read(rs.data(), rs.size());
-		  rb += static_cast<uintmax_t>(rs.size());
-		  uint8_t type;
-		  std::memcpy(&type, rs.c_str(), sizeof(type));
-		  rs.erase(rs.begin(), rs.begin() + sizeof(type));
-		  pathv.push_back(std::make_tuple(type, rs));
-		}
-	    }
-	}
+          if(entsz > 0)
+            {
+              rs.clear();
+              if(rb + static_cast<uintmax_t>(entsz) > fsz)
+                {
+                  std::cout << "MainWindow::createWindow: wrong entry size"
+                            << std::endl;
+                  err = true;
+                  break;
+                }
+              else
+                {
+                  rs.resize(static_cast<size_t>(entsz));
+                  f.read(rs.data(), rs.size());
+                  rb += static_cast<uintmax_t>(rs.size());
+                  uint8_t type;
+                  std::memcpy(&type, rs.c_str(), sizeof(type));
+                  rs.erase(rs.begin(), rs.begin() + sizeof(type));
+                  pathv.push_back(std::make_tuple(type, rs));
+                }
+            }
+        }
       f.close();
     }
   if(err)
@@ -602,11 +593,9 @@ MainWindow::createWindow()
 
   Gtk::Entry *pathent = Gtk::make_managed<Gtk::Entry>();
   pathent->set_margin(5);
-  auto itpv = std::find_if(pathv.begin(), pathv.end(), []
-  (auto &el)
-    {
-      return std::get<0> (el) == 1;
-    });
+  auto itpv = std::find_if(pathv.begin(), pathv.end(), [](auto &el) {
+    return std::get<0>(el) == 1;
+  });
   if(itpv != pathv.end())
     {
       pathent->set_text(Glib::ustring(std::get<1>(*itpv)));
@@ -627,8 +616,7 @@ MainWindow::createWindow()
   clearbut->set_halign(Gtk::Align::CENTER);
   clearbut->set_name("closeButton");
   clearbut->set_label(gettext("Clear"));
-  clearbut->signal_clicked().connect([pathent]
-  {
+  clearbut->signal_clicked().connect([pathent] {
     pathent->set_text("");
   });
   grid->attach(*clearbut, 4, 11, 1, 1);
@@ -641,11 +629,9 @@ MainWindow::createWindow()
 
   Gtk::Entry *tttdbent = Gtk::make_managed<Gtk::Entry>();
   tttdbent->set_margin(5);
-  itpv = std::find_if(pathv.begin(), pathv.end(), []
-  (auto &el)
-    {
-      return std::get<0> (el) == 2;
-    });
+  itpv = std::find_if(pathv.begin(), pathv.end(), [](auto &el) {
+    return std::get<0>(el) == 2;
+  });
   if(itpv != pathv.end())
     {
       tttdbent->set_text(Glib::ustring(std::get<1>(*itpv)));
@@ -666,8 +652,7 @@ MainWindow::createWindow()
   clearbut->set_halign(Gtk::Align::CENTER);
   clearbut->set_name("closeButton");
   clearbut->set_label(gettext("Clear"));
-  clearbut->signal_clicked().connect([tttdbent]
-  {
+  clearbut->signal_clicked().connect([tttdbent] {
     tttdbent->set_text("");
   });
   grid->attach(*clearbut, 4, 13, 1, 1);
@@ -680,11 +665,9 @@ MainWindow::createWindow()
 
   Gtk::Entry *mlbent = Gtk::make_managed<Gtk::Entry>();
   mlbent->set_margin(5);
-  itpv = std::find_if(pathv.begin(), pathv.end(), []
-  (auto &el)
-    {
-      return std::get<0> (el) == 3;
-    });
+  itpv = std::find_if(pathv.begin(), pathv.end(), [](auto &el) {
+    return std::get<0>(el) == 3;
+  });
   if(itpv != pathv.end())
     {
       mlbent->set_text(Glib::ustring(std::get<1>(*itpv)));
@@ -705,8 +688,7 @@ MainWindow::createWindow()
   clearbut->set_halign(Gtk::Align::CENTER);
   clearbut->set_name("closeButton");
   clearbut->set_label(gettext("Clear"));
-  clearbut->signal_clicked().connect([mlbent]
-  {
+  clearbut->signal_clicked().connect([mlbent] {
     mlbent->set_text("");
   });
   grid->attach(*clearbut, 4, 15, 1, 1);
@@ -719,11 +701,9 @@ MainWindow::createWindow()
 
   Gtk::Entry *smlent = Gtk::make_managed<Gtk::Entry>();
   smlent->set_margin(5);
-  itpv = std::find_if(pathv.begin(), pathv.end(), []
-  (auto &el)
-    {
-      return std::get<0> (el) == 5;
-    });
+  itpv = std::find_if(pathv.begin(), pathv.end(), [](auto &el) {
+    return std::get<0>(el) == 5;
+  });
   if(itpv != pathv.end())
     {
       smlent->set_text(Glib::ustring(std::get<1>(*itpv)));
@@ -744,8 +724,7 @@ MainWindow::createWindow()
   clearbut->set_halign(Gtk::Align::CENTER);
   clearbut->set_name("closeButton");
   clearbut->set_label(gettext("Clear"));
-  clearbut->signal_clicked().connect([smlent]
-  {
+  clearbut->signal_clicked().connect([smlent] {
     smlent->set_text("");
   });
   grid->attach(*clearbut, 4, 17, 1, 1);
@@ -759,21 +738,19 @@ MainWindow::createWindow()
   Gtk::Entry *scale_ent = Gtk::make_managed<Gtk::Entry>();
   scale_ent->set_margin(5);
   scale_ent->set_halign(Gtk::Align::FILL);
-  itpv = std::find_if(pathv.begin(), pathv.end(), []
-  (auto &el)
-    {
-      return std::get<0> (el) == 4;
-    });
+  itpv = std::find_if(pathv.begin(), pathv.end(), [](auto &el) {
+    return std::get<0>(el) == 4;
+  });
   if(itpv != pathv.end())
     {
       if(!std::get<1>(*itpv).empty())
-	{
-	  scale_ent->set_text(Glib::ustring(std::get<1>(*itpv)));
-	}
+        {
+          scale_ent->set_text(Glib::ustring(std::get<1>(*itpv)));
+        }
       else
-	{
-	  scale_ent->set_text("0.00000001");
-	}
+        {
+          scale_ent->set_text("0.00000001");
+        }
     }
   else
     {
@@ -787,11 +764,10 @@ MainWindow::createWindow()
   calc->set_margin(5);
   calc->set_label(gettext("Calculate coordinates"));
   calc->set_name("button");
-  calc->signal_clicked().connect(
-      sigc::bind(sigc::mem_fun(*this, &MainWindow::calcCoord), day, month, year,
-		 hour, minut, second, timecomb, belt, objcomb, coordcomb,
-		 xyzcomb, equincomb, unitcomb, stepent, stepnument, pathent,
-		 tttdbent, mlbent, smlent));
+  calc->signal_clicked().connect(sigc::bind(
+      sigc::mem_fun(*this, &MainWindow::calcCoord), day, month, year, hour,
+      minut, second, timecomb, belt, objcomb, coordcomb, xyzcomb, equincomb,
+      unitcomb, stepent, stepnument, pathent, tttdbent, mlbent, smlent));
   grid->attach(*calc, 0, 20, 2, 1);
 
   Gtk::Button *orb = Gtk::make_managed<Gtk::Button>();
@@ -801,8 +777,8 @@ MainWindow::createWindow()
   orb->set_name("button");
   orb->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &MainWindow::orbitsGraph), day, month,
-		 year, hour, minut, second, timecomb, belt, coordcomb,
-		 equincomb, pathent, tttdbent, smlent, scale_ent));
+                 year, hour, minut, second, timecomb, belt, coordcomb,
+                 equincomb, pathent, tttdbent, smlent, scale_ent));
   grid->attach(*orb, 2, 20, 1, 1);
 
   Gtk::Button *about = Gtk::make_managed<Gtk::Button>();
@@ -810,20 +786,21 @@ MainWindow::createWindow()
   about->set_margin(5);
   about->set_label(gettext("About"));
   about->set_name("button");
-  about->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::aboutProg));
+  about->signal_clicked().connect(
+      sigc::mem_fun(*this, &MainWindow::aboutProg));
   grid->attach(*about, 5, 20, 1, 1);
 
-  this->signal_close_request().connect(
-      std::bind(&MainWindow::closeFunc, this, pathent, tttdbent, mlbent, smlent,
-		scale_ent),
-      false);
+  this->signal_close_request().connect(std::bind(&MainWindow::closeFunc, this,
+                                                 pathent, tttdbent, mlbent,
+                                                 smlent, scale_ent),
+                                       false);
 }
 
 Glib::RefPtr<Gio::ListStore<BodyListItem>>
 MainWindow::createBodyList()
 {
-  Glib::RefPtr<Gio::ListStore<BodyListItem>> result = Gio::ListStore<
-      BodyListItem>::create();
+  Glib::RefPtr<Gio::ListStore<BodyListItem>> result
+      = Gio::ListStore<BodyListItem>::create();
   std::string filename = Sharepath + "/Bodylist.csv";
   std::filesystem::path blpath = std::filesystem::u8path(filename);
   std::vector<std::vector<std::string>> listv;
@@ -832,33 +809,33 @@ MainWindow::createBodyList()
   if(f.is_open())
     {
       while(!f.eof())
-	{
-	  std::string line;
-	  getline(f, line);
-	  if(!line.empty())
-	    {
-	      std::vector<std::string> item;
-	      for(;;)
-		{
-		  std::string::size_type n = line.find(";");
-		  if(n != std::string::npos)
-		    {
-		      std::string tmp = line.substr(0, n);
-		      item.push_back(tmp);
-		      tmp = tmp + ";";
-		      line.erase(0, tmp.size());
-		    }
-		  else
-		    {
-		      break;
-		    }
-		}
-	      if(item.size() > 0)
-		{
-		  listv.push_back(item);
-		}
-	    }
-	}
+        {
+          std::string line;
+          getline(f, line);
+          if(!line.empty())
+            {
+              std::vector<std::string> item;
+              for(;;)
+                {
+                  std::string::size_type n = line.find(";");
+                  if(n != std::string::npos)
+                    {
+                      std::string tmp = line.substr(0, n);
+                      item.push_back(tmp);
+                      tmp = tmp + ";";
+                      line.erase(0, tmp.size());
+                    }
+                  else
+                    {
+                      break;
+                    }
+                }
+              if(item.size() > 0)
+                {
+                  listv.push_back(item);
+                }
+            }
+        }
       f.close();
     }
   else
@@ -874,55 +851,53 @@ MainWindow::createBodyList()
       std::string::size_type n;
       n = lnm.find(".");
       if(n != std::string::npos)
-	{
-	  lnm = lnm.substr(0, n);
-	}
+        {
+          lnm = lnm.substr(0, n);
+        }
       size_t dist = 1;
-      auto it = std::find_if(item.begin(), item.end(), [lnm]
-      (auto &el)
-	{
-	  std::string::size_type n;
-	  n = el.find(lnm);
-	  if(n != std::string::npos)
-	    {
-	      return true;
-	    }
-	  else
-	    {
-	      return false;
-	    }
-	});
+      auto it = std::find_if(item.begin(), item.end(), [lnm](auto &el) {
+        std::string::size_type n;
+        n = el.find(lnm);
+        if(n != std::string::npos)
+          {
+            return true;
+          }
+        else
+          {
+            return false;
+          }
+      });
       if(it != item.end())
-	{
-	  dist = std::distance(item.begin(), it);
-	}
+        {
+          dist = std::distance(item.begin(), it);
+        }
       std::stringstream strm;
       std::locale loc("C");
       for(size_t i = 0; i < listv.size(); i++)
-	{
-	  item = listv[i];
-	  if(item.size() > 0)
-	    {
-	      std::string val = item[0];
-	      strm.clear();
-	      strm.str("");
-	      strm.imbue(loc);
-	      strm.str(val);
-	      int naifid;
-	      strm >> naifid;
-	      if(item.size() > dist)
-		{
-		  val = item[dist];
-		}
-	      else if(item.size() >= 2)
-		{
-		  val = item[1];
-		}
-	      Glib::RefPtr<BodyListItem> bli = BodyListItem::create(val,
-								    naifid);
-	      result->append(bli);
-	    }
-	}
+        {
+          item = listv[i];
+          if(item.size() > 0)
+            {
+              std::string val = item[0];
+              strm.clear();
+              strm.str("");
+              strm.imbue(loc);
+              strm.str(val);
+              int naifid;
+              strm >> naifid;
+              if(item.size() > dist)
+                {
+                  val = item[dist];
+                }
+              else if(item.size() >= 2)
+                {
+                  val = item[1];
+                }
+              Glib::RefPtr<BodyListItem> bli
+                  = BodyListItem::create(val, naifid);
+              result->append(bli);
+            }
+        }
     }
 
   return result;
@@ -935,73 +910,73 @@ MainWindow::openDialog(Gtk::Entry *pathent)
   Glib::RefPtr<Gtk::FileDialog> fcd = Gtk::FileDialog::create();
   fcd->set_modal(true);
   fcd->set_title(gettext("Ephemeris file selection"));
-  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  Glib::RefPtr<Gio::File> fl
+      = Gio::File::create_for_path(Glib::get_home_dir());
   fcd->set_initial_folder(fl);
   fcd->set_accept_label(gettext("Select"));
   Glib::RefPtr<Gio::Cancellable> cncl = Gio::Cancellable::create();
-  fcd->open(*this, [pathent]
-  (Glib::RefPtr<Gio::AsyncResult> &result)
-    {
-      Glib::RefPtr<Gio::File> fl;
-      auto obj = result->get_source_object_base();
-      auto fchd = std::dynamic_pointer_cast<Gtk::FileDialog> (obj);
-      if(!fchd)
-	{
-	  return void ();
-	}
-      try
-	{
-	  fl = fchd->open_finish(result);
-	}
-      catch(Glib::Error &e)
-	{
-	  if(e.code() != Gtk::DialogError::DISMISSED)
-	    {
-	      std::cout << "MainWindow::openDialog:" << e.what()
-	      << std::endl;
-	    }
-	}
-      if(fl)
-	{
-	  pathent->set_text(fl->get_path());
-	}
-    },
-	    cncl);
+  fcd->open(
+      *this,
+      [pathent](Glib::RefPtr<Gio::AsyncResult> &result) {
+        Glib::RefPtr<Gio::File> fl;
+        auto obj = result->get_source_object_base();
+        auto fchd = std::dynamic_pointer_cast<Gtk::FileDialog>(obj);
+        if(!fchd)
+          {
+            return void();
+          }
+        try
+          {
+            fl = fchd->open_finish(result);
+          }
+        catch(Glib::Error &e)
+          {
+            if(e.code() != Gtk::DialogError::DISMISSED)
+              {
+                std::cout << "MainWindow::openDialog:" << e.what()
+                          << std::endl;
+              }
+          }
+        if(fl)
+          {
+            pathent->set_text(fl->get_path());
+          }
+      },
+      cncl);
 #endif
 #ifdef EPH_GTK_OLD
-  Gtk::FileChooserDialog *fcd = new Gtk::FileChooserDialog(
-      *this, gettext("Ephemeris file selection"),
-      Gtk::FileChooser::Action::OPEN, true);
+  Gtk::FileChooserDialog *fcd
+      = new Gtk::FileChooserDialog(*this, gettext("Ephemeris file selection"),
+                                   Gtk::FileChooser::Action::OPEN, true);
   fcd->set_application(this->get_application());
   fcd->set_modal(true);
 
-  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  Glib::RefPtr<Gio::File> fl
+      = Gio::File::create_for_path(Glib::get_home_dir());
   fcd->set_current_folder(fl);
 
   fcd->add_button(gettext("Cancel"), Gtk::ResponseType::CANCEL);
   fcd->add_button(gettext("Open"), Gtk::ResponseType::ACCEPT);
 
-  fcd->signal_response().connect([fcd, pathent]
-  (int resp_id)
-    {
-      if(resp_id == Gtk::ResponseType::ACCEPT)
-	{
-	  Glib::RefPtr<Gio::File> fl = fcd->get_file();
-	  if(fl)
-	    {
-	      pathent->set_text(fl->get_path());
-	    }
-	}
-      fcd->close();
-    });
+  fcd->signal_response().connect([fcd, pathent](int resp_id) {
+    if(resp_id == Gtk::ResponseType::ACCEPT)
+      {
+        Glib::RefPtr<Gio::File> fl = fcd->get_file();
+        if(fl)
+          {
+            pathent->set_text(fl->get_path());
+          }
+      }
+    fcd->close();
+  });
 
-  fcd->signal_close_request().connect([fcd]
-  {
-    std::shared_ptr<Gtk::FileChooserDialog> fd(fcd);
-    fd->set_visible(false);
-    return true;
-  },
-				      false);
+  fcd->signal_close_request().connect(
+      [fcd] {
+        std::shared_ptr<Gtk::FileChooserDialog> fd(fcd);
+        fd->set_visible(false);
+        return true;
+      },
+      false);
 
   fcd->present();
 #endif
@@ -1009,14 +984,14 @@ MainWindow::openDialog(Gtk::Entry *pathent)
 
 void
 MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-		      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-		      Gtk::DropDown *timecomb, Gtk::DropDown *belt,
-		      Gtk::DropDown *objcomb, Gtk::DropDown *coordcomb,
-		      Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
-		      Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
-		      Gtk::Entry *stepnument, Gtk::Entry *pathent,
-		      Gtk::Entry *tttdbent, Gtk::Entry *mlbent,
-		      Gtk::Entry *smlent)
+                      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+                      Gtk::DropDown *timecomb, Gtk::DropDown *belt,
+                      Gtk::DropDown *objcomb, Gtk::DropDown *coordcomb,
+                      Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
+                      Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
+                      Gtk::Entry *stepnument, Gtk::Entry *pathent,
+                      Gtk::Entry *tttdbent, Gtk::Entry *mlbent,
+                      Gtk::Entry *smlent)
 {
   std::string daystr(day->get_text());
   std::string monthstr(month->get_text());
@@ -1025,8 +1000,8 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   std::string minutstr(minut->get_text());
   std::string secondstr(second->get_text());
   Glib::RefPtr<Gio::ListModel> model = belt->get_model();
-  Glib::RefPtr<Gtk::StringList> strl =
-      std::dynamic_pointer_cast<Gtk::StringList>(model);
+  Glib::RefPtr<Gtk::StringList> strl
+      = std::dynamic_pointer_cast<Gtk::StringList>(model);
   std::string beltstr(strl->get_string(belt->get_selected()));
   std::string stepstr(stepent->get_text());
   std::string stepnumberstr(stepnument->get_text());
@@ -1034,8 +1009,8 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   std::string tttdbstr(tttdbent->get_text());
   std::string smlstr(smlent->get_text());
   int naifid = -1;
-  Glib::RefPtr<BodyListItem> bli = std::dynamic_pointer_cast<BodyListItem>(
-      objcomb->get_selected_item());
+  Glib::RefPtr<BodyListItem> bli
+      = std::dynamic_pointer_cast<BodyListItem>(objcomb->get_selected_item());
   if(bli)
     {
       naifid = bli->naifid;
@@ -1084,10 +1059,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << daystr;
       strm >> daynum;
       if(daynum < 1)
-	{
-	  errDialog(1);
-	  return void();
-	}
+        {
+          errDialog(1);
+          return void();
+        }
     }
 
   if(monthstr == "")
@@ -1103,27 +1078,27 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << monthstr;
       strm >> monthnum;
       if(monthnum < 1 || monthnum > 12)
-	{
-	  errDialog(2);
-	  return void();
-	}
+        {
+          errDialog(2);
+          return void();
+        }
       if(monthnum == 1 || monthnum == 3 || monthnum == 5 || monthnum == 7
-	  || monthnum == 8 || monthnum == 10 || monthnum == 12)
-	{
-	  if(daynum > 31)
-	    {
-	      errDialog(1);
-	      return void();
-	    }
-	}
+         || monthnum == 8 || monthnum == 10 || monthnum == 12)
+        {
+          if(daynum > 31)
+            {
+              errDialog(1);
+              return void();
+            }
+        }
       else
-	{
-	  if(daynum > 30)
-	    {
-	      errDialog(1);
-	      return void();
-	    }
-	}
+        {
+          if(daynum > 30)
+            {
+              errDialog(1);
+              return void();
+            }
+        }
     }
 
   if(yearstr == "")
@@ -1139,27 +1114,27 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << yearstr;
       strm >> yearnum;
       if((yearnum & 3) == 0 && ((yearnum % 25) != 0 || (yearnum & 15) == 0))
-	{
-	  if(monthnum == 2)
-	    {
-	      if(daynum > 29)
-		{
-		  errDialog(1);
-		  return void();
-		}
-	    }
-	}
+        {
+          if(monthnum == 2)
+            {
+              if(daynum > 29)
+                {
+                  errDialog(1);
+                  return void();
+                }
+            }
+        }
       else
-	{
-	  if(monthnum == 2)
-	    {
-	      if(daynum > 28)
-		{
-		  errDialog(1);
-		  return void();
-		}
-	    }
-	}
+        {
+          if(monthnum == 2)
+            {
+              if(daynum > 28)
+                {
+                  errDialog(1);
+                  return void();
+                }
+            }
+        }
     }
 
   if(hourstr == "")
@@ -1175,10 +1150,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << hourstr;
       strm >> hournum;
       if(hournum < 0 || hournum > 23)
-	{
-	  errDialog(4);
-	  return void();
-	}
+        {
+          errDialog(4);
+          return void();
+        }
     }
 
   if(minutstr == "")
@@ -1194,10 +1169,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << minutstr;
       strm >> minutnum;
       if(minutnum < 0 || minutnum > 59)
-	{
-	  errDialog(5);
-	  return void();
-	}
+        {
+          errDialog(5);
+          return void();
+        }
     }
 
   if(secondstr == "")
@@ -1213,10 +1188,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << secondstr;
       strm >> secondnum;
       if(secondnum < 0 || secondnum > 59)
-	{
-	  errDialog(6);
-	  return void();
-	}
+        {
+          errDialog(6);
+          return void();
+        }
     }
 
   if(stepstr == "")
@@ -1232,10 +1207,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << stepstr;
       strm >> stepnum;
       if(stepnum <= 0)
-	{
-	  errDialog(7);
-	  return void();
-	}
+        {
+          errDialog(7);
+          return void();
+        }
     }
 
   if(stepnumberstr == "")
@@ -1251,10 +1226,10 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << stepnumberstr;
       strm >> stepnumbernum;
       if(stepnumbernum <= 0)
-	{
-	  errDialog(8);
-	  return void();
-	}
+        {
+          errDialog(8);
+          return void();
+        }
     }
   Gtk::ProgressBar *bar = nullptr;
   Gtk::Window *info_win = resultPulseWin(0, bar);
@@ -1265,17 +1240,15 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   bool datech;
   if(!tttdbstr.empty())
     {
-      datech = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-				 secondnum,
-				 static_cast<int>(timecomb->get_selected()),
-				 beltnum, tttdbstr);
+      datech = daf.epochCheckUTC(
+          daynum, monthnum, yearnum, hournum, minutnum, secondnum,
+          static_cast<int>(timecomb->get_selected()), beltnum, tttdbstr);
     }
   else
     {
-      datech = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-				 secondnum,
-				 static_cast<int>(timecomb->get_selected()),
-				 beltnum, pathstr);
+      datech = daf.epochCheckUTC(
+          daynum, monthnum, yearnum, hournum, minutnum, secondnum,
+          static_cast<int>(timecomb->get_selected()), beltnum, pathstr);
     }
   if(!datech)
     {
@@ -1299,20 +1272,17 @@ MainWindow::calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       naifid, JDcalc, static_cast<int>(timecomb->get_selected()), coordtype,
       xyz, theory, unit, stepnum, stepnumbernum, pathstr, tttdbstr, smlstr,
       &orbits_cancel);
-  std::vector<std::array<mpf_class, 3> > *result = new std::vector<
-      std::array<mpf_class, 3> >;
+  std::vector<std::array<mpf_class, 3>> *result
+      = new std::vector<std::array<mpf_class, 3>>;
   Glib::Dispatcher *result_win_disp = new Glib::Dispatcher;
-  result_win_disp->connect(
-      [result, this, belt, objcomb, coordcomb, xyzcomb, equincomb, unitcomb,
-       result_win_disp, info_win]
-      {
-	info_win->close();
-	this->resultPresenting(result, belt, objcomb, coordcomb, xyzcomb,
-			       equincomb, unitcomb, result_win_disp);
-      });
+  result_win_disp->connect([result, this, belt, objcomb, coordcomb, xyzcomb,
+                            equincomb, unitcomb, result_win_disp, info_win] {
+    info_win->close();
+    this->resultPresenting(result, belt, objcomb, coordcomb, xyzcomb,
+                           equincomb, unitcomb, result_win_disp);
+  });
 
-  std::thread *coordthr = new std::thread([calc, result_win_disp, result]
-  {
+  std::thread *coordthr = new std::thread([calc, result_win_disp, result] {
     *result = calc->calculationsXYZ();
     delete calc;
     result_win_disp->emit();
@@ -1360,7 +1330,7 @@ MainWindow::errDialog(int variant)
   else if(variant == 9)
     {
       msgtxt = gettext("Date is out of ephemeris time interval or "
-		       "TT-TDB amendments was not found!");
+                       "TT-TDB amendments was not found!");
     }
   else if(variant == 10)
     {
@@ -1395,18 +1365,18 @@ MainWindow::errDialog(int variant)
   close->signal_clicked().connect(std::bind(&Gtk::Window::close, window));
   grid->attach(*close, 0, 1, 1, 1);
 
-  window->signal_close_request().connect([window]
-  {
-    std::shared_ptr<Gtk::Window> win(window);
-    win->set_visible(false);
-    return true;
-  },
-					 false);
+  window->signal_close_request().connect(
+      [window] {
+        std::shared_ptr<Gtk::Window> win(window);
+        win->set_visible(false);
+        return true;
+      },
+      false);
 
   window->present();
 }
 
-Gtk::Window*
+Gtk::Window *
 MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
 {
   orbits_cancel.store(0);
@@ -1450,34 +1420,33 @@ MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
       cancel->set_halign(Gtk::Align::CENTER);
       cancel->set_margin(5);
       cancel->set_label(gettext("Cancel"));
-      cancel->signal_clicked().connect([this, cancel, calclab, bar]
-      {
-	this->orbits_cancel.store(1);
-	cancel->set_visible(false);
-	bar->set_visible(false);
-	calclab->set_text(gettext("Canceling..."));
+      cancel->signal_clicked().connect([this, cancel, calclab, bar] {
+        this->orbits_cancel.store(1);
+        cancel->set_visible(false);
+        bar->set_visible(false);
+        calclab->set_text(gettext("Canceling..."));
       });
       grid->attach(*cancel, 0, 2, 1, 1);
     }
 
-  window->signal_close_request().connect([window]
-  {
-    std::shared_ptr<Gtk::Window> win(window);
-    win->set_visible(false);
-    return true;
-  },
-					 false);
+  window->signal_close_request().connect(
+      [window] {
+        std::shared_ptr<Gtk::Window> win(window);
+        win->set_visible(false);
+        return true;
+      },
+      false);
   window->present();
 
   return window;
 }
 
 void
-MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
-			     Gtk::DropDown *belt, Gtk::DropDown *objcomb,
-			     Gtk::DropDown *coordcomb, Gtk::DropDown *xyzcomb,
-			     Gtk::DropDown *equincomb, Gtk::DropDown *unitcomb,
-			     Glib::Dispatcher *result_win_disp)
+MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3>> *result,
+                             Gtk::DropDown *belt, Gtk::DropDown *objcomb,
+                             Gtk::DropDown *coordcomb, Gtk::DropDown *xyzcomb,
+                             Gtk::DropDown *equincomb, Gtk::DropDown *unitcomb,
+                             Glib::Dispatcher *result_win_disp)
 {
   Gtk::Window *window = new Gtk::Window;
   window->set_application(this->get_application());
@@ -1494,17 +1463,16 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
   Gtk::Label *objlab = Gtk::make_managed<Gtk::Label>();
   objlab->set_halign(Gtk::Align::START);
   objlab->set_margin(5);
-  Glib::RefPtr<BodyListItem> bli = std::dynamic_pointer_cast<BodyListItem>(
-      objcomb->get_selected_item());
+  Glib::RefPtr<BodyListItem> bli
+      = std::dynamic_pointer_cast<BodyListItem>(objcomb->get_selected_item());
   if(bli)
     {
       objlab->set_text(Glib::ustring(gettext("Object: ") + bli->bodyname));
     }
   else
     {
-      objlab->set_text(
-	  Glib::ustring(
-	      gettext("Object: ") + Glib::ustring(gettext("Error!"))));
+      objlab->set_text(Glib::ustring(gettext("Object: ")
+                                     + Glib::ustring(gettext("Error!"))));
     }
   grid->attach(*objlab, 0, 0, 1, 1);
 
@@ -1512,12 +1480,10 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
   coordlab->set_halign(Gtk::Align::START);
   coordlab->set_margin(5);
   Glib::RefPtr<Gio::ListModel> lmodel = coordcomb->get_model();
-  Glib::RefPtr<Gtk::StringList> strl =
-      std::dynamic_pointer_cast<Gtk::StringList>(lmodel);
-  coordlab->set_text(
-      Glib::ustring(
-	  gettext("Coordinates: ")
-	      + strl->get_string(coordcomb->get_selected())));
+  Glib::RefPtr<Gtk::StringList> strl
+      = std::dynamic_pointer_cast<Gtk::StringList>(lmodel);
+  coordlab->set_text(Glib::ustring(
+      gettext("Coordinates: ") + strl->get_string(coordcomb->get_selected())));
   grid->attach(*coordlab, 0, 1, 1, 1);
 
   Gtk::Label *equinlab = Gtk::make_managed<Gtk::Label>();
@@ -1526,9 +1492,8 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
   lmodel = equincomb->get_model();
   strl = std::dynamic_pointer_cast<Gtk::StringList>(lmodel);
   equinlab->set_text(
-      Glib::ustring(
-	  gettext("Equator and equinox: ")
-	      + strl->get_string(equincomb->get_selected())));
+      Glib::ustring(gettext("Equator and equinox: ")
+                    + strl->get_string(equincomb->get_selected())));
   grid->attach(*equinlab, 0, 2, 1, 1);
 
   Gtk::Label *unitlab = Gtk::make_managed<Gtk::Label>();
@@ -1537,9 +1502,8 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
   lmodel = unitcomb->get_model();
   strl = std::dynamic_pointer_cast<Gtk::StringList>(lmodel);
   unitlab->set_text(
-      Glib::ustring(
-	  gettext("Units of measurement: ")
-	      + strl->get_string(unitcomb->get_selected())));
+      Glib::ustring(gettext("Units of measurement: ")
+                    + strl->get_string(unitcomb->get_selected())));
   grid->attach(*unitlab, 0, 3, 1, 1);
 
   Gtk::Label *beltlab = Gtk::make_managed<Gtk::Label>();
@@ -1547,13 +1511,12 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
   beltlab->set_margin(5);
   lmodel = belt->get_model();
   strl = std::dynamic_pointer_cast<Gtk::StringList>(lmodel);
-  beltlab->set_text(
-      Glib::ustring(
-	  gettext("Hour belt: ") + strl->get_string(belt->get_selected())));
+  beltlab->set_text(Glib::ustring(gettext("Hour belt: ")
+                                  + strl->get_string(belt->get_selected())));
   grid->attach(*beltlab, 0, 4, 1, 1);
 
-  Glib::RefPtr<Gio::ListStore<ModelColumns> > store = Gio::ListStore<
-      ModelColumns>::create();
+  Glib::RefPtr<Gio::ListStore<ModelColumns>> store
+      = Gio::ListStore<ModelColumns>::create();
   std::stringstream strm;
   std::locale loc("C");
   AuxFunc af;
@@ -1562,7 +1525,7 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
       int ych, mch, dch, hch, minch;
       double secch;
       af.dateJulian(JDshow + i * stepnum, &dch, &mch, &ych, &hch, &minch,
-		    &secch);
+                    &secch);
       strm.clear();
       strm.str("");
       strm.imbue(loc);
@@ -1572,26 +1535,26 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
       strm << dch;
       std::string datestr;
       if(dch < 10)
-	{
-	  datestr = "0" + strm.str();
-	}
+        {
+          datestr = "0" + strm.str();
+        }
       else
-	{
-	  datestr = strm.str();
-	}
+        {
+          datestr = strm.str();
+        }
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
       strm << mch;
       if(mch < 10)
-	{
-	  datestr = datestr + ".0" + strm.str();
-	}
+        {
+          datestr = datestr + ".0" + strm.str();
+        }
       else
-	{
-	  datestr = datestr + "." + strm.str();
-	}
+        {
+          datestr = datestr + "." + strm.str();
+        }
 
       strm.clear();
       strm.str("");
@@ -1604,60 +1567,63 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
       strm.imbue(loc);
       strm << hch;
       if(hch < 10)
-	{
-	  datestr = datestr + " 0" + strm.str();
-	}
+        {
+          datestr = datestr + " 0" + strm.str();
+        }
       else
-	{
-	  datestr = datestr + " " + strm.str();
-	}
+        {
+          datestr = datestr + " " + strm.str();
+        }
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
       strm << minch;
       if(minch < 10)
-	{
-	  datestr = datestr + ":0" + strm.str();
-	}
+        {
+          datestr = datestr + ":0" + strm.str();
+        }
       else
-	{
-	  datestr = datestr + ":" + strm.str();
-	}
+        {
+          datestr = datestr + ":" + strm.str();
+        }
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
       if(secch > 59)
-	{
-	  secch = 0;
-	}
+        {
+          secch = 0;
+        }
       strm << std::fixed << std::setprecision(3) << secch;
       if(secch < 10)
-	{
-	  datestr = datestr + ":0" + strm.str();
-	}
+        {
+          datestr = datestr + ":0" + strm.str();
+        }
       else
-	{
-	  datestr = datestr + ":" + strm.str();
-	}
+        {
+          datestr = datestr + ":" + strm.str();
+        }
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
-      strm << std::fixed << std::setprecision(20) << std::get<0>(result->at(i));
+      strm << std::fixed << std::setprecision(20)
+           << std::get<0>(result->at(i));
       std::string X = strm.str();
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
-      strm << std::fixed << std::setprecision(20) << std::get<1>(result->at(i));
+      strm << std::fixed << std::setprecision(20)
+           << std::get<1>(result->at(i));
       std::string Y = strm.str();
 
       strm.clear();
       strm.str("");
       strm.imbue(loc);
-      strm << std::fixed << std::setprecision(20) << std::get<2>(result->at(i));
+      strm << std::fixed << std::setprecision(20)
+           << std::get<2>(result->at(i));
       std::string Z = strm.str();
       Glib::RefPtr<ModelColumns> row = ModelColumns::create(datestr, X, Y, Z);
       store->append(row);
@@ -1665,95 +1631,82 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
 
   Glib::RefPtr<Gtk::NoSelection> selection = Gtk::NoSelection::create(store);
 
-  Glib::RefPtr<Gtk::SignalListItemFactory> factory =
-      Gtk::SignalListItemFactory::create();
-  factory->signal_setup().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &item)
-    {
-      Gtk::Label *lab = Gtk::make_managed<Gtk::Label> ();
-      lab->set_margin(5);
-      lab->set_halign(Gtk::Align::CENTER);
-      lab->set_valign(Gtk::Align::CENTER);
-      lab->set_text("");
-      item->set_child(*lab);
-    });
+  Glib::RefPtr<Gtk::SignalListItemFactory> factory
+      = Gtk::SignalListItemFactory::create();
+  factory->signal_setup().connect([](const Glib::RefPtr<Gtk::ListItem> &item) {
+    Gtk::Label *lab = Gtk::make_managed<Gtk::Label>();
+    lab->set_margin(5);
+    lab->set_halign(Gtk::Align::CENTER);
+    lab->set_valign(Gtk::Align::CENTER);
+    lab->set_text("");
+    item->set_child(*lab);
+  });
 
-  factory->signal_bind().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &item)
-    {
-      Glib::RefPtr<ModelColumns> row
-      = std::dynamic_pointer_cast<ModelColumns> (item->get_item());
-      Gtk::Label *lab = dynamic_cast<Gtk::Label *>(item->get_child());
-      lab->set_text(row->date);
-    });
+  factory->signal_bind().connect([](const Glib::RefPtr<Gtk::ListItem> &item) {
+    Glib::RefPtr<ModelColumns> row
+        = std::dynamic_pointer_cast<ModelColumns>(item->get_item());
+    Gtk::Label *lab = dynamic_cast<Gtk::Label *>(item->get_child());
+    lab->set_text(row->date);
+  });
   Glib::RefPtr<Gtk::ColumnViewColumn> col_date = Gtk::ColumnViewColumn::create(
       gettext("Date and time(local)"), factory);
 
-  Glib::RefPtr<Gtk::SignalListItemFactory> factoryX =
-      Gtk::SignalListItemFactory::create();
-  factoryX->signal_setup().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &item)
-    {
-      Gtk::Label *lab = Gtk::make_managed<Gtk::Label> ();
-      lab->set_margin(5);
-      lab->set_halign(Gtk::Align::CENTER);
-      lab->set_valign(Gtk::Align::CENTER);
-      lab->set_text("");
-      item->set_child(*lab);
-    });
+  Glib::RefPtr<Gtk::SignalListItemFactory> factoryX
+      = Gtk::SignalListItemFactory::create();
+  factoryX->signal_setup().connect(
+      [](const Glib::RefPtr<Gtk::ListItem> &item) {
+        Gtk::Label *lab = Gtk::make_managed<Gtk::Label>();
+        lab->set_margin(5);
+        lab->set_halign(Gtk::Align::CENTER);
+        lab->set_valign(Gtk::Align::CENTER);
+        lab->set_text("");
+        item->set_child(*lab);
+      });
 
-  factoryX->signal_bind().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &item)
-    {
-      Glib::RefPtr<ModelColumns> row
-      = std::dynamic_pointer_cast<ModelColumns> (item->get_item());
-      Gtk::Label *lab = dynamic_cast<Gtk::Label *>(item->get_child());
-      lab->set_text(row->x);
-    });
+  factoryX->signal_bind().connect([](const Glib::RefPtr<Gtk::ListItem> &item) {
+    Glib::RefPtr<ModelColumns> row
+        = std::dynamic_pointer_cast<ModelColumns>(item->get_item());
+    Gtk::Label *lab = dynamic_cast<Gtk::Label *>(item->get_child());
+    lab->set_text(row->x);
+  });
 
-  Glib::RefPtr<Gtk::SignalListItemFactory> factoryY =
-      Gtk::SignalListItemFactory::create();
-  factoryY->signal_setup().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &item)
-    {
-      Gtk::Label *lab = Gtk::make_managed<Gtk::Label> ();
-      lab->set_margin(5);
-      lab->set_halign(Gtk::Align::CENTER);
-      lab->set_valign(Gtk::Align::CENTER);
-      lab->set_text("");
-      item->set_child(*lab);
-    });
+  Glib::RefPtr<Gtk::SignalListItemFactory> factoryY
+      = Gtk::SignalListItemFactory::create();
+  factoryY->signal_setup().connect(
+      [](const Glib::RefPtr<Gtk::ListItem> &item) {
+        Gtk::Label *lab = Gtk::make_managed<Gtk::Label>();
+        lab->set_margin(5);
+        lab->set_halign(Gtk::Align::CENTER);
+        lab->set_valign(Gtk::Align::CENTER);
+        lab->set_text("");
+        item->set_child(*lab);
+      });
 
-  factoryY->signal_bind().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &item)
-    {
-      Glib::RefPtr<ModelColumns> row
-      = std::dynamic_pointer_cast<ModelColumns> (item->get_item());
-      Gtk::Label *lab = dynamic_cast<Gtk::Label *>(item->get_child());
-      lab->set_text(row->y);
-    });
+  factoryY->signal_bind().connect([](const Glib::RefPtr<Gtk::ListItem> &item) {
+    Glib::RefPtr<ModelColumns> row
+        = std::dynamic_pointer_cast<ModelColumns>(item->get_item());
+    Gtk::Label *lab = dynamic_cast<Gtk::Label *>(item->get_child());
+    lab->set_text(row->y);
+  });
 
-  Glib::RefPtr<Gtk::SignalListItemFactory> factoryZ =
-      Gtk::SignalListItemFactory::create();
-  factoryZ->signal_setup().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &item)
-    {
-      Gtk::Label *lab = Gtk::make_managed<Gtk::Label> ();
-      lab->set_margin(5);
-      lab->set_halign(Gtk::Align::CENTER);
-      lab->set_valign(Gtk::Align::CENTER);
-      lab->set_text("");
-      item->set_child(*lab);
-    });
+  Glib::RefPtr<Gtk::SignalListItemFactory> factoryZ
+      = Gtk::SignalListItemFactory::create();
+  factoryZ->signal_setup().connect(
+      [](const Glib::RefPtr<Gtk::ListItem> &item) {
+        Gtk::Label *lab = Gtk::make_managed<Gtk::Label>();
+        lab->set_margin(5);
+        lab->set_halign(Gtk::Align::CENTER);
+        lab->set_valign(Gtk::Align::CENTER);
+        lab->set_text("");
+        item->set_child(*lab);
+      });
 
-  factoryZ->signal_bind().connect([]
-  (const Glib::RefPtr<Gtk::ListItem> &item)
-    {
-      Glib::RefPtr<ModelColumns> row
-      = std::dynamic_pointer_cast<ModelColumns> (item->get_item());
-      Gtk::Label *lab = dynamic_cast<Gtk::Label *>(item->get_child());
-      lab->set_text(row->z);
-    });
+  factoryZ->signal_bind().connect([](const Glib::RefPtr<Gtk::ListItem> &item) {
+    Glib::RefPtr<ModelColumns> row
+        = std::dynamic_pointer_cast<ModelColumns>(item->get_item());
+    Gtk::Label *lab = dynamic_cast<Gtk::Label *>(item->get_child());
+    lab->set_text(row->z);
+  });
 
   Glib::RefPtr<Gtk::ColumnViewColumn> col_X;
   Glib::RefPtr<Gtk::ColumnViewColumn> col_Y;
@@ -1762,36 +1715,36 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
   if(objcomb->get_selected() != 21)
     {
       if(xyzcomb->get_selected() == 0)
-	{
-	  col_X = Gtk::ColumnViewColumn::create("X", factoryX);
-	  col_Y = Gtk::ColumnViewColumn::create("Y", factoryY);
-	  col_Z = Gtk::ColumnViewColumn::create("Z", factoryZ);
-	  header_line = header_line + ";X;Y;Z;";
-	}
+        {
+          col_X = Gtk::ColumnViewColumn::create("X", factoryX);
+          col_Y = Gtk::ColumnViewColumn::create("Y", factoryY);
+          col_Z = Gtk::ColumnViewColumn::create("Z", factoryZ);
+          header_line = header_line + ";X;Y;Z;";
+        }
       else if(xyzcomb->get_selected() == 1)
-	{
-	  col_X = Gtk::ColumnViewColumn::create("Vx", factoryX);
-	  col_Y = Gtk::ColumnViewColumn::create("Vy", factoryY);
-	  col_Z = Gtk::ColumnViewColumn::create("Vz", factoryZ);
-	  header_line = header_line + ";Vx;Vy;Vz;";
-	}
+        {
+          col_X = Gtk::ColumnViewColumn::create("Vx", factoryX);
+          col_Y = Gtk::ColumnViewColumn::create("Vy", factoryY);
+          col_Z = Gtk::ColumnViewColumn::create("Vz", factoryZ);
+          header_line = header_line + ";Vx;Vy;Vz;";
+        }
     }
   else
     {
       if(xyzcomb->get_selected() == 0)
-	{
-	  col_X = Gtk::ColumnViewColumn::create("φ", factoryX);
-	  col_Y = Gtk::ColumnViewColumn::create("θ", factoryY);
-	  col_Z = Gtk::ColumnViewColumn::create("ψ", factoryZ);
-	  header_line = header_line + ";φ;θ;ψ;";
-	}
+        {
+          col_X = Gtk::ColumnViewColumn::create("φ", factoryX);
+          col_Y = Gtk::ColumnViewColumn::create("θ", factoryY);
+          col_Z = Gtk::ColumnViewColumn::create("ψ", factoryZ);
+          header_line = header_line + ";φ;θ;ψ;";
+        }
       if(xyzcomb->get_selected() == 1)
-	{
-	  col_X = Gtk::ColumnViewColumn::create("φ'", factoryX);
-	  col_Y = Gtk::ColumnViewColumn::create("θ'", factoryY);
-	  col_Z = Gtk::ColumnViewColumn::create("ψ'", factoryZ);
-	  header_line = header_line + ";φ';θ';ψ';";
-	}
+        {
+          col_X = Gtk::ColumnViewColumn::create("φ'", factoryX);
+          col_Y = Gtk::ColumnViewColumn::create("θ'", factoryY);
+          col_Z = Gtk::ColumnViewColumn::create("ψ'", factoryZ);
+          header_line = header_line + ";φ';θ';ψ';";
+        }
     }
 
   Gtk::ColumnView *columnv = Gtk::make_managed<Gtk::ColumnView>();
@@ -1814,10 +1767,9 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
   save->set_halign(Gtk::Align::CENTER);
   save->set_margin(5);
   save->set_label(gettext("Save"));
-  save->signal_clicked().connect(
-      sigc::bind(sigc::mem_fun(*this, &MainWindow::saveDialog), window, objlab,
-		 coordlab, equinlab, unitlab, beltlab, columnv, objcomb,
-		 header_line));
+  save->signal_clicked().connect(sigc::bind(
+      sigc::mem_fun(*this, &MainWindow::saveDialog), window, objlab, coordlab,
+      equinlab, unitlab, beltlab, columnv, objcomb, header_line));
   grid->attach(*save, 0, 6, 1, 1);
 
   Gtk::Button *close = Gtk::make_managed<Gtk::Button>();
@@ -1825,8 +1777,7 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
   close->set_halign(Gtk::Align::CENTER);
   close->set_margin(5);
   close->set_label(gettext("Close"));
-  close->signal_clicked().connect([window]
-  {
+  close->signal_clicked().connect([window] {
     window->close();
   });
   grid->attach(*close, 1, 6, 1, 1);
@@ -1837,8 +1788,7 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
       grid->remove(*equinlab);
     }
 
-  columnv->signal_realize().connect([columnv, scrl, this]
-  {
+  columnv->signal_realize().connect([columnv, scrl, this] {
     Glib::RefPtr<Gdk::Surface> surf = this->get_surface();
     Glib::RefPtr<Gdk::Display> disp = this->get_display();
     Glib::RefPtr<Gdk::Monitor> mon = disp->get_monitor_at_surface(surf);
@@ -1850,82 +1800,81 @@ MainWindow::resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
     int s_width = 0.5 * req.get_width();
     if(width <= s_width)
       {
-	scrl->set_min_content_width(width);
+        scrl->set_min_content_width(width);
       }
     else
       {
-	scrl->set_min_content_width(s_width);
+        scrl->set_min_content_width(s_width);
       }
     int height = nat.get_height();
     int s_height = 0.5 * req.get_height();
     if(height <= s_height)
       {
-	scrl->set_min_content_height(height);
+        scrl->set_min_content_height(height);
       }
     else
       {
-	scrl->set_min_content_height(s_height);
+        scrl->set_min_content_height(s_height);
       }
   });
 
-  window->signal_close_request().connect([window, result_win_disp]
-  {
-    delete result_win_disp;
-    window->set_visible(false);
-    delete window;
-    return true;
-  },
-					 false);
+  window->signal_close_request().connect(
+      [window, result_win_disp] {
+        delete result_win_disp;
+        window->set_visible(false);
+        delete window;
+        return true;
+      },
+      false);
   window->present();
   delete result;
 }
 
 void
 MainWindow::saveDialog(Gtk::Window *win, Gtk::Label *objlab,
-		       Gtk::Label *coordlab, Gtk::Label *equinlab,
-		       Gtk::Label *unitlab, Gtk::Label *beltlab,
-		       Gtk::ColumnView *view, Gtk::DropDown *objcomb,
-		       std::string header_line)
+                       Gtk::Label *coordlab, Gtk::Label *equinlab,
+                       Gtk::Label *unitlab, Gtk::Label *beltlab,
+                       Gtk::ColumnView *view, Gtk::DropDown *objcomb,
+                       std::string header_line)
 {
 #ifndef EPH_GTK_OLD
   Glib::RefPtr<Gtk::FileDialog> fcd = Gtk::FileDialog::create();
   fcd->set_title(gettext("Save result"));
   fcd->set_modal(true);
-  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  Glib::RefPtr<Gio::File> fl
+      = Gio::File::create_for_path(Glib::get_home_dir());
   fcd->set_initial_folder(fl);
   fcd->set_initial_name("result.csv");
   Glib::RefPtr<Gio::Cancellable> cancel = Gio::Cancellable::create();
   fcd->save(
       *win,
       [this, objlab, coordlab, equinlab, unitlab, beltlab, view, objcomb,
-       header_line]
-      (const Glib::RefPtr<Gio::AsyncResult> &result)
-	{
-	  Glib::RefPtr<Gio::File> fl;
-	  auto obj = result->get_source_object_base();
-	  auto fchd = std::dynamic_pointer_cast<Gtk::FileDialog> (obj);
-	  if(!fchd)
-	    {
-	      return void ();
-	    }
-	  try
-	    {
-	      fl = fchd->save_finish(result);
-	    }
-	  catch(Glib::Error &e)
-	    {
-	      if(e.code() != Gtk::DialogError::DISMISSED)
-		{
-		  std::cout << "MainWindow::saveDialog:" << e.what()
-		  << std::endl;
-		}
-	    }
-	  if(fl)
-	    {
-	      this->saveDialogFunc(fl, objlab, coordlab, equinlab, unitlab,
-		  beltlab, view, objcomb, header_line);
-	    }
-	},
+       header_line](const Glib::RefPtr<Gio::AsyncResult> &result) {
+        Glib::RefPtr<Gio::File> fl;
+        auto obj = result->get_source_object_base();
+        auto fchd = std::dynamic_pointer_cast<Gtk::FileDialog>(obj);
+        if(!fchd)
+          {
+            return void();
+          }
+        try
+          {
+            fl = fchd->save_finish(result);
+          }
+        catch(Glib::Error &e)
+          {
+            if(e.code() != Gtk::DialogError::DISMISSED)
+              {
+                std::cout << "MainWindow::saveDialog:" << e.what()
+                          << std::endl;
+              }
+          }
+        if(fl)
+          {
+            this->saveDialogFunc(fl, objlab, coordlab, equinlab, unitlab,
+                                 beltlab, view, objcomb, header_line);
+          }
+      },
       cancel);
 #endif
 #ifdef EPH_GTK_OLD
@@ -1937,34 +1886,33 @@ MainWindow::saveDialog(Gtk::Window *win, Gtk::Label *objlab,
   fcd->add_button(gettext("Cancel"), Gtk::ResponseType::CANCEL);
   fcd->add_button(gettext("Save"), Gtk::ResponseType::ACCEPT);
 
-  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  Glib::RefPtr<Gio::File> fl
+      = Gio::File::create_for_path(Glib::get_home_dir());
   fcd->set_current_folder(fl);
   fcd->set_current_name("result.csv");
 
-  fcd->signal_response().connect(
-      [fcd, this, objlab, coordlab, equinlab, unitlab, beltlab, view, objcomb,
-       header_line]
-      (int resp_id)
-	{
-	  if(resp_id == Gtk::ResponseType::ACCEPT)
-	    {
-	      Glib::RefPtr<Gio::File> fl = fcd->get_file();
-	      if(fl)
-		{
-		  this->saveDialogFunc(fl, objlab, coordlab, equinlab, unitlab,
-		      beltlab, view, objcomb, header_line);
-		}
-	    }
-	  fcd->close();
-	});
+  fcd->signal_response().connect([fcd, this, objlab, coordlab, equinlab,
+                                  unitlab, beltlab, view, objcomb,
+                                  header_line](int resp_id) {
+    if(resp_id == Gtk::ResponseType::ACCEPT)
+      {
+        Glib::RefPtr<Gio::File> fl = fcd->get_file();
+        if(fl)
+          {
+            this->saveDialogFunc(fl, objlab, coordlab, equinlab, unitlab,
+                                 beltlab, view, objcomb, header_line);
+          }
+      }
+    fcd->close();
+  });
 
-  fcd->signal_close_request().connect([fcd]
-  {
-    std::shared_ptr<Gtk::FileChooserDialog> fd(fcd);
-    fd->set_visible(false);
-    return true;
-  },
-				      false);
+  fcd->signal_close_request().connect(
+      [fcd] {
+        std::shared_ptr<Gtk::FileChooserDialog> fd(fcd);
+        fd->set_visible(false);
+        return true;
+      },
+      false);
 
   fcd->present();
 #endif
@@ -1972,10 +1920,10 @@ MainWindow::saveDialog(Gtk::Window *win, Gtk::Label *objlab,
 
 void
 MainWindow::saveDialogFunc(Glib::RefPtr<Gio::File> fl, Gtk::Label *objlab,
-			   Gtk::Label *coordlab, Gtk::Label *equinlab,
-			   Gtk::Label *unitlab, Gtk::Label *beltlab,
-			   Gtk::ColumnView *view, Gtk::DropDown *objcomb,
-			   std::string header_line)
+                           Gtk::Label *coordlab, Gtk::Label *equinlab,
+                           Gtk::Label *unitlab, Gtk::Label *beltlab,
+                           Gtk::ColumnView *view, Gtk::DropDown *objcomb,
+                           std::string header_line)
 {
   std::string filename = fl->get_path();
   std::filesystem::path filepath = std::filesystem::u8path(filename);
@@ -1993,12 +1941,12 @@ MainWindow::saveDialogFunc(Glib::RefPtr<Gio::File> fl, Gtk::Label *objlab,
       line = line + "\n";
       f.write(line.c_str(), line.size());
       if(objcomb->get_selected() != 21)
-	{
-	  line = std::string(coordlab->get_text()) + ";\n";
-	  f.write(line.c_str(), line.size());
-	  line = std::string(equinlab->get_text()) + ";\n";
-	  f.write(line.c_str(), line.size());
-	}
+        {
+          line = std::string(coordlab->get_text()) + ";\n";
+          f.write(line.c_str(), line.size());
+          line = std::string(equinlab->get_text()) + ";\n";
+          f.write(line.c_str(), line.size());
+        }
       line = std::string(unitlab->get_text()) + ";\n";
       f.write(line.c_str(), line.size());
       line = std::string(beltlab->get_text()) + ";\n\n";
@@ -2008,39 +1956,40 @@ MainWindow::saveDialogFunc(Glib::RefPtr<Gio::File> fl, Gtk::Label *objlab,
       line = line + "\n";
       f.write(line.c_str(), line.size());
 
-      Glib::RefPtr<Gtk::NoSelection> model = std::dynamic_pointer_cast<
-	  Gtk::NoSelection>(view->get_model());
+      Glib::RefPtr<Gtk::NoSelection> model
+          = std::dynamic_pointer_cast<Gtk::NoSelection>(view->get_model());
       if(model)
-	{
-	  Glib::RefPtr<Gio::ListModel> mod = model->get_model();
-	  Glib::RefPtr<Gio::ListStore<ModelColumns> > store =
-	      std::dynamic_pointer_cast<Gio::ListStore<ModelColumns> >(mod);
-	  if(store)
-	    {
-	      for(guint i = 0; i < mod->get_n_items(); i++)
-		{
-		  Glib::RefPtr<ModelColumns> item = store->get_item(i);
-		  line.clear();
-		  line = std::string(item->date) + ";";
-		  line = line + std::string(item->x) + ";";
-		  line = line + std::string(item->y) + ";";
-		  line = line + std::string(item->z) + ";";
-		  line = line + "\n";
-		  f.write(line.c_str(), line.size());
-		}
-	    }
-	}
+        {
+          Glib::RefPtr<Gio::ListModel> mod = model->get_model();
+          Glib::RefPtr<Gio::ListStore<ModelColumns>> store
+              = std::dynamic_pointer_cast<Gio::ListStore<ModelColumns>>(mod);
+          if(store)
+            {
+              for(guint i = 0; i < mod->get_n_items(); i++)
+                {
+                  Glib::RefPtr<ModelColumns> item = store->get_item(i);
+                  line.clear();
+                  line = std::string(item->date) + ";";
+                  line = line + std::string(item->x) + ";";
+                  line = line + std::string(item->y) + ";";
+                  line = line + std::string(item->z) + ";";
+                  line = line + "\n";
+                  f.write(line.c_str(), line.size());
+                }
+            }
+        }
       f.close();
     }
 }
 
 void
 MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-			Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-			Gtk::DropDown *timecomb, Gtk::DropDown *belt,
-			Gtk::DropDown *coordcomb, Gtk::DropDown *equincomb,
-			Gtk::Entry *pathent, Gtk::Entry *tttdbent,
-			Gtk::Entry *smlent, Gtk::Entry *scale_ent)
+                        Gtk::Entry *hour, Gtk::Entry *minut,
+                        Gtk::Entry *second, Gtk::DropDown *timecomb,
+                        Gtk::DropDown *belt, Gtk::DropDown *coordcomb,
+                        Gtk::DropDown *equincomb, Gtk::Entry *pathent,
+                        Gtk::Entry *tttdbent, Gtk::Entry *smlent,
+                        Gtk::Entry *scale_ent)
 {
   std::string daystr(day->get_text());
   std::string monthstr(month->get_text());
@@ -2049,8 +1998,8 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   std::string minutstr(minut->get_text());
   std::string secondstr(second->get_text());
   Glib::RefPtr<Gio::ListModel> lmodel = belt->get_model();
-  Glib::RefPtr<Gtk::StringList> strl =
-      std::dynamic_pointer_cast<Gtk::StringList>(lmodel);
+  Glib::RefPtr<Gtk::StringList> strl
+      = std::dynamic_pointer_cast<Gtk::StringList>(lmodel);
   std::string beltstr(strl->get_string(belt->get_selected()));
   std::string pathstr(pathent->get_text());
   std::string tttdbstr(tttdbent->get_text());
@@ -2061,14 +2010,14 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
     {
       char c = *itsf;
       if(c == ',')
-	{
-	  c = '.';
-	  *itsf = c;
-	}
+        {
+          c = '.';
+          *itsf = c;
+        }
       else if((c < '0' || c > '9') && c != '.')
-	{
-	  break;
-	}
+        {
+          break;
+        }
       itsf++;
     }
   if(itsf != scale_fact.end())
@@ -2111,10 +2060,10 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << daystr;
       strm >> daynum;
       if(daynum < 1)
-	{
-	  errDialog(1);
-	  return void();
-	}
+        {
+          errDialog(1);
+          return void();
+        }
     }
 
   if(monthstr == "")
@@ -2130,27 +2079,27 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << monthstr;
       strm >> monthnum;
       if(monthnum < 1 || monthnum > 12)
-	{
-	  errDialog(2);
-	  return void();
-	}
+        {
+          errDialog(2);
+          return void();
+        }
       if(monthnum == 1 || monthnum == 3 || monthnum == 5 || monthnum == 7
-	  || monthnum == 8 || monthnum == 10 || monthnum == 12)
-	{
-	  if(daynum > 31)
-	    {
-	      errDialog(1);
-	      return void();
-	    }
-	}
+         || monthnum == 8 || monthnum == 10 || monthnum == 12)
+        {
+          if(daynum > 31)
+            {
+              errDialog(1);
+              return void();
+            }
+        }
       else
-	{
-	  if(daynum > 30)
-	    {
-	      errDialog(1);
-	      return void();
-	    }
-	}
+        {
+          if(daynum > 30)
+            {
+              errDialog(1);
+              return void();
+            }
+        }
     }
 
   if(yearstr == "")
@@ -2166,27 +2115,27 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << yearstr;
       strm >> yearnum;
       if((yearnum & 3) == 0 && ((yearnum % 25) != 0 || (yearnum & 15) == 0))
-	{
-	  if(monthnum == 2)
-	    {
-	      if(daynum > 29)
-		{
-		  errDialog(1);
-		  return void();
-		}
-	    }
-	}
+        {
+          if(monthnum == 2)
+            {
+              if(daynum > 29)
+                {
+                  errDialog(1);
+                  return void();
+                }
+            }
+        }
       else
-	{
-	  if(monthnum == 2)
-	    {
-	      if(daynum > 28)
-		{
-		  errDialog(1);
-		  return void();
-		}
-	    }
-	}
+        {
+          if(monthnum == 2)
+            {
+              if(daynum > 28)
+                {
+                  errDialog(1);
+                  return void();
+                }
+            }
+        }
     }
 
   if(hourstr == "")
@@ -2202,10 +2151,10 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << hourstr;
       strm >> hournum;
       if(hournum < 0 || hournum > 23)
-	{
-	  errDialog(4);
-	  return void();
-	}
+        {
+          errDialog(4);
+          return void();
+        }
     }
 
   if(minutstr == "")
@@ -2221,10 +2170,10 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << minutstr;
       strm >> minutnum;
       if(minutnum < 0 || minutnum > 59)
-	{
-	  errDialog(5);
-	  return void();
-	}
+        {
+          errDialog(5);
+          return void();
+        }
     }
 
   if(secondstr == "")
@@ -2240,14 +2189,14 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
       strm << secondstr;
       strm >> secondnum;
       if(secondnum < 0 || secondnum > 59)
-	{
-	  errDialog(6);
-	  return void();
-	}
+        {
+          errDialog(6);
+          return void();
+        }
     }
   AuxFunc af;
-  double JDcalc = af.utcJD(daynum, monthnum, yearnum, hournum, minutnum,
-			   secondnum);
+  double JDcalc
+      = af.utcJD(daynum, monthnum, yearnum, hournum, minutnum, secondnum);
 
   if(JDcalc < 0)
     {
@@ -2264,92 +2213,82 @@ MainWindow::orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
   bool chtm;
   if(tttdbstr.empty())
     {
-      chtm = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-			       secondnum,
-			       static_cast<int>(timecomb->get_selected()),
-			       beltnum, pathstr);
+      chtm = daf.epochCheckUTC(
+          daynum, monthnum, yearnum, hournum, minutnum, secondnum,
+          static_cast<int>(timecomb->get_selected()), beltnum, pathstr);
     }
   else
     {
-      chtm = daf.epochCheckUTC(daynum, monthnum, yearnum, hournum, minutnum,
-			       secondnum,
-			       static_cast<int>(timecomb->get_selected()),
-			       beltnum, tttdbstr);
+      chtm = daf.epochCheckUTC(
+          daynum, monthnum, yearnum, hournum, minutnum, secondnum,
+          static_cast<int>(timecomb->get_selected()), beltnum, tttdbstr);
     }
   if(chtm)
     {
       Gtk::ProgressBar *bar = Gtk::make_managed<Gtk::ProgressBar>();
       bar->set_fraction(0.0);
-      OrbitsDiagram *od = new OrbitsDiagram(
-	  this, pathstr, tttdbstr, smlstr, JDcalc,
-	  static_cast<int>(timecomb->get_selected()),
-	  static_cast<int>(coordcomb->get_selected()),
-	  static_cast<int>(equincomb->get_selected()), plot_fact,
-	  &orbits_cancel);
+      OrbitsDiagram *od
+          = new OrbitsDiagram(this, pathstr, tttdbstr, smlstr, JDcalc,
+                              static_cast<int>(timecomb->get_selected()),
+                              static_cast<int>(coordcomb->get_selected()),
+                              static_cast<int>(equincomb->get_selected()),
+                              plot_fact, &orbits_cancel);
       if(orbits_cancel.load() != 0)
-	{
-	  delete od;
-	  errDialog(11);
-	  orbits_cancel.store(0);
-	  return void();
-	}
+        {
+          delete od;
+          errDialog(11);
+          orbits_cancel.store(0);
+          return void();
+        }
 
       Gtk::Window *win = resultPulseWin(1, bar);
       double sz = static_cast<double>(od->calculateSize());
-      std::shared_ptr<Glib::Dispatcher> pulse_disp = std::make_shared<
-	  Glib::Dispatcher>();
-      std::shared_ptr<Glib::Dispatcher> compl_disp = std::make_shared<
-	  Glib::Dispatcher>();
-      std::shared_ptr<Glib::Dispatcher> canceled_disp = std::make_shared<
-	  Glib::Dispatcher>();
+      std::shared_ptr<Glib::Dispatcher> pulse_disp
+          = std::make_shared<Glib::Dispatcher>();
+      std::shared_ptr<Glib::Dispatcher> compl_disp
+          = std::make_shared<Glib::Dispatcher>();
+      std::shared_ptr<Glib::Dispatcher> canceled_disp
+          = std::make_shared<Glib::Dispatcher>();
       std::shared_ptr<std::mutex> pulsemtx = std::make_shared<std::mutex>();
       std::shared_ptr<double> frac = std::make_shared<double>(0.0);
-      pulse_disp->connect([bar, frac]
-      {
-	bar->set_fraction(*frac);
+      pulse_disp->connect([bar, frac] {
+        bar->set_fraction(*frac);
       });
 
-      od->pulse_signal = [pulse_disp, frac, sz, pulsemtx, bar]
-      {
-	pulsemtx->lock();
-	*frac = *frac + 1.0 / sz;
-	if(*frac - bar->get_fraction() > 0.01)
-	  {
-	    pulse_disp->emit();
-	  }
-	pulsemtx->unlock();
+      od->pulse_signal = [pulse_disp, frac, sz, pulsemtx, bar] {
+        pulsemtx->lock();
+        *frac = *frac + 1.0 / sz;
+        if(*frac - bar->get_fraction() > 0.01)
+          {
+            pulse_disp->emit();
+          }
+        pulsemtx->unlock();
       };
 
-      od->diagram_close = [od]
-      {
-	delete od;
+      od->diagram_close = [od] {
+        delete od;
       };
 
-      compl_disp->connect([bar, win, od]
-      {
-	bar->set_fraction(1.0);
-	win->close();
-	od->diagramPlot();
+      compl_disp->connect([bar, win, od] {
+        bar->set_fraction(1.0);
+        win->close();
+        od->diagramPlot();
       });
 
-      canceled_disp->connect([win, od]
-      {
-	win->close();
-	delete od;
+      canceled_disp->connect([win, od] {
+        win->close();
+        delete od;
       });
 
-      od->calc_completed = [compl_disp]
-      {
-	compl_disp->emit();
+      od->calc_completed = [compl_disp] {
+        compl_disp->emit();
       };
-      od->canceled_signal = [canceled_disp]
-      {
-	canceled_disp->emit();
+      od->canceled_signal = [canceled_disp] {
+        canceled_disp->emit();
       };
 
-      std::thread *thr = new std::thread([od]
-      {
-	od->calculateOrbits();
+      std::thread *thr = new std::thread([od] {
+        od->calculateOrbits();
       });
       thr->detach();
       delete thr;
@@ -2368,7 +2307,7 @@ MainWindow::aboutProg()
   aboutd->set_application(this->get_application());
   aboutd->set_name("mainWindow");
   aboutd->set_program_name("EphEPM");
-  aboutd->set_version("2.1");
+  aboutd->set_version("2.2");
   aboutd->set_copyright(
       "Copyright 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>");
   AuxFunc af;
@@ -2405,30 +2344,30 @@ MainWindow::aboutProg()
   Glib::RefPtr<Gio::File> logofile = Gio::File::create_for_path(filename);
   aboutd->set_logo(Gdk::Texture::create_from_file(logofile));
   abbuf = Glib::ustring(gettext("EphEPM is simple program to calculate some "
-				"Solar system bodies coordinates.\n"
-				"Author Yury Bobylev.\n\n"
-				"Program uses next libraries:\n"))
-      + Glib::ustring("GTK https://www.gtk.org\n"
-		      "GMP https://gmplib.org\n"
-		      "MathGL http://mathgl.sourceforge.net\n"
-		      "ICU https://icu.unicode.org\n"
-		      "SOFA https://iausofa.org/");
+                                "Solar system bodies coordinates.\n"
+                                "Author Yury Bobylev.\n\n"
+                                "Program uses next libraries:\n"))
+          + Glib::ustring("GTK https://www.gtk.org\n"
+                          "GMP https://gmplib.org\n"
+                          "MathGL http://mathgl.sourceforge.net\n"
+                          "ICU https://icu.unicode.org\n"
+                          "SOFA https://iausofa.org/");
   aboutd->set_comments(abbuf);
 
-  aboutd->signal_close_request().connect([aboutd]
-  {
-    aboutd->set_visible(false);
-    delete aboutd;
-    return true;
-  },
-					 false);
+  aboutd->signal_close_request().connect(
+      [aboutd] {
+        aboutd->set_visible(false);
+        delete aboutd;
+        return true;
+      },
+      false);
   aboutd->present();
 }
 
 bool
 MainWindow::closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent,
-		      Gtk::Entry *mlbent, Gtk::Entry *smlent,
-		      Gtk::Entry *scale_ent)
+                      Gtk::Entry *mlbent, Gtk::Entry *smlent,
+                      Gtk::Entry *scale_ent)
 {
   std::string savepath(Glib::get_home_dir());
   savepath = savepath + "/.config/EphEPM/ephpath";
@@ -2441,7 +2380,7 @@ MainWindow::closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent,
     {
       std::filesystem::remove_all(filepath);
     }
-  std::vector<std::tuple<uint8_t, std::string> > pathv;
+  std::vector<std::tuple<uint8_t, std::string>> pathv;
   std::string line(pathent->get_text());
   if(!line.empty())
     {
@@ -2481,31 +2420,31 @@ MainWindow::closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent,
       std::fstream f;
       f.open(filepath, std::ios_base::out | std::ios_base::binary);
       if(f.is_open())
-	{
-	  std::string wstr;
-	  for(auto it = pathv.begin(); it != pathv.end(); it++)
-	    {
-	      wstr.clear();
-	      std::tuple<uint8_t, std::string> ttup = *it;
-	      uint8_t type = std::get<0>(*it);
-	      std::string path = std::get<1>(*it);
-	      wstr.resize(sizeof(type));
-	      std::memcpy(&wstr[0], &type, sizeof(type));
+        {
+          std::string wstr;
+          for(auto it = pathv.begin(); it != pathv.end(); it++)
+            {
+              wstr.clear();
+              std::tuple<uint8_t, std::string> ttup = *it;
+              uint8_t type = std::get<0>(*it);
+              std::string path = std::get<1>(*it);
+              wstr.resize(sizeof(type));
+              std::memcpy(&wstr[0], &type, sizeof(type));
 
-	      std::copy(path.begin(), path.end(), std::back_inserter(wstr));
-	      uint64_t esz = static_cast<uint64_t>(wstr.size());
-	      std::vector<char> wv;
-	      wv.resize(sizeof(esz));
-	      std::memcpy(&wv[0], &esz, sizeof(esz));
-	      std::copy(wstr.begin(), wstr.end(), std::back_inserter(wv));
-	      f.write(wv.data(), wv.size());
-	    }
-	  f.close();
-	}
+              std::copy(path.begin(), path.end(), std::back_inserter(wstr));
+              uint64_t esz = static_cast<uint64_t>(wstr.size());
+              std::vector<char> wv;
+              wv.resize(sizeof(esz));
+              std::memcpy(&wv[0], &esz, sizeof(esz));
+              std::copy(wstr.begin(), wstr.end(), std::back_inserter(wv));
+              f.write(wv.data(), wv.size());
+            }
+          f.close();
+        }
       else
-	{
-	  std::cout << "Error on saving configuration" << std::endl;
-	}
+        {
+          std::cout << "Error on saving configuration" << std::endl;
+        }
     }
   this->set_visible(false);
 

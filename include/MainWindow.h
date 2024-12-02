@@ -19,6 +19,8 @@
 #define INCLUDE_MAINWINDOW_H_
 
 #include <BodyListItem.h>
+#include <array>
+#include <atomic>
 #include <giomm-2.68/giomm/file.h>
 #include <giomm-2.68/giomm/liststore.h>
 #include <glibmm-2.68/glibmm/dispatcher.h>
@@ -30,8 +32,6 @@
 #include <gtkmm-4.0/gtkmm/entry.h>
 #include <gtkmm-4.0/gtkmm/label.h>
 #include <gtkmm-4.0/gtkmm/progressbar.h>
-#include <array>
-#include <atomic>
 #include <string>
 #include <vector>
 
@@ -39,8 +39,6 @@ class MainWindow : public Gtk::ApplicationWindow
 {
 public:
   MainWindow();
-  virtual
-  ~MainWindow();
 
 private:
   void
@@ -51,13 +49,13 @@ private:
 
   void
   calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-	    Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-	    Gtk::DropDown *timecomb, Gtk::DropDown *belt,
-	    Gtk::DropDown *objcomb, Gtk::DropDown *coordcomb,
-	    Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
-	    Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
-	    Gtk::Entry *stepnument, Gtk::Entry *pathent, Gtk::Entry *tttdbent,
-	    Gtk::Entry *mlbent, Gtk::Entry *smlent);
+            Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+            Gtk::DropDown *timecomb, Gtk::DropDown *belt,
+            Gtk::DropDown *objcomb, Gtk::DropDown *coordcomb,
+            Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
+            Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
+            Gtk::Entry *stepnument, Gtk::Entry *pathent, Gtk::Entry *tttdbent,
+            Gtk::Entry *mlbent, Gtk::Entry *smlent);
 
   void
   aboutProg();
@@ -66,13 +64,13 @@ private:
   errDialog(int variant);
 
   void
-  resultPresenting(std::vector<std::array<mpf_class, 3> > *result,
-		   Gtk::DropDown *belt, Gtk::DropDown *objcomb,
-		   Gtk::DropDown *coordcomb, Gtk::DropDown *xyzcomb,
-		   Gtk::DropDown *equincomb, Gtk::DropDown *unitcomb,
-		   Glib::Dispatcher *result_win_disp);
+  resultPresenting(std::vector<std::array<mpf_class, 3>> *result,
+                   Gtk::DropDown *belt, Gtk::DropDown *objcomb,
+                   Gtk::DropDown *coordcomb, Gtk::DropDown *xyzcomb,
+                   Gtk::DropDown *equincomb, Gtk::DropDown *unitcomb,
+                   Glib::Dispatcher *result_win_disp);
 
-  Gtk::Window*
+  Gtk::Window *
   resultPulseWin(int variant, Gtk::ProgressBar *bar);
 
   void
@@ -80,28 +78,28 @@ private:
 
   void
   saveDialog(Gtk::Window *win, Gtk::Label *objlab, Gtk::Label *coordlab,
-	     Gtk::Label *equinlab, Gtk::Label *unitlab, Gtk::Label *beltlab,
-	     Gtk::ColumnView *view, Gtk::DropDown *objcomb,
-	     std::string header_line);
+             Gtk::Label *equinlab, Gtk::Label *unitlab, Gtk::Label *beltlab,
+             Gtk::ColumnView *view, Gtk::DropDown *objcomb,
+             std::string header_line);
 
   void
   saveDialogFunc(Glib::RefPtr<Gio::File> fl, Gtk::Label *objlab,
-		 Gtk::Label *coordlab, Gtk::Label *equinlab,
-		 Gtk::Label *unitlab, Gtk::Label *beltlab,
-		 Gtk::ColumnView *view, Gtk::DropDown *objcomb,
-		 std::string header_line);
+                 Gtk::Label *coordlab, Gtk::Label *equinlab,
+                 Gtk::Label *unitlab, Gtk::Label *beltlab,
+                 Gtk::ColumnView *view, Gtk::DropDown *objcomb,
+                 std::string header_line);
 
   void
   orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-	      Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-	      Gtk::DropDown *timecomb, Gtk::DropDown *belt,
-	      Gtk::DropDown *coordcomb, Gtk::DropDown *equincomb,
-	      Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *smlent,
-	      Gtk::Entry *scale_ent);
+              Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
+              Gtk::DropDown *timecomb, Gtk::DropDown *belt,
+              Gtk::DropDown *coordcomb, Gtk::DropDown *equincomb,
+              Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *smlent,
+              Gtk::Entry *scale_ent);
 
   bool
   closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *mlbent,
-	    Gtk::Entry *smlent, Gtk::Entry *scale_ent);
+            Gtk::Entry *smlent, Gtk::Entry *scale_ent);
 
   std::string Sharepath;
 

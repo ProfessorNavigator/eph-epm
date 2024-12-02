@@ -26,21 +26,21 @@ class BodyV
 {
 public:
   BodyV();
-  virtual
-  ~BodyV();
+
   BodyV(const BodyV &other);
-  BodyV&
-  operator =(const BodyV &other);
+
+  BodyV &
+  operator=(const BodyV &other);
 
   void
   setFile(std::fstream *f);
 
-  std::fstream*
+  std::fstream *
   getFile();
 
   void
-  setVect(
-      std::vector<std::tuple<double, double, int, int, int, int, int, int>> &boydv);
+  setVect(std::vector<std::tuple<double, double, int, int, int, int, int, int>>
+              &boydv);
 
   std::vector<std::tuple<double, double, int, int, int, int, int, int>>
   getVect();

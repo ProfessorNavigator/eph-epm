@@ -29,22 +29,21 @@ class AuxFunc
 {
 public:
   AuxFunc();
-  virtual
-  ~AuxFunc();
 
   std::string
   get_selfpath();
 
   double
   timeTT(int day, int month, int year, int hour, int minut, double sec,
-	 int belt);
+         int belt);
 
   double
   timeTT(double JDutc);
 
   void
-  dateJulian(double JDN, int *day, int *month, int *year, int *hour, int *minut,
-	     double *second); //Julian date to calendar date
+  dateJulian(double JDN, int *day, int *month, int *year, int *hour,
+             int *minut,
+             double *second); // Julian date to calendar date
 
   double
   utcJD(int day, int month, int year, int hour, int minut, double sec);
@@ -54,19 +53,19 @@ public:
 
   void
   toEcliptic(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz, mpf_class *New,
-	     mpf_class *Newy, mpf_class *Newz, double JD, int ch);
+             mpf_class *Newy, mpf_class *Newz, double JD, int ch);
 
   void
-  precession(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz, mpf_class *Newx,
-	     mpf_class *Newy, mpf_class *Newz, double JD);
+  precession(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
+             mpf_class *Newx, mpf_class *Newy, mpf_class *Newz, double JD);
 
   void
   precessionNnut(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
-		 mpf_class *Newx, mpf_class *Newy, mpf_class *Newz, double JD);
+                 mpf_class *Newx, mpf_class *Newy, mpf_class *Newz, double JD);
 
   void
   rotateXYZ(mpf_class xyz[3], mpf_class rx, mpf_class ry, mpf_class rz,
-	    mpf_class result[3]);
+            mpf_class result[3]);
 
   mpf_class
   Cos(mpf_class x);

@@ -18,23 +18,24 @@
 #ifndef INCLUDE_EPMAPPLICATION_H_
 #define INCLUDE_EPMAPPLICATION_H_
 
+#include <MainWindow.h>
 #include <glibmm-2.68/glibmm/refptr.h>
 #include <gtkmm-4.0/gtkmm/application.h>
-#include <MainWindow.h>
 #include <string>
 
 class EPMApplication : public Gtk::Application
 {
 protected:
   EPMApplication(const std::string &id);
+
 public:
-  virtual
-  ~EPMApplication();
   static Glib::RefPtr<EPMApplication>
   create(std::string &id);
+
 private:
-  MainWindow*
+  MainWindow *
   create_appwindow();
+
 protected:
   void
   on_activate() override;

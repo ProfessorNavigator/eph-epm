@@ -19,12 +19,6 @@
 
 BodyV::BodyV()
 {
-
-}
-
-BodyV::~BodyV()
-{
-
 }
 
 BodyV::BodyV(const BodyV &other)
@@ -33,8 +27,8 @@ BodyV::BodyV(const BodyV &other)
   bodyv = other.bodyv;
 }
 
-BodyV&
-BodyV::operator =(const BodyV &other)
+BodyV &
+BodyV::operator=(const BodyV &other)
 {
   file = other.file;
   bodyv = other.bodyv;
@@ -47,7 +41,7 @@ BodyV::setFile(std::fstream *f)
   file = f;
 }
 
-std::fstream*
+std::fstream *
 BodyV::getFile()
 {
   return file;
@@ -55,7 +49,8 @@ BodyV::getFile()
 
 void
 BodyV::setVect(
-    std::vector<std::tuple<double, double, int, int, int, int, int, int>> &bodyv)
+    std::vector<std::tuple<double, double, int, int, int, int, int, int>>
+        &bodyv)
 {
   this->bodyv = bodyv;
 }

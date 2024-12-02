@@ -26,9 +26,6 @@
 class ModelColumns : public Glib::Object
 {
 public:
-  virtual
-  ~ModelColumns();
-
   static Glib::RefPtr<ModelColumns>
   create(std::string &date, std::string &x, std::string &y, std::string &z);
 
@@ -39,7 +36,7 @@ public:
 
 private:
   ModelColumns(std::string &date, std::string &x, std::string &y,
-	       std::string &z);
+               std::string &z);
 };
 
 #endif /* INCLUDE_MODELCOLUMNS_H_ */

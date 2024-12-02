@@ -18,31 +18,29 @@
 #ifndef INCLUDE_EPMCALCULATIONS_H_
 #define INCLUDE_EPMCALCULATIONS_H_
 
-#include <gmpxx.h>
 #include <cstdint>
 #include <fstream>
+#include <gmpxx.h>
 
 class EPMCalculations
 {
 public:
   EPMCalculations();
-  virtual
-  ~EPMCalculations();
 
   mpf_class
   tdbCalc(std::fstream *f, uint64_t *c_b, uint64_t *c_e, double JD, int type);
 
   mpf_class
   bodyCalcX(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
-	    int var, int type, mpf_class *au);
+            int var, int type, mpf_class *au);
 
   mpf_class
   bodyCalcY(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
-	    int var, int type, mpf_class *au);
+            int var, int type, mpf_class *au);
 
   mpf_class
   bodyCalcZ(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
-	    int var, int type, mpf_class *au);
+            int var, int type, mpf_class *au);
 };
 
 #endif /* INCLUDE_EPMCALCULATIONS_H_ */

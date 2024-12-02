@@ -20,14 +20,16 @@
 
 #include <DAFOperations.h>
 #include <DiagramWidget.h>
+#include <array>
+#include <atomic>
+#ifndef USE_OPENMP
+#include <condition_variable>
+#endif
+#include <functional>
 #include <gmpxx.h>
 #include <gtkmm-4.0/gdkmm/rectangle.h>
 #include <gtkmm-4.0/gtkmm/applicationwindow.h>
 #include <mgl2/mgl.h>
-#include <array>
-#include <atomic>
-#include <condition_variable>
-#include <functional>
 #include <mutex>
 #include <string>
 #include <tuple>
@@ -37,26 +39,22 @@ class OrbitsDiagram
 {
 public:
   OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
-		std::string tttdbpath, std::string smlpath, double JD,
-		int timesc, int coordtype, int theory, double plot_factor,
-		std::atomic<int> *cancel);
-  virtual
-  ~OrbitsDiagram();
+                std::string tttdbpath, std::string smlpath, double JD,
+                int timesc, int coordtype, int theory, double plot_factor,
+                std::atomic<int> *cancel);
+
+  virtual ~OrbitsDiagram();
 
   int
   calculateSize();
 
-  std::function<void
-  ()> pulse_signal;
+  std::function<void()> pulse_signal;
 
-  std::function<void
-  ()> calc_completed;
+  std::function<void()> calc_completed;
 
-  std::function<void
-  ()> canceled_signal;
+  std::function<void()> canceled_signal;
 
-  std::function<void
-  ()> diagram_close;
+  std::function<void()> diagram_close;
 
   void
   calculateOrbits();
@@ -89,9 +87,11 @@ private:
   mglGraph *gr = nullptr;
   std::mutex *grmtx = nullptr;
 
+#ifndef USE_OPENMP
   std::mutex cyclemtx;
   std::condition_variable thread_reg;
   unsigned int thrnum = 0;
+#endif
 
   double scale_factor = 0.001;
   std::atomic<int> *cancel = nullptr;

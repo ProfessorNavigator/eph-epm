@@ -17,9 +17,9 @@
 
 #include <AuxFunc.h>
 #include <EPMApplication.h>
-#include <libintl.h>
 #include <filesystem>
 #include <iostream>
+#include <libintl.h>
 #include <string>
 
 int
@@ -42,4 +42,3 @@ main(int argc, char *argv[])
     }
   return exitstat;
 }
-

@@ -18,10 +18,10 @@
 #ifndef INCLUDE_COORDINATES_H_
 #define INCLUDE_COORDINATES_H_
 
-#include <gmpxx.h>
 #include <array>
 #include <atomic>
 #include <functional>
+#include <gmpxx.h>
 #include <string>
 #include <vector>
 
@@ -33,17 +33,14 @@ class Coordinates
 {
 public:
   Coordinates(int body, double JD, int timesc, int coordtype, int xyz,
-	      int theory, int unit, double step, int stepnum,
-	      std::string epmpath, std::string tttdbpath, std::string smlbpath,
-	      std::atomic<int> *cancel);
-  virtual
-  ~Coordinates();
+              int theory, int unit, double step, int stepnum,
+              std::string epmpath, std::string tttdbpath, std::string smlbpath,
+              std::atomic<int> *cancel);
 
   std::vector<std::array<mpf_class, 3>>
   calculationsXYZ();
 
-  std::function<void
-  ()> pulse_signal;
+  std::function<void()> pulse_signal;
 
 private:
   int body = -1;

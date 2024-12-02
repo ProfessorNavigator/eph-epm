@@ -20,12 +20,12 @@
 
 #include <cairomm-1.16/cairomm/context.h>
 #include <cairomm-1.16/cairomm/refptr.h>
+#include <functional>
 #include <gtkmm-4.0/gdkmm/rectangle.h>
 #include <gtkmm-4.0/gtkmm/applicationwindow.h>
 #include <gtkmm-4.0/gtkmm/drawingarea.h>
 #include <gtkmm-4.0/gtkmm/entry.h>
 #include <mgl2/mgl.h>
-#include <functional>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -34,14 +34,11 @@ class DiagramWidget
 {
 public:
   DiagramWidget(Gtk::ApplicationWindow *mw, mglGraph *gr);
-  virtual
-  ~DiagramWidget();
 
   void
   diagramPlot();
 
-  std::function<void
-  ()> diagram_close;
+  std::function<void()> diagram_close;
 
 private:
   void
@@ -52,22 +49,22 @@ private:
 
   bool
   scrollEvent(double x, double y, Gtk::Entry *entx, Gtk::Entry *enty,
-	      Gtk::Entry *entz, Gtk::DrawingArea *drar);
+              Gtk::Entry *entz, Gtk::DrawingArea *drar);
 
   void
   dragOperation(double x, double y, Gtk::Entry *entx, Gtk::Entry *enty,
-		Gtk::Entry *entz, Gtk::DrawingArea *drar);
+                Gtk::Entry *entz, Gtk::DrawingArea *drar);
 
   void
   zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
-	    Gtk::DrawingArea *drar, int id);
+            Gtk::DrawingArea *drar, int id);
 
   void
   saveGraph(mglGraph *gr, Gtk::Window *win, int mode);
 
   void
   rotationFunc(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
-	       Gtk::DrawingArea *drar);
+               Gtk::DrawingArea *drar);
 
   Gdk::Rectangle
   screenRes();

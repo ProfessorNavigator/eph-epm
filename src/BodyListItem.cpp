@@ -23,11 +23,6 @@ BodyListItem::BodyListItem(Glib::ustring &bodyname, int &id)
   this->naifid = id;
 }
 
-BodyListItem::~BodyListItem()
-{
-
-}
-
 Glib::RefPtr<BodyListItem>
 BodyListItem::create(std::string &bodyname, int &id)
 {

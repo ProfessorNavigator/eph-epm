@@ -16,6 +16,7 @@
  */
 
 #include <DiagramWidget.h>
+#include <filesystem>
 #include <gdkmm/display.h>
 #include <gdkmm/general.h>
 #include <gdkmm/monitor.h>
@@ -39,13 +40,12 @@
 #include <gtkmm/object.h>
 #include <gtkmm/overlay.h>
 #include <libintl.h>
+#include <locale>
+#include <memory>
 #include <pangomm/layout.h>
 #include <sigc++/adaptors/bind.h>
 #include <sigc++/connection.h>
 #include <sigc++/functors/mem_fun.h>
-#include <filesystem>
-#include <locale>
-#include <memory>
 #include <sstream>
 
 #ifndef EPH_GTK_OLD
@@ -73,11 +73,6 @@ DiagramWidget::DiagramWidget(Gtk::ApplicationWindow *mw, mglGraph *gr)
   Width = req.get_width();
 }
 
-DiagramWidget::~DiagramWidget()
-{
-
-}
-
 void
 DiagramWidget::diagramPlot()
 {
@@ -97,20 +92,17 @@ DiagramWidget::diagramPlot()
   drar->set_draw_func(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::on_draw)));
 
-  Glib::RefPtr<Gtk::EventControllerScroll> scr =
-      Gtk::EventControllerScroll::create();
-  scr->set_flags(
-      Gtk::EventControllerScroll::Flags::VERTICAL
-	  | Gtk::EventControllerScroll::Flags::DISCRETE);
+  Glib::RefPtr<Gtk::EventControllerScroll> scr
+      = Gtk::EventControllerScroll::create();
+  scr->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL
+                 | Gtk::EventControllerScroll::Flags::DISCRETE);
   drar->add_controller(scr);
 
   Glib::RefPtr<Gtk::GestureDrag> drag = Gtk::GestureDrag::create();
-  drag->signal_drag_end().connect([this]
-  (double x, double y) 
-    {
-      this->X = 0;
-      this->Y = 0;
-    });
+  drag->signal_drag_end().connect([this](double, double) {
+    this->X = 0;
+    this->Y = 0;
+  });
   drar->add_controller(drag);
 
   overlay->set_child(*drar);
@@ -222,29 +214,29 @@ DiagramWidget::diagramPlot()
 
   scr->signal_scroll().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::scrollEvent), entx, enty,
-		 entz, drar),
+                 entz, drar),
       true);
   drag->signal_drag_update().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::dragOperation), entx,
-		 enty, entz, drar));
+                 enty, entz, drar));
   increase->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::zoomGraph), entx, enty,
-		 entz, drar, 0));
+                 entz, drar, 0));
   decrease->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::zoomGraph), entx, enty,
-		 entz, drar, 1));
+                 entz, drar, 1));
   up->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::zoomGraph), entx, enty,
-		 entz, drar, 2));
+                 entz, drar, 2));
   down->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::zoomGraph), entx, enty,
-		 entz, drar, 3));
+                 entz, drar, 3));
   left->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::zoomGraph), entx, enty,
-		 entz, drar, 4));
+                 entz, drar, 4));
   right->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::zoomGraph), entx, enty,
-		 entz, drar, 5));
+                 entz, drar, 5));
 
   Gtk::Button *rot = Gtk::make_managed<Gtk::Button>();
   rot->set_halign(Gtk::Align::CENTER);
@@ -252,8 +244,8 @@ DiagramWidget::diagramPlot()
   rot->set_label(gettext("Rotate"));
   rot->set_name("sizeButton");
   rot->signal_clicked().connect(
-      sigc::bind(sigc::mem_fun(*this, &DiagramWidget::rotationFunc), entx, enty,
-		 entz, drar));
+      sigc::bind(sigc::mem_fun(*this, &DiagramWidget::rotationFunc), entx,
+                 enty, entz, drar));
   grid->attach(*rot, 0, 9, 3, 1);
 
   Gtk::Button *restore = Gtk::make_managed<Gtk::Button>();
@@ -263,7 +255,7 @@ DiagramWidget::diagramPlot()
   restore->set_name("restoreButton");
   restore->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &DiagramWidget::zoomGraph), entx, enty,
-		 entz, drar, 6));
+                 entz, drar, 6));
   grid->attach(*restore, 0, 10, 3, 1);
 
   Gtk::Button *savejpg = Gtk::make_managed<Gtk::Button>();
@@ -271,9 +263,8 @@ DiagramWidget::diagramPlot()
   savejpg->set_halign(Gtk::Align::CENTER);
   savejpg->set_margin(5);
   savejpg->set_name("saveButton");
-  savejpg->signal_clicked().connect(
-      sigc::bind(sigc::mem_fun(*this, &DiagramWidget::saveGraph), gr, window,
-		 0));
+  savejpg->signal_clicked().connect(sigc::bind(
+      sigc::mem_fun(*this, &DiagramWidget::saveGraph), gr, window, 0));
   grid->attach(*savejpg, 0, 11, 3, 1);
 
   Gtk::Button *savepng = Gtk::make_managed<Gtk::Button>();
@@ -281,9 +272,8 @@ DiagramWidget::diagramPlot()
   savepng->set_halign(Gtk::Align::CENTER);
   savepng->set_margin(5);
   savepng->set_name("saveButton");
-  savepng->signal_clicked().connect(
-      sigc::bind(sigc::mem_fun(*this, &DiagramWidget::saveGraph), gr, window,
-		 1));
+  savepng->signal_clicked().connect(sigc::bind(
+      sigc::mem_fun(*this, &DiagramWidget::saveGraph), gr, window, 1));
   grid->attach(*savepng, 0, 12, 3, 1);
 
   Gtk::Button *savesvg = Gtk::make_managed<Gtk::Button>();
@@ -291,9 +281,8 @@ DiagramWidget::diagramPlot()
   savesvg->set_halign(Gtk::Align::CENTER);
   savesvg->set_margin(5);
   savesvg->set_name("saveButton");
-  savesvg->signal_clicked().connect(
-      sigc::bind(sigc::mem_fun(*this, &DiagramWidget::saveGraph), gr, window,
-		 2));
+  savesvg->signal_clicked().connect(sigc::bind(
+      sigc::mem_fun(*this, &DiagramWidget::saveGraph), gr, window, 2));
   grid->attach(*savesvg, 0, 13, 3, 1);
 
   Gtk::Button *minb = Gtk::make_managed<Gtk::Button>();
@@ -301,8 +290,7 @@ DiagramWidget::diagramPlot()
   minb->set_halign(Gtk::Align::CENTER);
   minb->set_margin(5);
   minb->set_name("minButton");
-  minb->signal_clicked().connect([window]
-  {
+  minb->signal_clicked().connect([window] {
     window->minimize();
   });
   grid->attach(*minb, 0, 14, 3, 1);
@@ -316,25 +304,24 @@ DiagramWidget::diagramPlot()
 
   close->signal_clicked().connect(sigc::mem_fun(*window, &Gtk::Window::close));
 
-  window->signal_close_request().connect([window, this]
-  {
-    window->set_visible(false);
-    if(this->diagram_close)
-      {
-	this->diagram_close();
-      }
-    delete window;
-    return true;
-  },
-					 false);
+  window->signal_close_request().connect(
+      [window, this] {
+        window->set_visible(false);
+        if(this->diagram_close)
+          {
+            this->diagram_close();
+          }
+        delete window;
+        return true;
+      },
+      false);
 
   window->set_application(mw->get_application());
   window->present();
 }
 
 void
-DiagramWidget::on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int width,
-		       int height)
+DiagramWidget::on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int, int)
 {
   auto image = Gdk::Pixbuf::create_from_data(
       gr->GetRGB(), Gdk::Colorspace::RGB, false, 8, gr->GetWidth(),
@@ -345,9 +332,9 @@ DiagramWidget::on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int width,
 }
 
 bool
-DiagramWidget::scrollEvent(double x, double y, Gtk::Entry *entx,
-			   Gtk::Entry *enty, Gtk::Entry *entz,
-			   Gtk::DrawingArea *drar)
+DiagramWidget::scrollEvent(double, double y, Gtk::Entry *entx,
+                           Gtk::Entry *enty, Gtk::Entry *entz,
+                           Gtk::DrawingArea *drar)
 {
   double pl1, pl2;
   pl1 = (plotincr[2] - plotincr[0]) * 0.1;
@@ -372,8 +359,8 @@ DiagramWidget::scrollEvent(double x, double y, Gtk::Entry *entx,
 
 void
 DiagramWidget::dragOperation(double x, double y, Gtk::Entry *entx,
-			     Gtk::Entry *enty, Gtk::Entry *entz,
-			     Gtk::DrawingArea *drar)
+                             Gtk::Entry *enty, Gtk::Entry *entz,
+                             Gtk::DrawingArea *drar)
 {
   double pl1, pl2;
   pl1 = (plotincr[2] - plotincr[0]) * ((x - X) / Width);
@@ -391,7 +378,7 @@ DiagramWidget::dragOperation(double x, double y, Gtk::Entry *entx,
 
 void
 DiagramWidget::zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
-			 Gtk::DrawingArea *drar, int id)
+                         Gtk::DrawingArea *drar, int id)
 {
   double pl1, pl2;
   pl1 = (plotincr[2] - plotincr[0]) * 0.1;
@@ -456,7 +443,8 @@ DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
   Glib::RefPtr<Gtk::FileDialog> fcd = Gtk::FileDialog::create();
   fcd->set_title(gettext("Save diagram"));
   fcd->set_modal(true);
-  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  Glib::RefPtr<Gio::File> fl
+      = Gio::File::create_for_path(Glib::get_home_dir());
   fcd->set_initial_folder(fl);
   if(mode == 0)
     {
@@ -471,49 +459,50 @@ DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
       fcd->set_initial_name("Orbits.svg");
     }
   Glib::RefPtr<Gio::Cancellable> cncl = Gio::Cancellable::create();
-  fcd->save(*win, [graph, mode]
-  (const Glib::RefPtr<Gio::AsyncResult> &result) 
-    {
-      Glib::RefPtr<Gio::File> fl;
-      auto obj = result->get_source_object_base();
-      auto fchd = std::dynamic_pointer_cast<Gtk::FileDialog>(obj);
-      if(!fchd)
-	{
-	  return void();
-	}
-      try
-	{
-	  fl = fchd->save_finish(result);
-	}
-      catch(Glib::Error &e)
-	{
-	  if(e.code() != Gtk::DialogError::DISMISSED)
-	    {
-	      std::cout << "DiagramWidget::saveGraph:" << e.what() << std::endl;
-	    }
-	}
-      if(fl)
-	{
-	  std::string filename(fl->get_path());
-	  std::filesystem::path p = std::filesystem::u8path(filename);
-	  if(mode == 0)
-	    {
-	      p.replace_extension(std::filesystem::u8path(".jpeg"));
-	      graph->WriteJPEG(p.string().c_str(), "");
-	    }
-	  else if(mode == 1)
-	    {
-	      p.replace_extension(std::filesystem::u8path(".png"));
-	      graph->WritePNG(p.string().c_str(), "", false);
-	    }
-	  else if(mode == 2)
-	    {
-	      p.replace_extension(std::filesystem::u8path(".svg"));
-	      graph->WriteSVG(p.string().c_str(), "");
-	    }
-	}
-    },
-	    cncl);
+  fcd->save(
+      *win,
+      [graph, mode](const Glib::RefPtr<Gio::AsyncResult> &result) {
+        Glib::RefPtr<Gio::File> fl;
+        auto obj = result->get_source_object_base();
+        auto fchd = std::dynamic_pointer_cast<Gtk::FileDialog>(obj);
+        if(!fchd)
+          {
+            return void();
+          }
+        try
+          {
+            fl = fchd->save_finish(result);
+          }
+        catch(Glib::Error &e)
+          {
+            if(e.code() != Gtk::DialogError::DISMISSED)
+              {
+                std::cout << "DiagramWidget::saveGraph:" << e.what()
+                          << std::endl;
+              }
+          }
+        if(fl)
+          {
+            std::string filename(fl->get_path());
+            std::filesystem::path p = std::filesystem::u8path(filename);
+            if(mode == 0)
+              {
+                p.replace_extension(std::filesystem::u8path(".jpeg"));
+                graph->WriteJPEG(p.string().c_str(), "");
+              }
+            else if(mode == 1)
+              {
+                p.replace_extension(std::filesystem::u8path(".png"));
+                graph->WritePNG(p.string().c_str(), "", false);
+              }
+            else if(mode == 2)
+              {
+                p.replace_extension(std::filesystem::u8path(".svg"));
+                graph->WriteSVG(p.string().c_str(), "");
+              }
+          }
+      },
+      cncl);
 #endif
 #ifdef EPH_GTK_OLD
   Gtk::FileChooserDialog *fd = new Gtk::FileChooserDialog(
@@ -521,7 +510,8 @@ DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
   fd->set_application(win->get_application());
   fd->set_modal(true);
 
-  Glib::RefPtr<Gio::File> fl = Gio::File::create_for_path(Glib::get_home_dir());
+  Glib::RefPtr<Gio::File> fl
+      = Gio::File::create_for_path(Glib::get_home_dir());
   fd->set_current_folder(fl);
 
   fd->add_button(gettext("Cancel"), Gtk::ResponseType::CANCEL);
@@ -541,43 +531,41 @@ DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
       fd->set_current_name("Orbits.svg");
     }
 
-  fd->signal_response().connect([graph, mode, fd]
-  (int resp_id)
-    {
-      if(resp_id == Gtk::ResponseType::ACCEPT)
-	{
-	  Glib::RefPtr<Gio::File> fl = fd->get_file();
-	  if(fl)
-	    {
-	      std::string filename(fl->get_path());
-	      std::filesystem::path p = std::filesystem::u8path(filename);
-	      if(mode == 0)
-		{
-		  p.replace_extension(std::filesystem::u8path(".jpeg"));
-		  graph->WriteJPEG(p.string().c_str(), "");
-		}
-	      else if(mode == 1)
-		{
-		  p.replace_extension(std::filesystem::u8path(".png"));
-		  graph->WritePNG(p.string().c_str(), "", false);
-		}
-	      else if(mode == 2)
-		{
-		  p.replace_extension(std::filesystem::u8path(".svg"));
-		  graph->WriteSVG(p.string().c_str(), "");
-		}
-	    }
-	}
-      fd->close();
-    });
+  fd->signal_response().connect([graph, mode, fd](int resp_id) {
+    if(resp_id == Gtk::ResponseType::ACCEPT)
+      {
+        Glib::RefPtr<Gio::File> fl = fd->get_file();
+        if(fl)
+          {
+            std::string filename(fl->get_path());
+            std::filesystem::path p = std::filesystem::u8path(filename);
+            if(mode == 0)
+              {
+                p.replace_extension(std::filesystem::u8path(".jpeg"));
+                graph->WriteJPEG(p.string().c_str(), "");
+              }
+            else if(mode == 1)
+              {
+                p.replace_extension(std::filesystem::u8path(".png"));
+                graph->WritePNG(p.string().c_str(), "", false);
+              }
+            else if(mode == 2)
+              {
+                p.replace_extension(std::filesystem::u8path(".svg"));
+                graph->WriteSVG(p.string().c_str(), "");
+              }
+          }
+      }
+    fd->close();
+  });
 
-  fd->signal_close_request().connect([fd]
-  {
-    std::shared_ptr<Gtk::FileChooserDialog> fchd(fd);
-    fchd->set_visible(false);
-    return true;
-  },
-				     false);
+  fd->signal_close_request().connect(
+      [fd] {
+        std::shared_ptr<Gtk::FileChooserDialog> fchd(fd);
+        fchd->set_visible(false);
+        return true;
+      },
+      false);
 
   fd->present();
 #endif
@@ -585,7 +573,7 @@ DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
 
 void
 DiagramWidget::rotationFunc(Gtk::Entry *entx, Gtk::Entry *enty,
-			    Gtk::Entry *entz, Gtk::DrawingArea *drar)
+                            Gtk::Entry *entz, Gtk::DrawingArea *drar)
 {
   std::string xstr(entx->get_text());
   std::string ystr(enty->get_text());

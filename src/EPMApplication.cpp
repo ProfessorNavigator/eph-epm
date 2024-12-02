@@ -21,40 +21,34 @@
 #include <stddef.h>
 #include <vector>
 
-EPMApplication::EPMApplication(const std::string &id) :
-    Gtk::Application(id.c_str())
+EPMApplication::EPMApplication(const std::string &id)
+    : Gtk::Application(id.c_str())
 {
-
-}
-
-EPMApplication::~EPMApplication()
-{
-
 }
 
 Glib::RefPtr<EPMApplication>
 EPMApplication::create(std::string &id)
 {
-  return Glib::make_refptr_for_instance<EPMApplication>(new EPMApplication(id));
+  return Glib::make_refptr_for_instance<EPMApplication>(
+      new EPMApplication(id));
 }
 
-MainWindow*
+MainWindow *
 EPMApplication::create_appwindow()
 {
   MainWindow *mw = new MainWindow;
   this->add_window(*mw);
-  mw->signal_hide().connect([mw, this]
-  {
-    std::vector<Gtk::Window*> wv;
+  mw->signal_hide().connect([mw, this] {
+    std::vector<Gtk::Window *> wv;
     wv = this->get_windows();
     for(size_t i = 0; i < wv.size(); i++)
       {
-	Gtk::Window *win = wv[i];
-	if(win != mw)
-	  {
-	    win->set_visible(false);
-	    delete win;
-	  }
+        Gtk::Window *win = wv[i];
+        if(win != mw)
+          {
+            win->set_visible(false);
+            delete win;
+          }
       }
     delete mw;
   });
@@ -65,7 +59,7 @@ EPMApplication::create_appwindow()
 void
 EPMApplication::on_activate()
 {
-  std::vector<Gtk::Window*> winv;
+  std::vector<Gtk::Window *> winv;
   winv = this->get_windows();
   if(winv.size() == 0)
     {
@@ -73,4 +67,3 @@ EPMApplication::on_activate()
       appwin->present();
     }
 }
-
