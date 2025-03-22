@@ -24,7 +24,7 @@ EPMApplication::EPMApplication(const std::string &id)
 }
 
 Glib::RefPtr<EPMApplication>
-EPMApplication::create(std::string &id)
+EPMApplication::create(const std::string &id)
 {
   return Glib::make_refptr_for_instance<EPMApplication>(
       new EPMApplication(id));

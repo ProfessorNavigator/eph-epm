@@ -25,7 +25,8 @@ class ModelColumns : public Glib::Object
 {
 public:
   static Glib::RefPtr<ModelColumns>
-  create(std::string &date, std::string &x, std::string &y, std::string &z);
+  create(const std::string &date, const std::string &x, const std::string &y,
+         const std::string &z);
 
   Glib::ustring date;
   Glib::ustring x;
@@ -33,8 +34,8 @@ public:
   Glib::ustring z;
 
 private:
-  ModelColumns(std::string &date, std::string &x, std::string &y,
-               std::string &z);
+  ModelColumns(const std::string &date, const std::string &x,
+               const std::string &y, const std::string &z);
 };
 
 #endif // MODELCOLUMNS_H

@@ -28,19 +28,23 @@ public:
   EPMCalculations();
 
   mpf_class
-  tdbCalc(std::fstream *f, uint64_t *c_b, uint64_t *c_e, double JD, int type);
+  tdbCalc(std::fstream *f, const uint64_t &c_b, const uint64_t &c_e,
+          const double &JD, const int &type);
 
   mpf_class
-  bodyCalcX(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
-            int var, int type, mpf_class *au);
+  bodyCalcX(std::fstream *f, const uint64_t &c_b, const uint64_t &c_e,
+            const mpf_class &JDC, const int &var, const int &type,
+            mpf_class &au);
 
   mpf_class
-  bodyCalcY(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
-            int var, int type, mpf_class *au);
+  bodyCalcY(std::fstream *f, const uint64_t &c_b, const uint64_t &c_e,
+            const mpf_class &JDC, const int &var, const int &type,
+            mpf_class &au);
 
   mpf_class
-  bodyCalcZ(std::fstream *f, uint64_t *c_b, uint64_t *c_e, mpf_class JDC,
-            int var, int type, mpf_class *au);
+  bodyCalcZ(std::fstream *f, const uint64_t &c_b, const uint64_t &c_e,
+            const mpf_class &JDC, const int &var, const int &type,
+            mpf_class &au);
 };
 
 #endif // EPMCALCULATIONS_H

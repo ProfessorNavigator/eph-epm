@@ -1279,53 +1279,69 @@ MainWindow::calcCoord()
 }
 
 void
-MainWindow::errDialog(int variant)
+MainWindow::errDialog(const int &variant)
 {
   Glib::ustring msgtxt;
-  if(variant == 1)
+  switch(variant)
     {
-      msgtxt = gettext("Wrong day input!");
-    }
-  else if(variant == 2)
-    {
-      msgtxt = gettext("Wrong month input!");
-    }
-  else if(variant == 3)
-    {
-      msgtxt = gettext("Wrong year input!");
-    }
-  else if(variant == 4)
-    {
-      msgtxt = gettext("Wrong hour input!");
-    }
-  else if(variant == 5)
-    {
-      msgtxt = gettext("Wrong minutes input!");
-    }
-  else if(variant == 6)
-    {
-      msgtxt = gettext("Wrong seconds input!");
-    }
-  else if(variant == 7)
-    {
-      msgtxt = gettext("Wrong step input!");
-    }
-  else if(variant == 8)
-    {
-      msgtxt = gettext("Wrong step number input!");
-    }
-  else if(variant == 9)
-    {
-      msgtxt = gettext("Date is out of ephemeris time interval or "
-                       "TT-TDB amendments was not found!");
-    }
-  else if(variant == 10)
-    {
-      msgtxt = gettext("Critical error!");
-    }
-  else if(variant == 11)
-    {
-      msgtxt = gettext("Incorrect ephemeris file!");
+    case 1:
+      {
+        msgtxt = gettext("Wrong day input!");
+        break;
+      }
+    case 2:
+      {
+        msgtxt = gettext("Wrong month input!");
+        break;
+      }
+    case 3:
+      {
+        msgtxt = gettext("Wrong year input!");
+        break;
+      }
+    case 4:
+      {
+        msgtxt = gettext("Wrong hour input!");
+        break;
+      }
+    case 5:
+      {
+        msgtxt = gettext("Wrong minutes input!");
+        break;
+      }
+    case 6:
+      {
+        msgtxt = gettext("Wrong seconds input!");
+        break;
+      }
+    case 7:
+      {
+        msgtxt = gettext("Wrong step input!");
+        break;
+      }
+    case 8:
+      {
+        msgtxt = gettext("Wrong step number input!");
+        break;
+      }
+    case 9:
+      {
+        msgtxt = gettext("Date is out of ephemeris time interval or "
+                         "TT-TDB amendments was not found!");
+        break;
+      }
+    case 10:
+      {
+        msgtxt = gettext("Critical error!");
+        break;
+      }
+    case 11:
+      {
+        msgtxt = gettext("Incorrect ephemeris file!");
+        break;
+      }
+    default:
+      break;
     }
 
   Gtk::Window *window = new Gtk::Window;
@@ -1364,7 +1380,7 @@ MainWindow::errDialog(int variant)
 }
 
 Gtk::Window *
-MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
+MainWindow::resultPulseWin(const int &variant, Gtk::ProgressBar *bar)
 {
   orbits_cancel.store(0);
   Gtk::Window *window = new Gtk::Window;
@@ -1380,40 +1396,47 @@ MainWindow::resultPulseWin(int variant, Gtk::ProgressBar *bar)
   grid->set_valign(Gtk::Align::CENTER);
   window->set_child(*grid);
 
-  if(variant == 0)
+  switch(variant)
     {
-      Gtk::Label *calclab = Gtk::make_managed<Gtk::Label>();
-      calclab->set_halign(Gtk::Align::CENTER);
-      calclab->set_margin(5);
-      calclab->set_text(gettext("Calculation in progress..."));
-      grid->attach(*calclab, 0, 0, 1, 1);
-    }
-  else if(variant == 1)
-    {
-      Gtk::Label *calclab = Gtk::make_managed<Gtk::Label>();
-      calclab->set_halign(Gtk::Align::CENTER);
-      calclab->set_margin(5);
-      calclab->set_text(gettext("Calculation in progress..."));
-      grid->attach(*calclab, 0, 0, 1, 1);
+    case 0:
+      {
+        Gtk::Label *calclab = Gtk::make_managed<Gtk::Label>();
+        calclab->set_halign(Gtk::Align::CENTER);
+        calclab->set_margin(5);
+        calclab->set_text(gettext("Calculation in progress..."));
+        grid->attach(*calclab, 0, 0, 1, 1);
+        break;
+      }
+    case 1:
+      {
+        Gtk::Label *calclab = Gtk::make_managed<Gtk::Label>();
+        calclab->set_halign(Gtk::Align::CENTER);
+        calclab->set_margin(5);
+        calclab->set_text(gettext("Calculation in progress..."));
+        grid->attach(*calclab, 0, 0, 1, 1);
 
-      bar->set_name("prgBar");
-      bar->set_halign(Gtk::Align::CENTER);
-      bar->set_margin(5);
-      bar->set_show_text(true);
-      grid->attach(*bar, 0, 1, 1, 1);
+        bar->set_name("prgBar");
+        bar->set_halign(Gtk::Align::CENTER);
+        bar->set_margin(5);
+        bar->set_show_text(true);
+        grid->attach(*bar, 0, 1, 1, 1);
 
-      Gtk::Button *cancel = Gtk::make_managed<Gtk::Button>();
-      cancel->set_name("closeButton");
-      cancel->set_halign(Gtk::Align::CENTER);
-      cancel->set_margin(5);
-      cancel->set_label(gettext("Cancel"));
-      cancel->signal_clicked().connect([this, cancel, calclab, bar] {
-        this->orbits_cancel.store(1);
-        cancel->set_visible(false);
-        bar->set_visible(false);
-        calclab->set_text(gettext("Canceling..."));
-      });
-      grid->attach(*cancel, 0, 2, 1, 1);
+        Gtk::Button *cancel = Gtk::make_managed<Gtk::Button>();
+        cancel->set_name("closeButton");
+        cancel->set_halign(Gtk::Align::CENTER);
+        cancel->set_margin(5);
+        cancel->set_label(gettext("Cancel"));
+        cancel->signal_clicked().connect([this, cancel, calclab, bar] {
+          this->orbits_cancel.store(1);
+          cancel->set_visible(false);
+          bar->set_visible(false);
+          calclab->set_text(gettext("Canceling..."));
+        });
+        grid->attach(*cancel, 0, 2, 1, 1);
+        break;
+      }
+    default:
+      break;
     }
 
   window->signal_close_request().connect(
@@ -1827,7 +1850,7 @@ MainWindow::aboutProg()
   aboutd->set_application(this->get_application());
   aboutd->set_name("mainWindow");
   aboutd->set_program_name("EphEPM");
-  aboutd->set_version("2.2.1");
+  aboutd->set_version("2.3");
   aboutd->set_copyright(
       "Copyright 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>");
   AuxFunc af;

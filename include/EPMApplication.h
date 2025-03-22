@@ -29,7 +29,7 @@ protected:
 
 public:
   static Glib::RefPtr<EPMApplication>
-  create(std::string &id);
+  create(const std::string &id);
 
 private:
   MainWindow *

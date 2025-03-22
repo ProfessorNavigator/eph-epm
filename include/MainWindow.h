@@ -61,13 +61,13 @@ private:
   aboutProg();
 
   void
-  errDialog(int variant);
+  errDialog(const int &variant);
 
   void
   resultPresenting(std::vector<CoordKeeper> *result);
 
   Gtk::Window *
-  resultPulseWin(int variant, Gtk::ProgressBar *bar);
+  resultPulseWin(const int &variant, Gtk::ProgressBar *bar);
 
   void
   openDialog(Gtk::Entry *entry);

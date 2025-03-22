@@ -357,7 +357,7 @@ DiagramWidget::dragOperation(double x, double y, Gtk::Entry *entx,
 
 void
 DiagramWidget::zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
-                         Gtk::DrawingArea *drar, int id)
+                         Gtk::DrawingArea *drar, const int &id)
 {
   double pl1, pl2;
   pl1 = (plotincr[2] - plotincr[0]) * 0.1;
@@ -416,7 +416,7 @@ DiagramWidget::zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
 }
 
 void
-DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, int mode)
+DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, const int &mode)
 {
 #ifndef EPH_GTK_OLD
   Glib::RefPtr<Gtk::FileDialog> fcd = Gtk::FileDialog::create();

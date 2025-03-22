@@ -55,7 +55,7 @@ BodyV::getFile()
 }
 
 void
-BodyV::setVect(std::vector<SPKItem> &bodyv)
+BodyV::setVect(const std::vector<SPKItem> &bodyv)
 {
   this->bodyv = bodyv;
 }

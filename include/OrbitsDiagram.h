@@ -36,9 +36,11 @@
 class OrbitsDiagram
 {
 public:
-  OrbitsDiagram(Gtk::Window *mw, std::string ephpath, std::string tttdbpath,
-                std::string smlpath, double JD, int timesc, int coordtype,
-                int theory, double plot_factor, std::atomic<int> *cancel);
+  OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
+                const std::string &tttdbpath, const std::string &smlpath,
+                const double &JD, const int &timesc, const int &coordtype,
+                const int &theory, const double &plot_factor,
+                std::atomic<int> *cancel);
 
   virtual ~OrbitsDiagram();
 
@@ -61,7 +63,7 @@ public:
 
 private:
   void
-  planetOrbCalc(std::tuple<int, double> planettup);
+  planetOrbCalc(const std::tuple<int, double> &planettup);
 
   void
   bodyBuilding(int body, mglGraph *graph);

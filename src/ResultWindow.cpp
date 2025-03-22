@@ -378,8 +378,8 @@ ResultWindow::formModel()
     {
       int ych, mch, dch, hch, minch;
       double secch;
-      af.dateJulian(result_data->JDshow + i * result_data->stepnum, &dch, &mch,
-                    &ych, &hch, &minch, &secch);
+      af.dateJulian(result_data->JDshow + i * result_data->stepnum, dch, mch,
+                    ych, hch, minch, secch);
       strm.clear();
       strm.str("");
       strm.imbue(loc);

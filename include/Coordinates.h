@@ -20,6 +20,7 @@
 
 #include <CoordKeeper.h>
 #include <atomic>
+#include <filesystem>
 #include <functional>
 #include <gmpxx.h>
 #include <string>
@@ -32,10 +33,11 @@
 class Coordinates
 {
 public:
-  Coordinates(int body, double JD, int timesc, int coordtype, int xyz,
-              int theory, int unit, double step, int stepnum,
-              std::string epmpath, std::string tttdbpath, std::string smlbpath,
-              std::atomic<int> *cancel);
+  Coordinates(const int &body, const double &JD, const int &timesc,
+              const int &coordtype, const int &xyz, const int &theory,
+              const int &unit, const double &step, const int &stepnum,
+              const std::string &epmpath, const std::string &tttdbpath,
+              const std::string &smlbpath, std::atomic<int> *cancel);
 
   std::vector<CoordKeeper>
   calculationsXYZ();
@@ -51,9 +53,9 @@ private:
   int unit = -1;
   double step = -1;
   int stepnum = -1;
-  std::string epmpath;
-  std::string tttdbpath;
-  std::string smlbpath;
+  std::filesystem::path epmpath;
+  std::filesystem::path tttdbpath;
+  std::filesystem::path smlbpath;
   std::atomic<int> *cancel = nullptr;
   int timesc = 0;
 };

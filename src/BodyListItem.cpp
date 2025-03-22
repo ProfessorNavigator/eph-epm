@@ -17,14 +17,14 @@
 
 #include <BodyListItem.h>
 
-BodyListItem::BodyListItem(Glib::ustring &bodyname, int &id)
+BodyListItem::BodyListItem(const Glib::ustring &bodyname, const int &id)
 {
   this->bodyname = bodyname;
   this->naifid = id;
 }
 
 Glib::RefPtr<BodyListItem>
-BodyListItem::create(std::string &bodyname, int &id)
+BodyListItem::create(const std::string &bodyname, const int &id)
 {
   Glib::ustring bnm(bodyname);
   BodyListItem *bli = new BodyListItem(bnm, id);

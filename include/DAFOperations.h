@@ -34,16 +34,19 @@ public:
   fileVersion(std::fstream *f);
 
   bool
-  epochCheckUTC(int day, int month, int year, int hours, int minutes,
-                double seconds, int timesc, int belt, std::string filename);
+  epochCheckUTC(const int &day, const int &month, const int &year,
+                const int &hours, const int &minutes, const double &seconds,
+                const int &timesc, const int &belt,
+                const std::string &filename);
 
   bool
-  epochCheckUTC(double JD, int timesc, double *epb, double *epe,
-                std::string filename);
+  epochCheckUTC(const double &JD, const int &timesc, double &epb, double &epe,
+                const std::string &filename);
 
   int
-  bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end, int NAIFid,
-           double JD);
+  bodyVect(std::fstream *result, uint64_t &c_beg, uint64_t &c_end,
+           const int &NAIFid, const double &JD);
+
   std::vector<SPKItem>
   bodiesVector(std::fstream *f);
 

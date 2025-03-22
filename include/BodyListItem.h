@@ -25,13 +25,13 @@ class BodyListItem : public Glib::Object
 {
 public:
   static Glib::RefPtr<BodyListItem>
-  create(std::string &bodyname, int &id);
+  create(const std::string &bodyname, const int &id);
 
   Glib::ustring bodyname;
   int naifid = -1;
 
 private:
-  BodyListItem(Glib::ustring &bodyname, int &id);
+  BodyListItem(const Glib::ustring &bodyname, const int &id);
 };
 
 #endif // BODYLISTITEM_H

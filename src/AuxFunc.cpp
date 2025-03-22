@@ -52,8 +52,9 @@ AuxFunc::get_selfpath()
 }
 
 double
-AuxFunc::timeTT(int day, int month, int year, int hour, int minut, double sec,
-                int belt)
+AuxFunc::timeTT(const int &day, const int &month, const int &year,
+                const int &hour, const int &minut, const double &sec,
+                const int &belt)
 {
   double a1, m1, c1, a2;
   a1 = std::floor(static_cast<double>(month - 3) / 12.0);
@@ -83,7 +84,7 @@ AuxFunc::timeTT(int day, int month, int year, int hour, int minut, double sec,
     }
   int chy, chm, chd, chh, chmin;
   double chsec;
-  dateJulian(JD, &chd, &chm, &chy, &chh, &chmin, &chsec);
+  dateJulian(JD, chd, chm, chy, chh, chmin, chsec);
   a1 = std::floor(static_cast<double>(chm - 3.0) / 12.0);
   m1 = static_cast<double>(chm) - 3.0 - 12.0 * a1;
   c1 = std::floor((static_cast<double>(chy) + a1) / 100.0);
@@ -107,7 +108,7 @@ AuxFunc::timeTT(int day, int month, int year, int hour, int minut, double sec,
     {
       if(JD <= 2299161.0)
         {
-          dateJulian(JD, &chd, &chm, &chy, &chh, &chmin, &chsec);
+          dateJulian(JD, chd, chm, chy, chh, chmin, chsec);
           a1 = std::floor(static_cast<double>(chm - 3) / 12.0);
           m1 = static_cast<double>(chm - 3) - 12.0 * a1;
           J = static_cast<int>(
@@ -231,13 +232,13 @@ AuxFunc::timeTT(int day, int month, int year, int hour, int minut, double sec,
 }
 
 double
-AuxFunc::timeTT(double JDutc)
+AuxFunc::timeTT(const double &JDutc)
 {
   double JD = JDutc;
   int chy, chm, chd, chh, chmin;
   double chsec;
   double a1, m1, c1, a2;
-  dateJulian(JD, &chd, &chm, &chy, &chh, &chmin, &chsec);
+  dateJulian(JD, chd, chm, chy, chh, chmin, chsec);
   a1 = std::floor(static_cast<double>(chm - 3.0) / 12.0);
   m1 = static_cast<double>(chm) - 3.0 - 12.0 * a1;
   c1 = std::floor((static_cast<double>(chy) + a1) / 100.0);
@@ -262,7 +263,7 @@ AuxFunc::timeTT(double JDutc)
     {
       if(JD <= 2299161.0)
         {
-          dateJulian(JD, &chd, &chm, &chy, &chh, &chmin, &chsec);
+          dateJulian(JD, chd, chm, chy, chh, chmin, chsec);
           a1 = std::floor(static_cast<double>(chm - 3) / 12.0);
           m1 = static_cast<double>(chm - 3) - 12.0 * a1;
           J = static_cast<int>(
@@ -386,8 +387,8 @@ AuxFunc::timeTT(double JDutc)
 }
 
 void
-AuxFunc::dateJulian(double JDN, int *day, int *month, int *year, int *hour,
-                    int *minut, double *second)
+AuxFunc::dateJulian(const double &JDN, int &day, int &month, int &year,
+                    int &hour, int &minut, double &second)
 {
   int J = static_cast<int>(JDN);
   int c1 = static_cast<int>(
@@ -407,24 +408,25 @@ AuxFunc::dateJulian(double JDN, int *day, int *month, int *year, int *hour,
            + 2 - 153 * m1;
   int a2 = static_cast<int>(std::floor(static_cast<double>(m1 + 2) / 12.0));
   int m2 = m1 + 2 - 12 * a2;
-  *year = 100 * c1 + a1 + a2;
-  *month = m2 + 1;
-  *day = static_cast<int>(std::floor(static_cast<double>(e3) / 5.0)) + 1;
+  year = 100 * c1 + a1 + a2;
+  month = m2 + 1;
+  day = static_cast<int>(std::floor(static_cast<double>(e3) / 5.0)) + 1;
   double F, p;
   F = std::modf(JDN, &p);
   if(F < 0.0)
     {
       F = 1 + F;
     }
-  *hour = static_cast<int>(F * 24.0);
-  *minut = static_cast<int>((F * 24.0 - static_cast<double>(*hour)) * 60.0);
-  *second = ((F * 24.0 - static_cast<double>(*hour)) * 60.0
-             - static_cast<double>(*minut))
-            * 60.0;
+  hour = static_cast<int>(F * 24.0);
+  minut = static_cast<int>((F * 24.0 - static_cast<double>(hour)) * 60.0);
+  second = ((F * 24.0 - static_cast<double>(hour)) * 60.0
+            - static_cast<double>(minut))
+           * 60.0;
 }
 
 double
-AuxFunc::utcJD(int day, int month, int year, int hour, int minut, double sec)
+AuxFunc::utcJD(const int &day, const int &month, const int &year,
+               const int &hour, const int &minut, const double &sec)
 {
   double a1, m1, c1, a2;
   a1 = std::floor(static_cast<double>(month - 3) / 12.0);
@@ -454,11 +456,11 @@ AuxFunc::utcJD(int day, int month, int year, int hour, int minut, double sec)
 }
 
 double
-AuxFunc::grigToJuliancal(double JDgr)
+AuxFunc::grigToJuliancal(const double &JDgr)
 {
   int day, month, year, hour, minut;
   double sec;
-  dateJulian(JDgr, &day, &month, &year, &hour, &minut, &sec);
+  dateJulian(JDgr, day, month, year, hour, minut, sec);
   double a1, m1;
   a1 = std::floor(static_cast<double>(month - 3) / 12.0);
   m1 = static_cast<double>(month - 3) - 12.0 * a1;
@@ -483,18 +485,18 @@ AuxFunc::grigToJuliancal(double JDgr)
 }
 
 void
-AuxFunc::toEcliptic(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
-                    mpf_class *Newx, mpf_class *Newy, mpf_class *Newz,
-                    double JD, int ch)
+AuxFunc::toEcliptic(const mpf_class &Oldx, const mpf_class &Oldy,
+                    const mpf_class &Oldz, mpf_class &Newx, mpf_class &Newy,
+                    mpf_class &Newz, const double &JD, const int &ch)
 {
   mpf_class e;
   if(ch == 0)
     {
       e = mpf_class(84381.448) / mpf_class(3600) * mpf_class(M_PI)
           / mpf_class(180);
-      *Newx = *Oldx;
-      *Newy = *Oldz * Sin(e) + *Oldy * Cos(e);
-      *Newz = *Oldz * Cos(e) - *Oldy * Sin(e);
+      Newx = Oldx;
+      Newy = Oldz * Sin(e) + Oldy * Cos(e);
+      Newz = Oldz * Cos(e) - Oldy * Sin(e);
     }
   else
     {
@@ -508,9 +510,9 @@ AuxFunc::toEcliptic(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
               result[i] = 0.0;
             }
           mpf_class xyz[3];
-          xyz[0] = *Oldx;
-          xyz[1] = *Oldy;
-          xyz[2] = *Oldz;
+          xyz[0] = Oldx;
+          xyz[1] = Oldy;
+          xyz[2] = Oldz;
 
           for(size_t i = 0; i < 3; i++)
             {
@@ -519,9 +521,9 @@ AuxFunc::toEcliptic(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
                   result[i] = result[i] + P[i][j] * xyz[j];
                 }
             }
-          *Newx = result[0];
-          *Newy = result[1];
-          *Newz = result[2];
+          Newx = result[0];
+          Newy = result[1];
+          Newz = result[2];
         }
       if(ch == 2)
         {
@@ -538,9 +540,9 @@ AuxFunc::toEcliptic(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
               result[i] = 0.0;
             }
           mpf_class xyz[3];
-          xyz[0] = *Oldx;
-          xyz[1] = *Oldy;
-          xyz[2] = *Oldz;
+          xyz[0] = Oldx;
+          xyz[1] = Oldy;
+          xyz[2] = Oldz;
 
           for(size_t i = 0; i < 3; i++)
             {
@@ -549,20 +551,18 @@ AuxFunc::toEcliptic(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
                   result[i] = result[i] + rbpn[i][j] * xyz[j];
                 }
             }
-          *Oldx = result[0];
-          *Oldy = result[1];
-          *Oldz = result[2];
-          *Newx = *Oldx;
-          *Newy = *Oldz * Sin(epsa + deps) + *Oldy * Cos(epsa + deps);
-          *Newz = *Oldz * Cos(epsa + deps) - *Oldy * Sin(epsa + deps);
+
+          Newx = result[0];
+          Newy = result[2] * Sin(epsa + deps) + result[1] * Cos(epsa + deps);
+          Newz = result[2] * Cos(epsa + deps) - result[1] * Sin(epsa + deps);
         }
     }
 }
 
 void
-AuxFunc::precession(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
-                    mpf_class *Newx, mpf_class *Newy, mpf_class *Newz,
-                    double JD)
+AuxFunc::precession(const mpf_class &Oldx, const mpf_class &Oldy,
+                    const mpf_class &Oldz, mpf_class &Newx, mpf_class &Newy,
+                    mpf_class &Newz, const double &JD)
 {
   double P[3][3];
   iauPmat06(JD, 0.0, P);
@@ -572,9 +572,9 @@ AuxFunc::precession(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
       result[i] = 0.0;
     }
   mpf_class xyz[3];
-  xyz[0] = *Oldx;
-  xyz[1] = *Oldy;
-  xyz[2] = *Oldz;
+  xyz[0] = Oldx;
+  xyz[1] = Oldy;
+  xyz[2] = Oldz;
 
   for(size_t i = 0; i < 3; i++)
     {
@@ -583,15 +583,15 @@ AuxFunc::precession(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
           result[i] = result[i] + P[i][j] * xyz[j];
         }
     }
-  *Newx = result[0];
-  *Newy = result[1];
-  *Newz = result[2];
+  Newx = result[0];
+  Newy = result[1];
+  Newz = result[2];
 }
 
 void
-AuxFunc::precessionNnut(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
-                        mpf_class *Newx, mpf_class *Newy, mpf_class *Newz,
-                        double JD)
+AuxFunc::precessionNnut(const mpf_class &Oldx, const mpf_class &Oldy,
+                        const mpf_class &Oldz, mpf_class &Newx,
+                        mpf_class &Newy, mpf_class &Newz, const double &JD)
 {
   double P[3][3];
   iauPnm06a(JD, 0.0, P);
@@ -601,9 +601,9 @@ AuxFunc::precessionNnut(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
       result[i] = 0.0;
     }
   mpf_class xyz[3];
-  xyz[0] = *Oldx;
-  xyz[1] = *Oldy;
-  xyz[2] = *Oldz;
+  xyz[0] = Oldx;
+  xyz[1] = Oldy;
+  xyz[2] = Oldz;
 
   for(size_t i = 0; i < 3; i++)
     {
@@ -612,13 +612,13 @@ AuxFunc::precessionNnut(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
           result[i] = result[i] + P[i][j] * xyz[j];
         }
     }
-  *Newx = result[0];
-  *Newy = result[1];
-  *Newz = result[2];
+  Newx = result[0];
+  Newy = result[1];
+  Newz = result[2];
 }
 
 mpf_class
-AuxFunc::Sin(mpf_class x)
+AuxFunc::Sin(const mpf_class &x)
 {
   mpf_set_default_prec(512);
   mpf_class TOLERANCE(0.0000000000000000001);
@@ -633,7 +633,7 @@ AuxFunc::Sin(mpf_class x)
 }
 
 mpf_class
-AuxFunc::Cos(mpf_class x)
+AuxFunc::Cos(const mpf_class &x)
 {
   mpf_set_default_prec(512);
   mpf_class TOLERANCE(0.0000000000000000001);
@@ -649,7 +649,7 @@ AuxFunc::Cos(mpf_class x)
 }
 
 std::string
-AuxFunc::utf8to(std::string line)
+AuxFunc::utf8to(const std::string &line)
 {
   UErrorCode status = U_ZERO_ERROR;
   icu::UnicodeString ustr;
@@ -689,16 +689,15 @@ AuxFunc::utf8to(std::string line)
         }
     }
 
-  line.clear();
-  line = std::string(target2.begin(), target2.end());
+  std::string result = std::string(target2.begin(), target2.end());
   ucnv_close(c);
 
-  return line;
+  return result;
 }
 
 void
-AuxFunc::rotateXYZ(mpf_class xyz[3], mpf_class rx, mpf_class ry, mpf_class rz,
-                   mpf_class result[3])
+AuxFunc::rotateXYZ(mpf_class xyz[3], const mpf_class &rx, const mpf_class &ry,
+                   const mpf_class &rz, mpf_class result[3])
 {
   mpf_class Mr[3][3];
   Mr[0][0] = Cos(rz) * Cos(ry);

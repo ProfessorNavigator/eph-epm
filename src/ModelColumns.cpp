@@ -17,8 +17,8 @@
 
 #include <ModelColumns.h>
 
-ModelColumns::ModelColumns(std::string &date, std::string &x, std::string &y,
-                           std::string &z)
+ModelColumns::ModelColumns(const std::string &date, const std::string &x,
+                           const std::string &y, const std::string &z)
 {
   this->date = Glib::ustring(date);
   this->x = Glib::ustring(x);
@@ -27,8 +27,8 @@ ModelColumns::ModelColumns(std::string &date, std::string &x, std::string &y,
 }
 
 Glib::RefPtr<ModelColumns>
-ModelColumns::create(std::string &date, std::string &x, std::string &y,
-                     std::string &z)
+ModelColumns::create(const std::string &date, const std::string &x,
+                     const std::string &y, const std::string &z)
 {
   return Glib::make_refptr_for_instance(new ModelColumns(date, x, y, z));
 }

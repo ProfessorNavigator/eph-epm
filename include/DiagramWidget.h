@@ -39,9 +39,6 @@ public:
 
 private:
   void
-  planetOrbCalc(std::tuple<std::string, double> planettup);
-
-  void
   on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int width, int height);
 
   bool
@@ -54,10 +51,10 @@ private:
 
   void
   zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
-            Gtk::DrawingArea *drar, int id);
+            Gtk::DrawingArea *drar, const int &id);
 
   void
-  saveGraph(mglGraph *gr, Gtk::Window *win, int mode);
+  saveGraph(mglGraph *gr, Gtk::Window *win, const int &mode);
 
   void
   rotationFunc(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,

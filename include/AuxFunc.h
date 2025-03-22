@@ -35,46 +35,50 @@ public:
   get_selfpath();
 
   double
-  timeTT(int day, int month, int year, int hour, int minut, double sec,
-         int belt);
+  timeTT(const int &day, const int &month, const int &year, const int &hour,
+         const int &minut, const double &sec, const int &belt);
 
   double
-  timeTT(double JDutc);
+  timeTT(const double &JDutc);
 
   void
-  dateJulian(double JDN, int *day, int *month, int *year, int *hour,
-             int *minut,
-             double *second); // Julian date to calendar date
+  dateJulian(const double &JDN, int &day, int &month, int &year, int &hour,
+             int &minut,
+             double &second); // Julian date to calendar date
 
   double
-  utcJD(int day, int month, int year, int hour, int minut, double sec);
+  utcJD(const int &day, const int &month, const int &year, const int &hour,
+        const int &minut, const double &sec);
 
   double
-  grigToJuliancal(double JDgr);
+  grigToJuliancal(const double &JDgr);
 
   void
-  toEcliptic(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz, mpf_class *New,
-             mpf_class *Newy, mpf_class *Newz, double JD, int ch);
+  toEcliptic(const mpf_class &Oldx, const mpf_class &Oldy,
+             const mpf_class &Oldz, mpf_class &Newx, mpf_class &Newy,
+             mpf_class &Newz, const double &JD, const int &ch);
 
   void
-  precession(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
-             mpf_class *Newx, mpf_class *Newy, mpf_class *Newz, double JD);
+  precession(const mpf_class &Oldx, const mpf_class &Oldy,
+             const mpf_class &Oldz, mpf_class &Newx, mpf_class &Newy,
+             mpf_class &Newz, const double &JD);
 
   void
-  precessionNnut(mpf_class *Oldx, mpf_class *Oldy, mpf_class *Oldz,
-                 mpf_class *Newx, mpf_class *Newy, mpf_class *Newz, double JD);
+  precessionNnut(const mpf_class &Oldx, const mpf_class &Oldy,
+                 const mpf_class &Oldz, mpf_class &Newx, mpf_class &Newy,
+                 mpf_class &Newz, const double &JD);
 
   void
-  rotateXYZ(mpf_class xyz[3], mpf_class rx, mpf_class ry, mpf_class rz,
-            mpf_class result[3]);
+  rotateXYZ(mpf_class xyz[3], const mpf_class &rx, const mpf_class &ry,
+            const mpf_class &rz, mpf_class result[3]);
 
   mpf_class
-  Cos(mpf_class x);
+  Cos(const mpf_class &x);
 
   mpf_class
-  Sin(mpf_class x);
+  Sin(const mpf_class &x);
 
   std::string
-  utf8to(std::string line);
+  utf8to(const std::string &line);
 };
 #endif // AUXFUNC_H

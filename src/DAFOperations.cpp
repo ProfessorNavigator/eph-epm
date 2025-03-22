@@ -74,9 +74,10 @@ DAFOperations::fileVersion(std::fstream *f)
 }
 
 bool
-DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
-                             int minutes, double seconds, int timesc, int belt,
-                             std::string filename)
+DAFOperations::epochCheckUTC(const int &day, const int &month, const int &year,
+                             const int &hours, const int &minutes,
+                             const double &seconds, const int &timesc,
+                             const int &belt, const std::string &filename)
 {
   bool result = false;
   std::filesystem::path filepath = std::filesystem::u8path(filename);
@@ -176,8 +177,8 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
 }
 
 bool
-DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
-                             std::string filename)
+DAFOperations::epochCheckUTC(const double &JD, const int &timesc, double &epb,
+                             double &epe, const std::string &filename)
 {
   bool result = false;
   std::filesystem::path filepath = std::filesystem::u8path(filename);
@@ -226,8 +227,8 @@ DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
             {
               if(JDtt >= itspk->JD_begin && JDtt <= itspk->JD_end)
                 {
-                  *epb = itspk->JD_begin;
-                  *epe = itspk->JD_end;
+                  epb = itspk->JD_begin;
+                  epe = itspk->JD_end;
                   result = true;
                 }
             }
@@ -448,8 +449,8 @@ DAFOperations::bodiesVector(std::fstream *f)
 }
 
 int
-DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
-                        int NAIFid, double JD)
+DAFOperations::bodyVect(std::fstream *result, uint64_t &c_beg, uint64_t &c_end,
+                        const int &NAIFid, const double &JD)
 {
   int type = -1;
   if(!result->is_open())
@@ -514,8 +515,8 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
             });
       if(itspk != spkv.end())
         {
-          *c_beg = itspk->initial_address - 1;
-          *c_end = itspk->final_addr;
+          c_beg = itspk->initial_address - 1;
+          c_end = itspk->final_addr;
           if(ephtype == 1 || ephtype == 2)
             {
               type = itspk->NAIF_spk_data_type;

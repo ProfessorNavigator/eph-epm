@@ -20,15 +20,17 @@
 #include <DAFOperations.h>
 #include <EPMCalculations.h>
 #include <cmath>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 
-Coordinates::Coordinates(int body, double JD, int timesc, int coordtype,
-                         int xyz, int theory, int unit, double step,
-                         int stepnum, std::string epmpath,
-                         std::string tttdbpath, std::string smlbpath,
-                         std::atomic<int> *cancel)
+Coordinates::Coordinates(const int &body, const double &JD, const int &timesc,
+                         const int &coordtype, const int &xyz,
+                         const int &theory, const int &unit,
+                         const double &step, const int &stepnum,
+                         const std::string &epmpath,
+                         const std::string &tttdbpath,
+                         const std::string &smlbpath, std::atomic<int> *cancel)
 {
   this->body = body;
   this->JD = JD;
@@ -38,9 +40,9 @@ Coordinates::Coordinates(int body, double JD, int timesc, int coordtype,
   this->unit = unit;
   this->step = step;
   this->stepnum = stepnum;
-  this->epmpath = epmpath;
-  this->tttdbpath = tttdbpath;
-  this->smlbpath = smlbpath;
+  this->epmpath = std::filesystem::u8path(epmpath);
+  this->tttdbpath = std::filesystem::u8path(tttdbpath);
+  this->smlbpath = std::filesystem::u8path(smlbpath);
   this->cancel = cancel;
   this->timesc = timesc;
 }
@@ -51,20 +53,22 @@ Coordinates::calculationsXYZ()
   mpf_set_default_prec(512);
   std::vector<CoordKeeper> result;
   AuxFunc af;
-  std::filesystem::path filepath;
   DAFOperations daf;
 
   std::fstream ephfile;
-  filepath = std::filesystem::u8path(epmpath);
-  ephfile.open(filepath, std::ios_base::in | std::ios_base::binary);
+  ephfile.open(epmpath, std::ios_base::in | std::ios_base::binary);
 
-  filepath = std::filesystem::u8path(tttdbpath);
   std::fstream tttdbfile;
-  tttdbfile.open(filepath, std::ios_base::in | std::ios_base::binary);
+  if(epmpath != tttdbpath)
+    {
+      tttdbfile.open(tttdbpath, std::ios_base::in | std::ios_base::binary);
+    }
 
-  filepath = std::filesystem::u8path(smlbpath);
   std::fstream smlbfile;
-  smlbfile.open(filepath, std::ios_base::in | std::ios_base::binary);
+  if(epmpath != smlbpath)
+    {
+      smlbfile.open(smlbpath, std::ios_base::in | std::ios_base::binary);
+    }
 
   if(!ephfile.is_open())
     {
@@ -120,10 +124,6 @@ Coordinates::calculationsXYZ()
             }
         }
       EPMCalculations epm;
-      uint64_t tdbb, tdbe;
-      int tdbtype;
-      uint64_t bodyb, bodye;
-      int bodytype;
       n = ephnm.find("SPKMERGE");
       if(n == std::string::npos)
         {
@@ -138,27 +138,56 @@ Coordinates::calculationsXYZ()
           au = 149597870.7;
         }
 
-      for(double i = JD; i < JD + step * stepnum; i += step)
-        {
-          if(cancel->load() > 0)
-            {
-              break;
-            }
+      result.reserve(stepnum);
+      {
+        double lim = JD + step * stepnum;
+        double i = JD;
+        while(i < lim)
+          {
+            CoordKeeper ckp;
+            ckp.JD = i;
+            result.emplace_back(ckp);
+            i += step;
+          }
+      }
 
+      std::atomic<bool> stop = false;
+      std::mutex eph_mtx;
+      std::mutex tdb_mtx;
+      std::mutex sml_mtx;
+#ifdef USE_OPENMP
+#pragma omp parallel for
+#endif
+      for(auto it = result.begin(); it != result.end(); it++)
+        {
+          if(cancel->load() > 0 || stop.load())
+            {
+              continue;
+            }
+          uint64_t tdbb, tdbe;
+          int tdbtype;
+          uint64_t bodyb, bodye;
+          int bodytype;
           if(tttdbfile.is_open())
             {
-              tdbtype = daf.bodyVect(&tttdbfile, &tdbb, &tdbe, 1000000001, i);
+              tdb_mtx.lock();
+              tdbtype
+                  = daf.bodyVect(&tttdbfile, tdbb, tdbe, 1000000001, it->JD);
+              tdb_mtx.unlock();
             }
           else
             {
-              tdbtype = daf.bodyVect(&ephfile, &tdbb, &tdbe, 1000000001, i);
+              eph_mtx.lock();
+              tdbtype = daf.bodyVect(&ephfile, tdbb, tdbe, 1000000001, it->JD);
+              eph_mtx.unlock();
             }
           if(tdbtype < 0)
             {
               std::cerr << "Coordinates::calculationsXYZ: cannot find TDB, "
                            "coordinates have not been calculated!"
                         << std::endl;
-              break;
+              stop.store(true);
+              continue;
             }
 
           mpf_class JDfin;
@@ -168,32 +197,36 @@ Coordinates::calculationsXYZ()
             {
             case 0:
               {
-                JDcalc = af.timeTT(i);
+                JDcalc = af.timeTT(it->JD);
                 if(tttdbfile.is_open())
                   {
+                    tdb_mtx.lock();
                     JDfin = mpf_class(JDcalc)
-                            - epm.tdbCalc(&tttdbfile, &tdbb, &tdbe, JDcalc,
+                            - epm.tdbCalc(&tttdbfile, tdbb, tdbe, JDcalc,
                                           tdbtype)
                                   / mpf_class(86400.0);
+                    tdb_mtx.unlock();
                   }
                 else
                   {
-                    JDfin = mpf_class(JDcalc)
-                            - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc,
-                                          tdbtype)
-                                  / mpf_class(86400.0);
+                    eph_mtx.lock();
+                    JDfin
+                        = mpf_class(JDcalc)
+                          - epm.tdbCalc(&ephfile, tdbb, tdbe, JDcalc, tdbtype)
+                                / mpf_class(86400.0);
+                    eph_mtx.unlock();
                   }
                 break;
               }
             case 1:
               {
-                if(i < 0)
+                if(it->JD < 0)
                   {
-                    JDcalc = i + 0.5;
+                    JDcalc = it->JD + 0.5;
                   }
                 else
                   {
-                    JDcalc = i - 0.5;
+                    JDcalc = it->JD - 0.5;
                   }
                 if(JDcalc <= 2299161.0)
                   {
@@ -201,31 +234,35 @@ Coordinates::calculationsXYZ()
                   }
                 if(tttdbfile.is_open())
                   {
+                    tdb_mtx.lock();
                     JDfin = mpf_class(JDcalc)
-                            - epm.tdbCalc(&tttdbfile, &tdbb, &tdbe, JDcalc,
+                            - epm.tdbCalc(&tttdbfile, tdbb, tdbe, JDcalc,
                                           tdbtype)
                                   / mpf_class(86400.0);
+                    tdb_mtx.unlock();
                   }
                 else
                   {
-                    JDfin = mpf_class(JDcalc)
-                            - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc,
-                                          tdbtype)
-                                  / mpf_class(86400.0);
+                    eph_mtx.lock();
+                    JDfin
+                        = mpf_class(JDcalc)
+                          - epm.tdbCalc(&ephfile, tdbb, tdbe, JDcalc, tdbtype)
+                                / mpf_class(86400.0);
+                    eph_mtx.unlock();
                   }
                 break;
               }
             case 2:
               {
-                if(i - 0.5 <= 2299161.0)
+                if(it->JD - 0.5 <= 2299161.0)
                   {
-                    if(i < 0)
+                    if(it->JD < 0)
                       {
-                        JDfin = JDcalc = af.grigToJuliancal(i + 0.5);
+                        JDfin = JDcalc = af.grigToJuliancal(it->JD + 0.5);
                       }
                     else
                       {
-                        JDfin = JDcalc = af.grigToJuliancal(i - 0.5);
+                        JDfin = JDcalc = af.grigToJuliancal(it->JD - 0.5);
                       }
                   }
                 break;
@@ -235,22 +272,28 @@ Coordinates::calculationsXYZ()
             }
           if(body != -3)
             {
-              bodytype = daf.bodyVect(&ephfile, &bodyb, &bodye, body,
-                                      JDfin.get_d());
+              eph_mtx.lock();
+              bodytype
+                  = daf.bodyVect(&ephfile, bodyb, bodye, body, JDfin.get_d());
+              eph_mtx.unlock();
             }
           else
             {
-              daf.bodyVect(&ephfile, &bodyb, &bodye, 3, JDfin.get_d());
+              eph_mtx.lock();
+              daf.bodyVect(&ephfile, bodyb, bodye, 3, JDfin.get_d());
               bodytype
-                  = daf.bodyVect(&ephfile, &moonb, &moone, 3, JDfin.get_d());
+                  = daf.bodyVect(&ephfile, moonb, moone, 3, JDfin.get_d());
+              eph_mtx.unlock();
             }
           bool smbody = false;
           if(bodytype < 0)
             {
               if(smlbfile.is_open())
                 {
-                  bodytype = daf.bodyVect(&smlbfile, &bodyb, &bodye, body,
+                  sml_mtx.lock();
+                  bodytype = daf.bodyVect(&smlbfile, bodyb, bodye, body,
                                           JDfin.get_d());
+                  sml_mtx.unlock();
                 }
               if(bodytype < 0)
                 {
@@ -258,7 +301,8 @@ Coordinates::calculationsXYZ()
                             << body
                             << ", coordinates have not been calculated!"
                             << std::endl;
-                  break;
+                  stop.store(true);
+                  continue;
                 }
               else
                 {
@@ -266,70 +310,74 @@ Coordinates::calculationsXYZ()
                 }
             }
 
-          CoordKeeper ckp;
-          ckp.JD = i;
           if(body != 3 && body != -3)
             {
               if(!smbody)
                 {
-                  ckp.X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au);
-                  ckp.Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au);
-                  ckp.Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au);
+                  eph_mtx.lock();
+                  it->X = epm.bodyCalcX(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au);
+                  it->Y = epm.bodyCalcY(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au);
+                  it->Z = epm.bodyCalcZ(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au);
+                  eph_mtx.unlock();
                 }
               else
                 {
-                  ckp.X = epm.bodyCalcX(&smlbfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au);
-                  ckp.Y = epm.bodyCalcY(&smlbfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au);
-                  ckp.Z = epm.bodyCalcZ(&smlbfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au);
+                  sml_mtx.lock();
+                  it->X = epm.bodyCalcX(&smlbfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au);
+                  it->Y = epm.bodyCalcY(&smlbfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au);
+                  it->Z = epm.bodyCalcZ(&smlbfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au);
+                  sml_mtx.unlock();
                 }
             }
           else
             {
+              eph_mtx.lock();
               bodymoontype
-                  = daf.bodyVect(&ephfile, &moonb, &moone, 301, JDfin.get_d());
+                  = daf.bodyVect(&ephfile, moonb, moone, 301, JDfin.get_d());
               if(body == 3)
                 {
-                  ckp.X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au)
-                          - epm.bodyCalcX(&ephfile, &moonb, &moone, JDfin, xyz,
-                                          bodymoontype, &au)
+                  it->X = epm.bodyCalcX(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au)
+                          - epm.bodyCalcX(&ephfile, moonb, moone, JDfin, xyz,
+                                          bodymoontype, au)
                                 / rho;
-                  ckp.Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au)
-                          - epm.bodyCalcY(&ephfile, &moonb, &moone, JDfin, xyz,
-                                          bodymoontype, &au)
+                  it->Y = epm.bodyCalcY(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au)
+                          - epm.bodyCalcY(&ephfile, moonb, moone, JDfin, xyz,
+                                          bodymoontype, au)
                                 / rho;
-                  ckp.Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au)
-                          - epm.bodyCalcZ(&ephfile, &moonb, &moone, JDfin, xyz,
-                                          bodymoontype, &au)
+                  it->Z = epm.bodyCalcZ(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au)
+                          - epm.bodyCalcZ(&ephfile, moonb, moone, JDfin, xyz,
+                                          bodymoontype, au)
                                 / rho;
                 }
               else
                 {
                   mpf_class moonx, moony, moonz;
-                  moonx = epm.bodyCalcX(&ephfile, &moonb, &moone, JDfin, xyz,
-                                        bodymoontype, &au);
-                  moony = epm.bodyCalcY(&ephfile, &moonb, &moone, JDfin, xyz,
-                                        bodymoontype, &au);
-                  moonz = epm.bodyCalcZ(&ephfile, &moonb, &moone, JDfin, xyz,
-                                        bodymoontype, &au);
-                  ckp.X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au)
+                  moonx = epm.bodyCalcX(&ephfile, moonb, moone, JDfin, xyz,
+                                        bodymoontype, au);
+                  moony = epm.bodyCalcY(&ephfile, moonb, moone, JDfin, xyz,
+                                        bodymoontype, au);
+                  moonz = epm.bodyCalcZ(&ephfile, moonb, moone, JDfin, xyz,
+                                        bodymoontype, au);
+                  it->X = epm.bodyCalcX(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au)
                           - moonx / rho + moonx;
-                  ckp.Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au)
+                  it->Y = epm.bodyCalcY(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au)
                           - moony / rho + moony;
-                  ckp.Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                        bodytype, &au)
+                  it->Z = epm.bodyCalcZ(&ephfile, bodyb, bodye, JDfin, xyz,
+                                        bodytype, au)
                           - moonz / rho + moonz;
                 }
+              eph_mtx.unlock();
             }
           switch(xyz)
             {
@@ -339,25 +387,25 @@ Coordinates::calculationsXYZ()
                   {
                     if(n != std::string::npos || smbody)
                       {
-                        ckp.X = ckp.X / au;
-                        ckp.Y = ckp.Y / au;
-                        ckp.Z = ckp.Z / au;
+                        it->X = it->X / au;
+                        it->Y = it->Y / au;
+                        it->Z = it->Z / au;
                       }
                     switch(unit)
                       {
                       case 1:
                         {
-                          ckp.X = ckp.X * au;
-                          ckp.Y = ckp.Y * au;
-                          ckp.Z = ckp.Z * au;
+                          it->X = it->X * au;
+                          it->Y = it->Y * au;
+                          it->Z = it->Z * au;
                           break;
                         }
                       case 2:
                         {
                           mpf_class vl = au * 1000;
-                          ckp.X = ckp.X * vl;
-                          ckp.Y = ckp.Y * vl;
-                          ckp.Z = ckp.Z * vl;
+                          it->X = it->X * vl;
+                          it->Y = it->Y * vl;
+                          it->Z = it->Z * vl;
                           break;
                         }
                       default:
@@ -369,9 +417,9 @@ Coordinates::calculationsXYZ()
                     if(unit == 1)
                       {
                         double vl = 180 / M_PI;
-                        ckp.X = ckp.X * vl;
-                        ckp.Y = ckp.Y * vl;
-                        ckp.Z = ckp.Z * vl;
+                        it->X = it->X * vl;
+                        it->Y = it->Y * vl;
+                        it->Z = it->Z * vl;
                       }
                   }
                 break;
@@ -382,34 +430,34 @@ Coordinates::calculationsXYZ()
                   {
                     if(n != std::string::npos)
                       {
-                        ckp.X = ckp.X / au;
-                        ckp.Y = ckp.Y / au;
-                        ckp.Z = ckp.Z / au;
+                        it->X = it->X / au;
+                        it->Y = it->Y / au;
+                        it->Z = it->Z / au;
                       }
 
                     switch(unit)
                       {
                       case 1:
                         {
-                          ckp.X = ckp.X * au;
-                          ckp.Y = ckp.Y * au;
-                          ckp.Z = ckp.Z * au;
+                          it->X = it->X * au;
+                          it->Y = it->Y * au;
+                          it->Z = it->Z * au;
                           break;
                         }
                       case 2:
                         {
                           mpf_class vl = au / 86400;
-                          ckp.X = ckp.X * vl;
-                          ckp.Y = ckp.Y * vl;
-                          ckp.Z = ckp.Z * vl;
+                          it->X = it->X * vl;
+                          it->Y = it->Y * vl;
+                          it->Z = it->Z * vl;
                           break;
                         }
                       case 3:
                         {
                           mpf_class vl = au / 86400 * 1000;
-                          ckp.X = ckp.X * vl;
-                          ckp.Y = ckp.Y * vl;
-                          ckp.Z = ckp.Z * vl;
+                          it->X = it->X * vl;
+                          it->Y = it->Y * vl;
+                          it->Z = it->Z * vl;
                           break;
                         }
                       default:
@@ -420,16 +468,16 @@ Coordinates::calculationsXYZ()
                   {
                     if(n != std::string::npos)
                       {
-                        ckp.X = ckp.X * 2;
-                        ckp.Y = ckp.Y * 2;
-                        ckp.Z = ckp.Z * 2;
+                        it->X = it->X * 2;
+                        it->Y = it->Y * 2;
+                        it->Z = it->Z * 2;
                       }
                     if(unit == 1)
                       {
                         double vl = 180 / M_PI * 3600;
-                        ckp.X = ckp.X * vl;
-                        ckp.Y = ckp.Y * vl;
-                        ckp.Z = ckp.Z * vl;
+                        it->X = it->X * vl;
+                        it->Y = it->Y * vl;
+                        it->Z = it->Z * vl;
                       }
                   }
                 break;
@@ -447,21 +495,20 @@ Coordinates::calculationsXYZ()
                   case 1:
                     {
                       mpf_class Xn, Yn, Zn;
-                      af.precession(&ckp.X, &ckp.Y, &ckp.Z, &Xn, &Yn, &Zn,
-                                    JDcalc);
-                      ckp.X = std::move(Xn);
-                      ckp.Y = std::move(Yn);
-                      ckp.Z = std::move(Zn);
+                      af.precession(it->X, it->Y, it->Z, Xn, Yn, Zn, JDcalc);
+                      it->X = std::move(Xn);
+                      it->Y = std::move(Yn);
+                      it->Z = std::move(Zn);
                       break;
                     }
                   case 2:
                     {
                       mpf_class Xn, Yn, Zn;
-                      af.precessionNnut(&ckp.X, &ckp.Y, &ckp.Z, &Xn, &Yn, &Zn,
+                      af.precessionNnut(it->X, it->Y, it->Z, Xn, Yn, Zn,
                                         JDcalc);
-                      ckp.X = std::move(Xn);
-                      ckp.Y = std::move(Yn);
-                      ckp.Z = std::move(Zn);
+                      it->X = std::move(Xn);
+                      it->Y = std::move(Yn);
+                      it->Z = std::move(Zn);
                       break;
                     }
                   default:
@@ -472,18 +519,15 @@ Coordinates::calculationsXYZ()
             case 1:
               {
                 mpf_class Xn, Yn, Zn;
-                af.toEcliptic(&ckp.X, &ckp.Y, &ckp.Z, &Xn, &Yn, &Zn, JDcalc,
-                              theory);
-                ckp.X = std::move(Xn);
-                ckp.Y = std::move(Yn);
-                ckp.Z = std::move(Zn);
+                af.toEcliptic(it->X, it->Y, it->Z, Xn, Yn, Zn, JDcalc, theory);
+                it->X = std::move(Xn);
+                it->Y = std::move(Yn);
+                it->Z = std::move(Zn);
                 break;
               }
             default:
               break;
             }
-
-          result.emplace_back(ckp);
 
           if(pulse_signal)
             {

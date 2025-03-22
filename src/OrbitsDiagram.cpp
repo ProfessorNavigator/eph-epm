@@ -34,10 +34,12 @@
 #include <omp.h>
 #endif
 
-OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, std::string ephpath,
-                             std::string tttdbpath, std::string smlpath,
-                             double JD, int timesc, int coordtype, int theory,
-                             double plot_factor, std::atomic<int> *cancel)
+OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
+                             const std::string &tttdbpath,
+                             const std::string &smlpath, const double &JD,
+                             const int &timesc, const int &coordtype,
+                             const int &theory, const double &plot_factor,
+                             std::atomic<int> *cancel)
 {
   this->mw = mw;
   this->ephpath = ephpath;
@@ -153,11 +155,11 @@ OrbitsDiagram::calculateSize()
   bool ch;
   if(tttdbpath.empty())
     {
-      ch = daf->epochCheckUTC(JD, timesc, &epb, &epe, ephpath);
+      ch = daf->epochCheckUTC(JD, timesc, epb, epe, ephpath);
     }
   else
     {
-      ch = daf->epochCheckUTC(JD, timesc, &epb, &epe, tttdbpath);
+      ch = daf->epochCheckUTC(JD, timesc, epb, epe, tttdbpath);
     }
 
   if(ch)
@@ -398,7 +400,7 @@ OrbitsDiagram::calculateOrbits()
 }
 
 void
-OrbitsDiagram::planetOrbCalc(std::tuple<int, double> planettup)
+OrbitsDiagram::planetOrbCalc(const std::tuple<int, double> &planettup)
 {
   int body = std::get<0>(planettup);
   std::vector<CoordKeeper> result;
@@ -873,14 +875,13 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                     }
                   case 1:
                     {
-                      af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                    JD);
+                      af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD);
                       break;
                     }
                   case 2:
                     {
-                      af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
-                                        &Newz, JD);
+                      af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                        JD);
                       break;
                     }
                   default:
@@ -890,8 +891,7 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
               }
             case 1:
               {
-                af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-                              theory);
+                af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD, theory);
                 break;
               }
             default:
@@ -1041,14 +1041,14 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                           }
                         case 1:
                           {
-                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
-                                          &Newz, JD);
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
                             break;
                           }
                         case 2:
                           {
-                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
-                                              &Newy, &Newz, JD);
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
                             break;
                           }
                         default:
@@ -1058,8 +1058,8 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                     }
                   case 1:
                     {
-                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                    JD, theory);
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
                       break;
                     }
                   default:
@@ -1091,14 +1091,14 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                           }
                         case 1:
                           {
-                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
-                                          &Newz, JD);
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
                             break;
                           }
                         case 2:
                           {
-                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
-                                              &Newy, &Newz, JD);
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
                             break;
                           }
                         default:
@@ -1108,8 +1108,8 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                     }
                   case 1:
                     {
-                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                    JD, theory);
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
                       break;
                     }
                   default:
@@ -1143,14 +1143,14 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                           }
                         case 1:
                           {
-                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
-                                          &Newz, JD);
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
                             break;
                           }
                         case 2:
                           {
-                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
-                                              &Newy, &Newz, JD);
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
                             break;
                           }
                         default:
@@ -1160,8 +1160,8 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                     }
                   case 1:
                     {
-                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                    JD, theory);
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
                       break;
                     }
                   default:
@@ -1195,14 +1195,14 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                           }
                         case 1:
                           {
-                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
-                                          &Newz, JD);
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
                             break;
                           }
                         case 2:
                           {
-                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
-                                              &Newy, &Newz, JD);
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
                             break;
                           }
                         default:
@@ -1212,8 +1212,8 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                     }
                   case 1:
                     {
-                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                    JD, theory);
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
                       break;
                     }
                   default:
@@ -1247,14 +1247,14 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                           }
                         case 1:
                           {
-                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
-                                          &Newz, JD);
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
                             break;
                           }
                         case 2:
                           {
-                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
-                                              &Newy, &Newz, JD);
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
                             break;
                           }
                         default:
@@ -1264,8 +1264,8 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                     }
                   case 1:
                     {
-                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                    JD, theory);
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
                       break;
                     }
                   default:
@@ -1298,14 +1298,14 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                           }
                         case 1:
                           {
-                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
-                                          &Newz, JD);
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
                             break;
                           }
                         case 3:
                           {
-                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
-                                              &Newy, &Newz, JD);
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
                             break;
                           }
                         default:
@@ -1315,8 +1315,8 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                     }
                   case 1:
                     {
-                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                    JD, theory);
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
                       break;
                     }
                   default:

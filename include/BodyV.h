@@ -41,7 +41,7 @@ public:
   getFile();
 
   void
-  setVect(std::vector<SPKItem> &boydv);
+  setVect(const std::vector<SPKItem> &boydv);
 
   std::vector<SPKItem>
   getVect();
