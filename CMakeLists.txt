@@ -17,7 +17,11 @@ pkg_check_modules(ICU REQUIRED IMPORTED_TARGET icu-i18n)
 pkg_check_modules(ICUUC REQUIRED IMPORTED_TARGET icu-uc)
 pkg_check_modules(GMPXX REQUIRED IMPORTED_TARGET gmpxx)
 
-find_library(MGL mgl2 REQUIRED)
+find_library(MGL mgl2)
+
+if(NOT MGL_FOUND)
+  find_library(MGL mgl)
+endif()
 
 find_library(SOFA sofa_c REQUIRED)
 
@@ -30,6 +34,7 @@ endif()
 if(GTKMM_VERSION VERSION_LESS "4.10")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEPH_GTK_OLD")
 endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEPH_GTK_OLD")
 
 add_executable(ephepm)
 
