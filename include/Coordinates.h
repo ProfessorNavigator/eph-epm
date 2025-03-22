@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,10 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_COORDINATES_H_
-#define INCLUDE_COORDINATES_H_
+#ifndef COORDINATES_H
+#define COORDINATES_H
 
-#include <array>
+#include <CoordKeeper.h>
 #include <atomic>
 #include <functional>
 #include <gmpxx.h>
@@ -37,7 +37,7 @@ public:
               std::string epmpath, std::string tttdbpath, std::string smlbpath,
               std::atomic<int> *cancel);
 
-  std::vector<std::array<mpf_class, 3>>
+  std::vector<CoordKeeper>
   calculationsXYZ();
 
   std::function<void()> pulse_signal;
@@ -58,4 +58,4 @@ private:
   int timesc = 0;
 };
 
-#endif /* INCLUDE_COORDINATES_H_ */
+#endif // COORDINATES_H

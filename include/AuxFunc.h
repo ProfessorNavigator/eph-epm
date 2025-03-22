@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,9 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_AUXFUNC_H_
-#define INCLUDE_AUXFUNC_H_
+#ifndef AUXFUNC_H
+#define AUXFUNC_H
 
+#include <filesystem>
 #include <gmpxx.h>
 #include <string>
 
@@ -30,7 +31,7 @@ class AuxFunc
 public:
   AuxFunc();
 
-  std::string
+  std::filesystem::path
   get_selfpath();
 
   double
@@ -76,4 +77,4 @@ public:
   std::string
   utf8to(std::string line);
 };
-#endif /* INCLUDE_AUXFUNC_H_ */
+#endif // AUXFUNC_H

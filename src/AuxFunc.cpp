@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,8 @@
 
 #include <AuxFunc.h>
 #include <cmath>
-#include <filesystem>
-#include <gmp.h>
 #include <iostream>
 #include <sofa.h>
-#include <stddef.h>
 #include <unicode/ucnv.h>
 #include <unicode/unistr.h>
 #include <unicode/urename.h>
@@ -38,19 +35,19 @@ AuxFunc::AuxFunc()
   mpf_set_default_prec(512);
 }
 
-std::string
+std::filesystem::path
 AuxFunc::get_selfpath()
 {
   std::filesystem::path p;
 #ifdef __linux
   p = std::filesystem::u8path("/proc/self/exe");
-  return std::filesystem::read_symlink(p).u8string();
+  return std::filesystem::read_symlink(p);
 #endif
 #ifdef _WIN32
   char pth[MAX_PATH];
   GetModuleFileNameA(NULL, pth, MAX_PATH);
   p = std::filesystem::path(pth);
-  return p.u8string();
+  return p;
 #endif
 }
 

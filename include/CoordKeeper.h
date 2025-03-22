@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2025 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,41 +14,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#ifndef COORDKEEPER_H
+#define COORDKEEPER_H
 
-#ifndef BODYV_H
-#define BODYV_H
+#include <gmpxx.h>
 
-#include <SPKItem.h>
-#include <fstream>
-#include <vector>
-
-class BodyV
+class CoordKeeper
 {
 public:
-  BodyV();
+  CoordKeeper();
 
-  BodyV(const BodyV &other);
+  CoordKeeper(const CoordKeeper &other);
 
-  BodyV(BodyV &&other);
+  CoordKeeper(CoordKeeper &&other);
 
-  BodyV &
-  operator=(const BodyV &other);
+  CoordKeeper &
+  operator=(const CoordKeeper &other);
 
-  void
-  setFile(std::fstream *f);
+  CoordKeeper &
+  operator=(CoordKeeper &&other);
 
-  std::fstream *
-  getFile();
-
-  void
-  setVect(std::vector<SPKItem> &boydv);
-
-  std::vector<SPKItem>
-  getVect();
-
-private:
-  std::fstream *file = nullptr;
-  std::vector<SPKItem> bodyv;
+  double JD;
+  mpf_class X;
+  mpf_class Y;
+  mpf_class Z;
 };
 
-#endif // BODYV_H
+#endif // COORDKEEPER_H

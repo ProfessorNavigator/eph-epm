@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,26 +19,22 @@
 #include <Coordinates.h>
 #include <OrbitsDiagram.h>
 #include <algorithm>
-#include <bits/std_abs.h>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
-#include <gdkmm/display.h>
-#include <gdkmm/monitor.h>
-#include <gdkmm/surface.h>
-#include <glibmm/refptr.h>
+#include <gtkmm-4.0/gdkmm/monitor.h>
 #include <libintl.h>
 #include <mgl2/data.h>
 #include <mgl2/type.h>
+
 #ifndef USE_OPENMP
 #include <thread>
 #endif
-#include <utility>
 #ifdef USE_OPENMP
 #include <omp.h>
 #endif
 
-OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
+OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, std::string ephpath,
                              std::string tttdbpath, std::string smlpath,
                              double JD, int timesc, int coordtype, int theory,
                              double plot_factor, std::atomic<int> *cancel)
@@ -60,7 +56,7 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
   this->timesc = timesc;
   std::fstream f;
   std::filesystem::path ephp = std::filesystem::u8path(ephpath);
-  std::vector<std::tuple<double, double, int, int, int, int, int, int>> chv;
+  std::vector<SPKItem> chv;
   f.open(ephp, std::ios_base::in | std::ios_base::binary);
   if(f.is_open())
     {
@@ -74,8 +70,9 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
       chv = daf->bodiesVector(&f);
       f.close();
     }
-  auto itchv = std::find_if(chv.begin(), chv.end(), [](auto &el) {
-    return std::get<2>(el) == 2090377;
+
+  auto itchv = std::find_if(chv.begin(), chv.end(), [](SPKItem &el) {
+    return el.NAIF_body_id == 2090377;
   });
   if(itchv != chv.end())
     {
@@ -91,8 +88,8 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
           chv = daf->bodiesVector(&f);
           f.close();
         }
-      itchv = std::find_if(chv.begin(), chv.end(), [](auto &el) {
-        return std::get<2>(el) == 2090377;
+      itchv = std::find_if(chv.begin(), chv.end(), [](SPKItem &el) {
+        return el.NAIF_body_id == 2090377;
       });
       if(itchv != chv.end())
         {
@@ -100,8 +97,8 @@ OrbitsDiagram::OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
         }
       else
         {
-          itchv = std::find_if(chv.begin(), chv.end(), [](auto &el) {
-            return std::get<2>(el) == 9;
+          itchv = std::find_if(chv.begin(), chv.end(), [](SPKItem &el) {
+            return el.NAIF_body_id == 9;
           });
           if(itchv != chv.end())
             {
@@ -248,24 +245,89 @@ OrbitsDiagram::calculateOrbits()
       double rng = 0.0;
       for(int i = 0; i < 3; i++)
         {
-          auto minmaxel = std::minmax_element(
-              resultsed.begin(), resultsed.end(), [i](auto el1, auto &el2) {
-                return el1.at(i) > el2.at(i);
-              });
+          auto minmaxel
+              = std::minmax_element(resultsed.begin(), resultsed.end(),
+                                    [i](CoordKeeper el1, CoordKeeper &el2) {
+                                      switch(i)
+                                        {
+                                        case 0:
+                                          {
+                                            return el1.X > el2.X;
+                                          }
+                                        case 1:
+                                          {
+                                            return el1.Y > el2.Y;
+                                          }
+                                        case 2:
+                                          {
+                                            return el1.Z > el2.Z;
+                                          }
+                                        default:
+                                          return false;
+                                        }
+                                    });
           if(minmaxel.first != resultsed.end())
             {
-              std::array<mpf_class, 3> maxar = *(minmaxel.first);
-              if(maxar.at(i).get_d() > rng)
+              switch(i)
                 {
-                  rng = maxar.at(i).get_d();
+                case 0:
+                  {
+                    if(minmaxel.first->X.get_d() > rng)
+                      {
+                        rng = minmaxel.first->X.get_d();
+                      }
+                    break;
+                  }
+                case 1:
+                  {
+                    if(minmaxel.first->Y.get_d() > rng)
+                      {
+                        rng = minmaxel.first->Y.get_d();
+                      }
+                    break;
+                  }
+                case 2:
+                  {
+                    if(minmaxel.first->Z.get_d() > rng)
+                      {
+                        rng = minmaxel.first->Z.get_d();
+                      }
+                    break;
+                  }
+                default:
+                  break;
                 }
             }
           if(minmaxel.second != resultsed.end())
             {
-              std::array<mpf_class, 3> minar = *(minmaxel.second);
-              if(std::abs(minar.at(i).get_d()) > rng)
+              switch(i)
                 {
-                  rng = std::abs(minar.at(i).get_d());
+                case 0:
+                  {
+                    if(std::abs(minmaxel.second->X.get_d()) > rng)
+                      {
+                        rng = std::abs(minmaxel.second->X.get_d());
+                      }
+                    break;
+                  }
+                case 1:
+                  {
+                    if(std::abs(minmaxel.second->Y.get_d()) > rng)
+                      {
+                        rng = std::abs(minmaxel.second->Y.get_d());
+                      }
+                    break;
+                  }
+                case 2:
+                  {
+                    if(std::abs(minmaxel.second->Z.get_d()) > rng)
+                      {
+                        rng = std::abs(minmaxel.second->Z.get_d());
+                      }
+                    break;
+                  }
+                default:
+                  break;
                 }
             }
         }
@@ -304,10 +366,9 @@ OrbitsDiagram::calculateOrbits()
           });
           std::tuple<int, double> planettup;
           planettup = bodyv[i];
-          std::thread *thr = new std::thread(
+          std::thread thr(
               std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
-          thr->detach();
-          delete thr;
+          thr.detach();
         }
 #endif
     }
@@ -340,7 +401,7 @@ void
 OrbitsDiagram::planetOrbCalc(std::tuple<int, double> planettup)
 {
   int body = std::get<0>(planettup);
-  std::vector<std::array<mpf_class, 3>> result;
+  std::vector<CoordKeeper> result;
 
   if(body != 2090377)
     {
@@ -414,13 +475,16 @@ OrbitsDiagram::planetOrbCalc(std::tuple<int, double> planettup)
       resultsed.clear();
     }
   std::vector<double> X;
+  X.reserve(result.size());
   std::vector<double> Y;
+  Y.reserve(result.size());
   std::vector<double> Z;
-  for(size_t i = 0; i < result.size(); i++)
+  Z.reserve(result.size());
+  for(auto it = result.begin(); it != result.end(); it++)
     {
-      X.push_back(std::get<0>(result[i]).get_d());
-      Y.push_back(std::get<1>(result[i]).get_d());
-      Z.push_back(std::get<2>(result[i]).get_d());
+      X.push_back(it->X.get_d());
+      Y.push_back(it->Y.get_d());
+      Z.push_back(it->Z.get_d());
     }
   mglData x(X), y(Y), z(Z);
 
@@ -559,7 +623,8 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
         this->pulse_signal();
       }
   };
-  std::vector<std::array<mpf_class, 3>> result;
+
+  std::vector<CoordKeeper> result;
   result = coord->calculationsXYZ();
   delete coord;
   std::vector<double> X;
@@ -578,9 +643,9 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
   AuxFunc af;
   if(result.size() > 0)
     {
-      x = std::get<0>(result[0]).get_d();
-      y = std::get<1>(result[0]).get_d();
-      z = std::get<2>(result[0]).get_d();
+      x = result.begin()->X.get_d();
+      y = result.begin()->Y.get_d();
+      z = result.begin()->Z.get_d();
     }
   switch(body)
     {
@@ -772,43 +837,67 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
       break;
     }
 
-  for(double phi = -M_PI / 2.0; phi <= M_PI / 2.0; phi = phi + M_PI / 180.0)
+  double lim1 = M_PI / 2.0;
+  double lim2 = 2.0 * M_PI;
+  double add = M_PI / 180.0;
+  mpf_class vl1 = Rh / 149597870.7;
+  mpf_class vl2 = Rh2 / 149597870.7;
+  mpf_class vl3 = Rv / 149597870.7;
+  for(double phi = -M_PI / 2.0; phi <= lim1; phi += add)
     {
-      for(double tet = 0.0; tet <= 2.0 * M_PI; tet = tet + M_PI / 180.0)
+      for(double tet = 0.0; tet <= lim2; tet += add)
         {
           mpf_class xyz[3];
-          xyz[0] = mpf_class(Rh / 149597870.7) * af.Cos(phi) * af.Cos(tet);
-          xyz[1] = mpf_class(Rh2 / 149597870.7) * af.Cos(phi) * af.Sin(tet);
-          xyz[2] = mpf_class(Rv / 149597870.7) * af.Sin(phi);
+          xyz[0] = vl1 * af.Cos(phi) * af.Cos(tet);
+          xyz[1] = vl2 * af.Cos(phi) * af.Sin(tet);
+          xyz[2] = vl3 * af.Sin(phi);
           mpf_class result[3];
           af.rotateXYZ(xyz, 0.0, bet, alf, result);
           mpf_class Oldx(result[0]);
           mpf_class Oldy(result[1]);
           mpf_class Oldz(result[2]);
           mpf_class Newx, Newy, Newz;
-          if(coordtype == 0)
+
+          switch(coordtype)
             {
-              if(theory == 0)
-                {
-                  Newx = Oldx;
-                  Newy = Oldy;
-                  Newz = Oldz;
-                }
-              if(theory == 1)
-                {
-                  af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD);
-                }
-              if(theory == 2)
-                {
-                  af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+            case 0:
+              {
+                switch(theory)
+                  {
+                  case 0:
+                    {
+                      Newx = Oldx;
+                      Newy = Oldy;
+                      Newz = Oldz;
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
                                     JD);
-                }
+                      break;
+                    }
+                  case 2:
+                    {
+                      af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+                                        &Newz, JD);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+                break;
+              }
+            case 1:
+              {
+                af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
+                              theory);
+                break;
+              }
+            default:
+              break;
             }
-          if(coordtype == 1)
-            {
-              af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-                            theory);
-            }
+
           X.push_back(x + Newx.get_d());
           Y.push_back(y + Newy.get_d());
           Z.push_back(z + Newz.get_d());
@@ -819,12 +908,13 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
   Y.clear();
   Z.clear();
   double range = std::sqrt(x * x + y * y + z * z);
-  X.push_back(x + Rh * 2 / 149597870.7);
-  X.push_back(x + Rh * 2 / 149597870.7);
-  Y.push_back(y + Rh2 * 2 / 149597870.7);
-  Y.push_back(y + Rh2 * 2 / 149597870.7);
+  double vl = 2 / 149597870.7;
+  X.push_back(x + Rh * vl);
+  X.push_back(x + Rh * vl);
+  Y.push_back(y + Rh2 * vl);
+  Y.push_back(y + Rh2 * vl);
   Z.push_back(z + range);
-  Z.push_back(z + Rv * 2 / 149597870.7);
+  Z.push_back(z + Rv * vl);
   Xb.Rearrange(180, 361);
   Yb.Rearrange(180, 361);
   Zb.Rearrange(180, 361);
@@ -917,11 +1007,18 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
             std::vector<double> Yre4;
             std::vector<double> Zre4;
 
-            for(double fi = 0.0; fi < 2.0 * M_PI; fi = fi + M_PI / 180.0)
+            mpf_class au = 149597870.7;
+            mpf_class mult1 = mpf_class(67000.0) / au;
+            mpf_class mult2 = mpf_class(74500.0) / au;
+            mpf_class mult3 = mpf_class(92000.0) / au;
+            mpf_class mult4 = mpf_class(117580.0) / au;
+            mpf_class mult5 = mpf_class(122170.0) / au;
+            mpf_class mult6 = mpf_class(136775.0) / au;
+            for(double fi = 0.0; fi < lim2; fi += add)
               {
                 mpf_class xyz[3];
-                xyz[0] = 67000.0 * af.Cos(fi) / 149597870.7;
-                xyz[1] = 67000.0 * af.Sin(fi) / 149597870.7;
+                xyz[0] = mult1 * af.Cos(fi);
+                xyz[1] = mult1 * af.Sin(fi);
                 xyz[2] = 0.0;
                 mpf_class result[3];
                 af.rotateXYZ(xyz, 0.0, bet, alf, result);
@@ -929,203 +1026,301 @@ OrbitsDiagram::bodyBuilding(int body, mglGraph *graph)
                 mpf_class Oldy(result[1]);
                 mpf_class Oldz(result[2]);
                 mpf_class Newx, Newy, Newz;
-                if(coordtype == 0)
+                switch(coordtype)
                   {
-                    if(theory == 0)
-                      {
-                        Newx = Oldx;
-                        Newy = Oldy;
-                        Newz = Oldz;
-                      }
-                    if(theory == 1)
-                      {
-                        af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                      JD);
-                      }
-                    if(theory == 2)
-                      {
-                        af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
                                           &Newz, JD);
-                      }
-                  }
-                if(coordtype == 1)
-                  {
-                    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-                                  theory);
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
+                                              &Newy, &Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+                                    JD, theory);
+                      break;
+                    }
+                  default:
+                    break;
                   }
                 Xrb1.push_back(x + Newx.get_d());
                 Yrb1.push_back(y + Newy.get_d());
                 Zrb1.push_back(z + Newz.get_d());
-                xyz[0] = 74500.0 * af.Cos(fi) / 149597870.7;
-                xyz[1] = 74500.0 * af.Sin(fi) / 149597870.7;
+                xyz[0] = mult2 * af.Cos(fi);
+                xyz[1] = mult2 * af.Sin(fi);
                 xyz[2] = 0.0;
                 af.rotateXYZ(xyz, 0.0, bet, alf, result);
                 Oldx = result[0];
                 Oldy = result[1];
                 Oldz = result[2];
-                if(coordtype == 0)
+
+                switch(coordtype)
                   {
-                    if(theory == 0)
-                      {
-                        Newx = Oldx;
-                        Newy = Oldy;
-                        Newz = Oldz;
-                      }
-                    if(theory == 1)
-                      {
-                        af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                      JD);
-                      }
-                    if(theory == 2)
-                      {
-                        af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
                                           &Newz, JD);
-                      }
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
+                                              &Newy, &Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+                                    JD, theory);
+                      break;
+                    }
+                  default:
+                    break;
                   }
-                if(coordtype == 1)
-                  {
-                    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-                                  theory);
-                  }
+
                 Xre1.push_back(x + Newx.get_d());
                 Yre1.push_back(y + Newy.get_d());
                 Zre1.push_back(z + Newz.get_d());
 
-                xyz[0] = 92000.0 * af.Cos(fi) / 149597870.7;
-                xyz[1] = 92000.0 * af.Sin(fi) / 149597870.7;
+                xyz[0] = mult3 * af.Cos(fi);
+                xyz[1] = mult3 * af.Sin(fi);
                 xyz[2] = 0.0;
                 af.rotateXYZ(xyz, 0.0, bet, alf, result);
                 Oldx = result[0];
                 Oldy = result[1];
                 Oldz = result[2];
-                if(coordtype == 0)
+
+                switch(coordtype)
                   {
-                    if(theory == 0)
-                      {
-                        Newx = Oldx;
-                        Newy = Oldy;
-                        Newz = Oldz;
-                      }
-                    if(theory == 1)
-                      {
-                        af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                      JD);
-                      }
-                    if(theory == 2)
-                      {
-                        af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
                                           &Newz, JD);
-                      }
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
+                                              &Newy, &Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+                                    JD, theory);
+                      break;
+                    }
+                  default:
+                    break;
                   }
-                if(coordtype == 1)
-                  {
-                    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-                                  theory);
-                  }
+
                 Xre2.push_back(x + Newx.get_d());
                 Yre2.push_back(y + Newy.get_d());
                 Zre2.push_back(z + Newz.get_d());
 
-                xyz[0] = 117580.0 * af.Cos(fi) / 149597870.7;
-                xyz[1] = 117580.0 * af.Sin(fi) / 149597870.7;
+                xyz[0] = mult4 * af.Cos(fi);
+                xyz[1] = mult4 * af.Sin(fi);
                 xyz[2] = 0.0;
                 af.rotateXYZ(xyz, 0.0, bet, alf, result);
                 Oldx = result[0];
                 Oldy = result[1];
                 Oldz = result[2];
-                if(coordtype == 0)
+
+                switch(coordtype)
                   {
-                    if(theory == 0)
-                      {
-                        Newx = Oldx;
-                        Newy = Oldy;
-                        Newz = Oldz;
-                      }
-                    if(theory == 1)
-                      {
-                        af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                      JD);
-                      }
-                    if(theory == 2)
-                      {
-                        af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
                                           &Newz, JD);
-                      }
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
+                                              &Newy, &Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+                                    JD, theory);
+                      break;
+                    }
+                  default:
+                    break;
                   }
-                if(coordtype == 1)
-                  {
-                    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-                                  theory);
-                  }
+
                 Xre3.push_back(x + Newx.get_d());
                 Yre3.push_back(y + Newy.get_d());
                 Zre3.push_back(z + Newz.get_d());
 
-                xyz[0] = 122170.0 * af.Cos(fi) / 149597870.7;
-                xyz[1] = 122170.0 * af.Sin(fi) / 149597870.7;
+                xyz[0] = mult5 * af.Cos(fi);
+                xyz[1] = mult5 * af.Sin(fi);
                 xyz[2] = 0.0;
                 af.rotateXYZ(xyz, 0.0, bet, alf, result);
                 Oldx = result[0];
                 Oldy = result[1];
                 Oldz = result[2];
-                if(coordtype == 0)
+
+                switch(coordtype)
                   {
-                    if(theory == 0)
-                      {
-                        Newx = Oldx;
-                        Newy = Oldy;
-                        Newz = Oldz;
-                      }
-                    if(theory == 1)
-                      {
-                        af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                      JD);
-                      }
-                    if(theory == 2)
-                      {
-                        af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
                                           &Newz, JD);
-                      }
-                  }
-                if(coordtype == 1)
-                  {
-                    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-                                  theory);
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
+                                              &Newy, &Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+                                    JD, theory);
+                      break;
+                    }
+                  default:
+                    break;
                   }
                 Xrb4.push_back(x + Newx.get_d());
                 Yrb4.push_back(y + Newy.get_d());
                 Zrb4.push_back(z + Newz.get_d());
 
-                xyz[0] = 136775.0 * af.Cos(fi) / 149597870.7;
-                xyz[1] = 136775.0 * af.Sin(fi) / 149597870.7;
+                xyz[0] = mult6 * af.Cos(fi);
+                xyz[1] = mult6 * af.Sin(fi);
                 xyz[2] = 0.0;
                 af.rotateXYZ(xyz, 0.0, bet, alf, result);
                 Oldx = result[0];
                 Oldy = result[1];
                 Oldz = result[2];
-                if(coordtype == 0)
+
+                switch(coordtype)
                   {
-                    if(theory == 0)
-                      {
-                        Newx = Oldx;
-                        Newy = Oldy;
-                        Newz = Oldz;
-                      }
-                    if(theory == 1)
-                      {
-                        af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
-                                      JD);
-                      }
-                    if(theory == 2)
-                      {
-                        af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(&Oldx, &Oldy, &Oldz, &Newx, &Newy,
                                           &Newz, JD);
-                      }
-                  }
-                if(coordtype == 1)
-                  {
-                    af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz, JD,
-                                  theory);
+                            break;
+                          }
+                        case 3:
+                          {
+                            af.precessionNnut(&Oldx, &Oldy, &Oldz, &Newx,
+                                              &Newy, &Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(&Oldx, &Oldy, &Oldz, &Newx, &Newy, &Newz,
+                                    JD, theory);
+                      break;
+                    }
+                  default:
+                    break;
                   }
                 Xre4.push_back(x + Newx.get_d());
                 Yre4.push_back(y + Newy.get_d());

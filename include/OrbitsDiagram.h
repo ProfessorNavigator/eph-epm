@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,33 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_ORBITSDIAGRAM_H_
-#define INCLUDE_ORBITSDIAGRAM_H_
+#ifndef ORBITSDIAGRAM_H
+#define ORBITSDIAGRAM_H
 
+#include <CoordKeeper.h>
 #include <DAFOperations.h>
 #include <DiagramWidget.h>
-#include <array>
 #include <atomic>
-#ifndef USE_OPENMP
-#include <condition_variable>
-#endif
 #include <functional>
 #include <gmpxx.h>
-#include <gtkmm-4.0/gdkmm/rectangle.h>
-#include <gtkmm-4.0/gtkmm/applicationwindow.h>
 #include <mgl2/mgl.h>
 #include <mutex>
 #include <string>
 #include <tuple>
 #include <vector>
+#ifndef USE_OPENMP
+#include <condition_variable>
+#endif
 
 class OrbitsDiagram
 {
 public:
-  OrbitsDiagram(Gtk::ApplicationWindow *mw, std::string ephpath,
-                std::string tttdbpath, std::string smlpath, double JD,
-                int timesc, int coordtype, int theory, double plot_factor,
-                std::atomic<int> *cancel);
+  OrbitsDiagram(Gtk::Window *mw, std::string ephpath, std::string tttdbpath,
+                std::string smlpath, double JD, int timesc, int coordtype,
+                int theory, double plot_factor, std::atomic<int> *cancel);
 
   virtual ~OrbitsDiagram();
 
@@ -72,7 +69,7 @@ private:
   Gdk::Rectangle
   screenRes();
 
-  Gtk::ApplicationWindow *mw = nullptr;
+  Gtk::Window *mw = nullptr;
   DiagramWidget *dw = nullptr;
   std::string ephpath;
   std::string tttdbpath;
@@ -100,8 +97,8 @@ private:
   double plot_factor = 0.000000001;
   int coordtype = 0;
   int theory = 0;
-  std::vector<std::array<mpf_class, 3>> resultsed;
+  std::vector<CoordKeeper> resultsed;
   bool EPM = false;
 };
 
-#endif /* INCLUDE_ORBITSDIAGRAM_H_ */
+#endif // ORBITSDIAGRAM_H

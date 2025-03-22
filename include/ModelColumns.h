@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2023-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,12 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_MODELCOLUMNS_H_
-#define INCLUDE_MODELCOLUMNS_H_
+#ifndef MODELCOLUMNS_H
+#define MODELCOLUMNS_H
 
 #include <glibmm-2.68/glibmm/object.h>
-#include <glibmm-2.68/glibmm/refptr.h>
-#include <glibmm-2.68/glibmm/ustring.h>
 #include <string>
 
 class ModelColumns : public Glib::Object
@@ -39,4 +37,4 @@ private:
                std::string &z);
 };
 
-#endif /* INCLUDE_MODELCOLUMNS_H_ */
+#endif // MODELCOLUMNS_H

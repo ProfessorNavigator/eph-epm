@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,11 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_EPMAPPLICATION_H_
-#define INCLUDE_EPMAPPLICATION_H_
+#ifndef EPMAPPLICATION_H
+#define EPMAPPLICATION_H
 
 #include <MainWindow.h>
-#include <glibmm-2.68/glibmm/refptr.h>
 #include <gtkmm-4.0/gtkmm/application.h>
 #include <string>
 
@@ -41,4 +40,4 @@ protected:
   on_activate() override;
 };
 
-#endif /* INCLUDE_EPMAPPLICATION_H_ */
+#endif // EPMAPPLICATION_H

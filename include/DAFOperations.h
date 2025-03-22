@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,14 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_DAFOPERATIONS_H_
-#define INCLUDE_DAFOPERATIONS_H_
+#ifndef DAFOPERATIONS_H
+#define DAFOPERATIONS_H
 
 #include <BodyV.h>
+#include <SPKItem.h>
 #include <cstdint>
 #include <fstream>
 #include <string>
-#include <tuple>
 #include <vector>
 
 class DAFOperations
@@ -44,12 +44,11 @@ public:
   int
   bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end, int NAIFid,
            double JD);
-
-  std::vector<std::tuple<double, double, int, int, int, int, int, int>>
+  std::vector<SPKItem>
   bodiesVector(std::fstream *f);
 
 private:
   std::vector<BodyV> filev;
 };
 
-#endif /* INCLUDE_DAFOPERATIONS_H_ */
+#endif // DAFOPERATIONS_H

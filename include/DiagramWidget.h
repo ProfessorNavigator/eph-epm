@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,16 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_DIAGRAMWIDGET_H_
-#define INCLUDE_DIAGRAMWIDGET_H_
+#ifndef DIAGRAMWIDGET_H
+#define DIAGRAMWIDGET_H
 
-#include <cairomm-1.16/cairomm/context.h>
-#include <cairomm-1.16/cairomm/refptr.h>
 #include <functional>
-#include <gtkmm-4.0/gdkmm/rectangle.h>
-#include <gtkmm-4.0/gtkmm/applicationwindow.h>
 #include <gtkmm-4.0/gtkmm/drawingarea.h>
 #include <gtkmm-4.0/gtkmm/entry.h>
+#include <gtkmm-4.0/gtkmm/window.h>
 #include <mgl2/mgl.h>
 #include <string>
 #include <tuple>
@@ -33,7 +30,7 @@
 class DiagramWidget
 {
 public:
-  DiagramWidget(Gtk::ApplicationWindow *mw, mglGraph *gr);
+  DiagramWidget(Gtk::Window *mw, mglGraph *gr);
 
   void
   diagramPlot();
@@ -69,7 +66,7 @@ private:
   Gdk::Rectangle
   screenRes();
 
-  Gtk::ApplicationWindow *mw = nullptr;
+  Gtk::Window *mw = nullptr;
   mglGraph *gr = nullptr;
   std::vector<double> plotincr;
   int Height, Width;
@@ -80,4 +77,4 @@ private:
   double scale_val2 = 1143584.890685;
 };
 
-#endif /* INCLUDE_DIAGRAMWIDGET_H_ */
+#endif // DIAGRAMWIDGET_H

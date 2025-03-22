@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_EPMCALCULATIONS_H_
-#define INCLUDE_EPMCALCULATIONS_H_
+#ifndef EPMCALCULATIONS_H
+#define EPMCALCULATIONS_H
 
 #include <cstdint>
 #include <fstream>
@@ -43,4 +43,4 @@ public:
             int var, int type, mpf_class *au);
 };
 
-#endif /* INCLUDE_EPMCALCULATIONS_H_ */
+#endif // EPMCALCULATIONS_H

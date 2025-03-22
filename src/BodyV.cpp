@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2023-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,13 @@ BodyV::BodyV(const BodyV &other)
   bodyv = other.bodyv;
 }
 
+BodyV::BodyV(BodyV &&other)
+{
+  file = other.file;
+  bodyv = std::move(other.bodyv);
+  other.file = nullptr;
+}
+
 BodyV &
 BodyV::operator=(const BodyV &other)
 {
@@ -48,14 +55,12 @@ BodyV::getFile()
 }
 
 void
-BodyV::setVect(
-    std::vector<std::tuple<double, double, int, int, int, int, int, int>>
-        &bodyv)
+BodyV::setVect(std::vector<SPKItem> &bodyv)
 {
   this->bodyv = bodyv;
 }
 
-std::vector<std::tuple<double, double, int, int, int, int, int, int>>
+std::vector<SPKItem>
 BodyV::getVect()
 {
   return bodyv;

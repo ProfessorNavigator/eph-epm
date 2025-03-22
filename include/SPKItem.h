@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2025 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,41 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#ifndef SPKITEM_H
+#define SPKITEM_H
 
-#ifndef BODYV_H
-#define BODYV_H
-
-#include <SPKItem.h>
-#include <fstream>
-#include <vector>
-
-class BodyV
+class SPKItem
 {
 public:
-  BodyV();
+  SPKItem();
 
-  BodyV(const BodyV &other);
+  SPKItem(const SPKItem &other);
 
-  BodyV(BodyV &&other);
+  SPKItem &
+  operator=(const SPKItem &other);
 
-  BodyV &
-  operator=(const BodyV &other);
+  double JD_begin = 0.0;
+  double JD_end = 0.0;
 
-  void
-  setFile(std::fstream *f);
-
-  std::fstream *
-  getFile();
-
-  void
-  setVect(std::vector<SPKItem> &boydv);
-
-  std::vector<SPKItem>
-  getVect();
-
-private:
-  std::fstream *file = nullptr;
-  std::vector<SPKItem> bodyv;
+  int NAIF_body_id = 0;
+  int NAIF_center_id = 0;
+  int NAIF_ref_frame = 0;
+  int NAIF_spk_data_type = 0;
+  int initial_address = 0;
+  int final_addr = 0;
 };
 
-#endif // BODYV_H
+#endif // SPKITEM_H

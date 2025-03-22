@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
-#include <gmp.h>
 #include <iostream>
 
 Coordinates::Coordinates(int body, double JD, int timesc, int coordtype,
@@ -46,11 +45,11 @@ Coordinates::Coordinates(int body, double JD, int timesc, int coordtype,
   this->timesc = timesc;
 }
 
-std::vector<std::array<mpf_class, 3>>
+std::vector<CoordKeeper>
 Coordinates::calculationsXYZ()
 {
   mpf_set_default_prec(512);
-  std::vector<std::array<mpf_class, 3>> result;
+  std::vector<CoordKeeper> result;
   AuxFunc af;
   std::filesystem::path filepath;
   DAFOperations daf;
@@ -139,7 +138,7 @@ Coordinates::calculationsXYZ()
           au = 149597870.7;
         }
 
-      for(double i = JD; i < JD + step * stepnum; i = i + step)
+      for(double i = JD; i < JD + step * stepnum; i += step)
         {
           if(cancel->load() > 0)
             {
@@ -164,66 +163,75 @@ Coordinates::calculationsXYZ()
 
           mpf_class JDfin;
           double JDcalc = 0.0;
-          if(timesc == 0)
+
+          switch(timesc)
             {
-              JDcalc = af.timeTT(i);
-              if(tttdbfile.is_open())
-                {
-                  JDfin = mpf_class(JDcalc)
-                          - epm.tdbCalc(&tttdbfile, &tdbb, &tdbe, JDcalc,
-                                        tdbtype)
-                                / mpf_class(86400.0);
-                }
-              else
-                {
-                  JDfin
-                      = mpf_class(JDcalc)
-                        - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype)
-                              / mpf_class(86400.0);
-                }
-            }
-          if(timesc == 1)
-            {
-              if(i < 0)
-                {
-                  JDcalc = i + 0.5;
-                }
-              else
-                {
-                  JDcalc = i - 0.5;
-                }
-              if(JDcalc <= 2299161.0)
-                {
-                  JDcalc = af.grigToJuliancal(JDcalc);
-                }
-              if(tttdbfile.is_open())
-                {
-                  JDfin = mpf_class(JDcalc)
-                          - epm.tdbCalc(&tttdbfile, &tdbb, &tdbe, JDcalc,
-                                        tdbtype)
-                                / mpf_class(86400.0);
-                }
-              else
-                {
-                  JDfin
-                      = mpf_class(JDcalc)
-                        - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc, tdbtype)
-                              / mpf_class(86400.0);
-                }
-            }
-          if(timesc == 2)
-            {
-              if(i - 0.5 <= 2299161.0)
-                {
-                  if(i < 0)
-                    {
-                      JDfin = JDcalc = af.grigToJuliancal(i + 0.5);
-                    }
-                  else
-                    {
-                      JDfin = JDcalc = af.grigToJuliancal(i - 0.5);
-                    }
-                }
+            case 0:
+              {
+                JDcalc = af.timeTT(i);
+                if(tttdbfile.is_open())
+                  {
+                    JDfin = mpf_class(JDcalc)
+                            - epm.tdbCalc(&tttdbfile, &tdbb, &tdbe, JDcalc,
+                                          tdbtype)
+                                  / mpf_class(86400.0);
+                  }
+                else
+                  {
+                    JDfin = mpf_class(JDcalc)
+                            - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc,
+                                          tdbtype)
+                                  / mpf_class(86400.0);
+                  }
+                break;
+              }
+            case 1:
+              {
+                if(i < 0)
+                  {
+                    JDcalc = i + 0.5;
+                  }
+                else
+                  {
+                    JDcalc = i - 0.5;
+                  }
+                if(JDcalc <= 2299161.0)
+                  {
+                    JDcalc = af.grigToJuliancal(JDcalc);
+                  }
+                if(tttdbfile.is_open())
+                  {
+                    JDfin = mpf_class(JDcalc)
+                            - epm.tdbCalc(&tttdbfile, &tdbb, &tdbe, JDcalc,
+                                          tdbtype)
+                                  / mpf_class(86400.0);
+                  }
+                else
+                  {
+                    JDfin = mpf_class(JDcalc)
+                            - epm.tdbCalc(&ephfile, &tdbb, &tdbe, JDcalc,
+                                          tdbtype)
+                                  / mpf_class(86400.0);
+                  }
+                break;
+              }
+            case 2:
+              {
+                if(i - 0.5 <= 2299161.0)
+                  {
+                    if(i < 0)
+                      {
+                        JDfin = JDcalc = af.grigToJuliancal(i + 0.5);
+                      }
+                    else
+                      {
+                        JDfin = JDcalc = af.grigToJuliancal(i - 0.5);
+                      }
+                  }
+                break;
+              }
+            default:
+              break;
             }
           if(body != -3)
             {
@@ -232,8 +240,7 @@ Coordinates::calculationsXYZ()
             }
           else
             {
-              bodytype
-                  = daf.bodyVect(&ephfile, &bodyb, &bodye, 3, JDfin.get_d());
+              daf.bodyVect(&ephfile, &bodyb, &bodye, 3, JDfin.get_d());
               bodytype
                   = daf.bodyVect(&ephfile, &moonb, &moone, 3, JDfin.get_d());
             }
@@ -258,28 +265,28 @@ Coordinates::calculationsXYZ()
                   smbody = true;
                 }
             }
-          mpf_class X;
-          mpf_class Y;
-          mpf_class Z;
+
+          CoordKeeper ckp;
+          ckp.JD = i;
           if(body != 3 && body != -3)
             {
               if(!smbody)
                 {
-                  X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au);
-                  Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au);
-                  Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au);
+                  ckp.X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au);
+                  ckp.Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au);
+                  ckp.Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au);
                 }
               else
                 {
-                  X = epm.bodyCalcX(&smlbfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au);
-                  Y = epm.bodyCalcY(&smlbfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au);
-                  Z = epm.bodyCalcZ(&smlbfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au);
+                  ckp.X = epm.bodyCalcX(&smlbfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au);
+                  ckp.Y = epm.bodyCalcY(&smlbfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au);
+                  ckp.Z = epm.bodyCalcZ(&smlbfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au);
                 }
             }
           else
@@ -288,21 +295,21 @@ Coordinates::calculationsXYZ()
                   = daf.bodyVect(&ephfile, &moonb, &moone, 301, JDfin.get_d());
               if(body == 3)
                 {
-                  X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au)
-                      - epm.bodyCalcX(&ephfile, &moonb, &moone, JDfin, xyz,
-                                      bodymoontype, &au)
-                            / rho;
-                  Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au)
-                      - epm.bodyCalcY(&ephfile, &moonb, &moone, JDfin, xyz,
-                                      bodymoontype, &au)
-                            / rho;
-                  Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au)
-                      - epm.bodyCalcZ(&ephfile, &moonb, &moone, JDfin, xyz,
-                                      bodymoontype, &au)
-                            / rho;
+                  ckp.X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au)
+                          - epm.bodyCalcX(&ephfile, &moonb, &moone, JDfin, xyz,
+                                          bodymoontype, &au)
+                                / rho;
+                  ckp.Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au)
+                          - epm.bodyCalcY(&ephfile, &moonb, &moone, JDfin, xyz,
+                                          bodymoontype, &au)
+                                / rho;
+                  ckp.Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au)
+                          - epm.bodyCalcZ(&ephfile, &moonb, &moone, JDfin, xyz,
+                                          bodymoontype, &au)
+                                / rho;
                 }
               else
                 {
@@ -313,126 +320,171 @@ Coordinates::calculationsXYZ()
                                         bodymoontype, &au);
                   moonz = epm.bodyCalcZ(&ephfile, &moonb, &moone, JDfin, xyz,
                                         bodymoontype, &au);
-                  X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au)
-                      - moonx / rho + moonx;
-                  Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au)
-                      - moony / rho + moony;
-                  Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
-                                    bodytype, &au)
-                      - moonz / rho + moonz;
+                  ckp.X = epm.bodyCalcX(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au)
+                          - moonx / rho + moonx;
+                  ckp.Y = epm.bodyCalcY(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au)
+                          - moony / rho + moony;
+                  ckp.Z = epm.bodyCalcZ(&ephfile, &bodyb, &bodye, JDfin, xyz,
+                                        bodytype, &au)
+                          - moonz / rho + moonz;
                 }
             }
-          if(xyz == 0)
+          switch(xyz)
             {
-              if(body != 1800303 && body != 1800302 && body != 31008)
-                {
-                  if(n != std::string::npos || smbody)
-                    {
-                      X = X / au;
-                      Y = Y / au;
-                      Z = Z / au;
-                    }
-                  if(unit == 1)
-                    {
-                      X = X * au;
-                      Y = Y * au;
-                      Z = Z * au;
-                    }
-                  else if(unit == 2)
-                    {
-                      X = X * au * 1000;
-                      Y = Y * au * 1000;
-                      Z = Z * au * 1000;
-                    }
-                }
-              else
-                {
-                  if(unit == 1)
-                    {
-                      X = X * 180 / M_PI;
-                      Y = Y * 180 / M_PI;
-                      Z = Z * 180 / M_PI;
-                    }
-                }
-            }
-          if(xyz == 1)
-            {
-              if(body != 1800303 && body != 1800302 && body != 31008)
-                {
-                  if(n != std::string::npos)
-                    {
-                      X = X / au;
-                      Y = Y / au;
-                      Z = Z / au;
-                    }
-                  if(unit == 1)
-                    {
-                      X = X * au;
-                      Y = Y * au;
-                      Z = Z * au;
-                    }
-                  if(unit == 2)
-                    {
-                      X = X * au / 86400;
-                      Y = Y * au / 86400;
-                      Z = Z * au / 86400;
-                    }
-                  if(unit == 3)
-                    {
-                      X = X * au / 86400 * 1000;
-                      Y = Y * au / 86400 * 1000;
-                      Z = Z * au / 86400 * 1000;
-                    }
-                }
-              else
-                {
-                  if(n != std::string::npos)
-                    {
-                      X = X * 2;
-                      Y = Y * 2;
-                      Z = Z * 2;
-                    }
-                  if(unit == 1)
-                    {
-                      X = X * 180 / M_PI * 3600;
-                      Y = Y * 180 / M_PI * 3600;
-                      Z = Z * 180 / M_PI * 3600;
-                    }
-                }
+            case 0:
+              {
+                if(body != 1800303 && body != 1800302 && body != 31008)
+                  {
+                    if(n != std::string::npos || smbody)
+                      {
+                        ckp.X = ckp.X / au;
+                        ckp.Y = ckp.Y / au;
+                        ckp.Z = ckp.Z / au;
+                      }
+                    switch(unit)
+                      {
+                      case 1:
+                        {
+                          ckp.X = ckp.X * au;
+                          ckp.Y = ckp.Y * au;
+                          ckp.Z = ckp.Z * au;
+                          break;
+                        }
+                      case 2:
+                        {
+                          mpf_class vl = au * 1000;
+                          ckp.X = ckp.X * vl;
+                          ckp.Y = ckp.Y * vl;
+                          ckp.Z = ckp.Z * vl;
+                          break;
+                        }
+                      default:
+                        break;
+                      }
+                  }
+                else
+                  {
+                    if(unit == 1)
+                      {
+                        double vl = 180 / M_PI;
+                        ckp.X = ckp.X * vl;
+                        ckp.Y = ckp.Y * vl;
+                        ckp.Z = ckp.Z * vl;
+                      }
+                  }
+                break;
+              }
+            case 1:
+              {
+                if(body != 1800303 && body != 1800302 && body != 31008)
+                  {
+                    if(n != std::string::npos)
+                      {
+                        ckp.X = ckp.X / au;
+                        ckp.Y = ckp.Y / au;
+                        ckp.Z = ckp.Z / au;
+                      }
+
+                    switch(unit)
+                      {
+                      case 1:
+                        {
+                          ckp.X = ckp.X * au;
+                          ckp.Y = ckp.Y * au;
+                          ckp.Z = ckp.Z * au;
+                          break;
+                        }
+                      case 2:
+                        {
+                          mpf_class vl = au / 86400;
+                          ckp.X = ckp.X * vl;
+                          ckp.Y = ckp.Y * vl;
+                          ckp.Z = ckp.Z * vl;
+                          break;
+                        }
+                      case 3:
+                        {
+                          mpf_class vl = au / 86400 * 1000;
+                          ckp.X = ckp.X * vl;
+                          ckp.Y = ckp.Y * vl;
+                          ckp.Z = ckp.Z * vl;
+                          break;
+                        }
+                      default:
+                        break;
+                      }
+                  }
+                else
+                  {
+                    if(n != std::string::npos)
+                      {
+                        ckp.X = ckp.X * 2;
+                        ckp.Y = ckp.Y * 2;
+                        ckp.Z = ckp.Z * 2;
+                      }
+                    if(unit == 1)
+                      {
+                        double vl = 180 / M_PI * 3600;
+                        ckp.X = ckp.X * vl;
+                        ckp.Y = ckp.Y * vl;
+                        ckp.Z = ckp.Z * vl;
+                      }
+                  }
+                break;
+              }
+            default:
+              break;
             }
 
-          if(theory == 1 && coordtype == 0)
+          switch(coordtype)
             {
-              mpf_class Xn, Yn, Zn;
-              af.precession(&X, &Y, &Z, &Xn, &Yn, &Zn, JDcalc);
-              X = Xn;
-              Y = Yn;
-              Z = Zn;
-            }
-          if(theory == 2 && coordtype == 0)
-            {
-              mpf_class Xn, Yn, Zn;
-              af.precessionNnut(&X, &Y, &Z, &Xn, &Yn, &Zn, JDcalc);
-              X = Xn;
-              Y = Yn;
-              Z = Zn;
-            }
-          if(coordtype == 1)
-            {
-              mpf_class Xn, Yn, Zn;
-              af.toEcliptic(&X, &Y, &Z, &Xn, &Yn, &Zn, JDcalc, theory);
-              X = Xn;
-              Y = Yn;
-              Z = Zn;
+            case 0:
+              {
+                switch(theory)
+                  {
+                  case 1:
+                    {
+                      mpf_class Xn, Yn, Zn;
+                      af.precession(&ckp.X, &ckp.Y, &ckp.Z, &Xn, &Yn, &Zn,
+                                    JDcalc);
+                      ckp.X = std::move(Xn);
+                      ckp.Y = std::move(Yn);
+                      ckp.Z = std::move(Zn);
+                      break;
+                    }
+                  case 2:
+                    {
+                      mpf_class Xn, Yn, Zn;
+                      af.precessionNnut(&ckp.X, &ckp.Y, &ckp.Z, &Xn, &Yn, &Zn,
+                                        JDcalc);
+                      ckp.X = std::move(Xn);
+                      ckp.Y = std::move(Yn);
+                      ckp.Z = std::move(Zn);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+                break;
+              }
+            case 1:
+              {
+                mpf_class Xn, Yn, Zn;
+                af.toEcliptic(&ckp.X, &ckp.Y, &ckp.Z, &Xn, &Yn, &Zn, JDcalc,
+                              theory);
+                ckp.X = std::move(Xn);
+                ckp.Y = std::move(Yn);
+                ckp.Z = std::move(Zn);
+                break;
+              }
+            default:
+              break;
             }
 
-          std::array<mpf_class, 3> resultarr;
-          resultarr[0] = X;
-          resultarr[1] = Y;
-          resultarr[2] = Z;
-          result.push_back(resultarr);
+          result.emplace_back(ckp);
+
           if(pulse_signal)
             {
               pulse_signal();

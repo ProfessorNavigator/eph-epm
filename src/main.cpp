@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,13 +25,24 @@
 int
 main(int argc, char *argv[])
 {
-  std::string Sharepath;
   AuxFunc af;
-  std::filesystem::path p(std::filesystem::u8path(af.get_selfpath()));
-  Sharepath = p.parent_path().u8string() + "/../share/locale";
-  bindtextdomain("ephepm", Sharepath.c_str());
+  std::filesystem::path p = af.get_selfpath();
+  p = p.parent_path() / std::filesystem::u8path("../share/locale");
+  bindtextdomain("ephepm", p.u8string().c_str());
   bind_textdomain_codeset("ephepm", "UTF-8");
   textdomain("ephepm");
+
+#ifdef __linux
+  {
+    int res = setenv("GTK_THEME", "Adwaita", 1);
+    if(res < 0)
+      {
+        std::cout << "EphemerisEPM main setenv error: " << std::strerror(errno)
+                  << std::endl;
+      }
+  }
+#endif
+
   std::string id = "ru.mail.bobilev_yury.EphEPM";
   auto app = EPMApplication::create(id);
   int exitstat = 0;

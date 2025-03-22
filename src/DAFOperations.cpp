@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
-#include <stddef.h>
 
 DAFOperations::DAFOperations()
 {
@@ -124,47 +123,45 @@ DAFOperations::epochCheckUTC(int day, int month, int year, int hours,
         }
       else
         {
-          std::vector<std::tuple<double, double, int, int, int, int, int, int>>
-              spkv;
+          std::vector<SPKItem> spkv;
           spkv = bodiesVector(&f);
-          auto itspk = std::find_if(spkv.begin(), spkv.end(), [](auto &el) {
-            return std::get<2>(el) == 1000000001;
+          auto itspk = std::find_if(spkv.begin(), spkv.end(), [](SPKItem &el) {
+            return el.NAIF_body_id == 1000000001;
           });
           if(timesc == 2)
             {
-              itspk = std::find_if(spkv.begin(), spkv.end(), [](auto &el) {
-                return std::get<2>(el) == 1;
+              itspk = std::find_if(spkv.begin(), spkv.end(), [](SPKItem &el) {
+                return el.NAIF_body_id == 1;
               });
             }
           if(itspk != spkv.end())
             {
-              if(JDtt >= std::get<0>(*itspk) && JDtt <= std::get<1>(*itspk))
+              if(JDtt >= itspk->JD_begin && JDtt <= itspk->JD_end)
                 {
                   result = true;
                 }
             }
           else
             {
-              itspk = std::find_if(spkv.begin(), spkv.end(), [](auto &el) {
-                return std::get<2>(el) == 1800303;
+              itspk = std::find_if(spkv.begin(), spkv.end(), [](SPKItem &el) {
+                return el.NAIF_body_id == 1800303;
               });
               if(itspk != spkv.end())
                 {
-                  if(JDtt >= std::get<0>(*itspk)
-                     && JDtt <= std::get<1>(*itspk))
+                  if(JDtt >= itspk->JD_begin && JDtt <= itspk->JD_end)
                     {
                       result = true;
                     }
                 }
               else
                 {
-                  itspk = std::find_if(spkv.begin(), spkv.end(), [](auto &el) {
-                    return std::get<2>(el) == 1800302;
-                  });
+                  itspk = std::find_if(spkv.begin(), spkv.end(),
+                                       [](SPKItem &el) {
+                                         return el.NAIF_body_id == 1800302;
+                                       });
                   if(itspk != spkv.end())
                     {
-                      if(JDtt >= std::get<0>(*itspk)
-                         && JDtt <= std::get<1>(*itspk))
+                      if(JDtt >= itspk->JD_begin && JDtt <= itspk->JD_end)
                         {
                           result = true;
                         }
@@ -214,49 +211,47 @@ DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
         }
       else
         {
-          std::vector<std::tuple<double, double, int, int, int, int, int, int>>
-              spkv;
+          std::vector<SPKItem> spkv;
           spkv = this->bodiesVector(&f);
-          auto itspk = std::find_if(spkv.begin(), spkv.end(), [](auto &el) {
-            return std::get<2>(el) == 1000000001;
+          auto itspk = std::find_if(spkv.begin(), spkv.end(), [](SPKItem &el) {
+            return el.NAIF_body_id == 1000000001;
           });
           if(timesc == 2)
             {
-              itspk = std::find_if(spkv.begin(), spkv.end(), [](auto &el) {
-                return std::get<2>(el) == 1;
+              itspk = std::find_if(spkv.begin(), spkv.end(), [](SPKItem &el) {
+                return el.NAIF_body_id == 1;
               });
             }
           if(itspk != spkv.end())
             {
-              if(JDtt >= std::get<0>(*itspk) && JDtt <= std::get<1>(*itspk))
+              if(JDtt >= itspk->JD_begin && JDtt <= itspk->JD_end)
                 {
-                  *epb = std::get<0>(*itspk);
-                  *epe = std::get<1>(*itspk);
+                  *epb = itspk->JD_begin;
+                  *epe = itspk->JD_end;
                   result = true;
                 }
             }
           else
             {
-              itspk = std::find_if(spkv.begin(), spkv.end(), [](auto &el) {
-                return std::get<2>(el) == 1800303;
+              itspk = std::find_if(spkv.begin(), spkv.end(), [](SPKItem &el) {
+                return el.NAIF_body_id == 1800303;
               });
               if(itspk != spkv.end())
                 {
-                  if(JDtt >= std::get<0>(*itspk)
-                     && JDtt <= std::get<1>(*itspk))
+                  if(JDtt >= itspk->JD_begin && JDtt <= itspk->JD_end)
                     {
                       result = true;
                     }
                 }
               else
                 {
-                  itspk = std::find_if(spkv.begin(), spkv.end(), [](auto &el) {
-                    return std::get<2>(el) == 1800302;
-                  });
+                  itspk = std::find_if(spkv.begin(), spkv.end(),
+                                       [](SPKItem &el) {
+                                         return el.NAIF_body_id == 1800302;
+                                       });
                   if(itspk != spkv.end())
                     {
-                      if(JDtt >= std::get<0>(*itspk)
-                         && JDtt <= std::get<1>(*itspk))
+                      if(JDtt >= itspk->JD_begin && JDtt <= itspk->JD_end)
                         {
                           result = true;
                         }
@@ -270,22 +265,10 @@ DAFOperations::epochCheckUTC(double JD, int timesc, double *epb, double *epe,
   return result;
 }
 
-std::vector<std::tuple<double, double, int, int, int, int, int, int>>
+std::vector<SPKItem>
 DAFOperations::bodiesVector(std::fstream *f)
 {
-  /*Body tuple vector.
-   * Tuple parts are the following:
-   * 0 - JD of interval begin
-   * 1 - JD of interval end
-   * 2 - the NAIF object identification number of the target body
-   * 3 - the NAIF object identification code of the center
-   * 4 - the NAIF integer code for the reference frame
-   * 5 - the integer code for the SPK data type
-   * 6 - the initial address of the array
-   * 7 - the final address of the array
-   * */
-  std::vector<std::tuple<double, double, int, int, int, int, int, int>>
-      spkbodyv;
+  std::vector<SPKItem> spkbodyv;
   std::vector<char> readv;
   f->seekg(8, std::ios_base::beg);
 
@@ -346,7 +329,7 @@ DAFOperations::bodiesVector(std::fstream *f)
       for(int j = 0; j < static_cast<int>(NS); j++)
         {
           size_t readbytes = 0;
-          std::tuple<double, double, int, int, int, int, int, int> spkbodytup;
+          SPKItem spkbodyitem;
           for(uint32_t i = 0; i < ND; i++)
             {
               readv.clear();
@@ -357,47 +340,104 @@ DAFOperations::bodiesVector(std::fstream *f)
               std::memcpy(&val, readv.data(), sizeof(val));
               if(i == 0)
                 {
-                  std::get<0>(spkbodytup) = 2451545.0 + val / 86400;
+                  spkbodyitem.JD_begin = 2451545.0 + val / 86400;
                 }
               if(i == 1)
                 {
-                  std::get<1>(spkbodytup) = 2451545.0 + val / 86400;
+                  spkbodyitem.JD_end = 2451545.0 + val / 86400;
                 }
             }
-          for(uint32_t i = 0; i < NI; i++)
+
+          if(NI == 6)
             {
-              readv.clear();
-              uint32_t val;
-              readv.resize(sizeof(val));
-              f->read(readv.data(), readv.size());
-              readbytes += readv.size();
-              std::memcpy(&val, readv.data(), sizeof(val));
-              if(i == 0)
+              for(uint32_t i = 0; i < NI; i++)
                 {
-                  std::get<2>(spkbodytup) = static_cast<int>(val);
-                }
-              if(i == 1)
-                {
-                  std::get<3>(spkbodytup) = static_cast<int>(val);
-                }
-              if(i == 2)
-                {
-                  std::get<4>(spkbodytup) = static_cast<int>(val);
-                }
-              if(i == 3)
-                {
-                  std::get<5>(spkbodytup) = static_cast<int>(val);
-                }
-              if(i == 4)
-                {
-                  std::get<6>(spkbodytup) = static_cast<int>(val);
-                }
-              if(i == 5)
-                {
-                  std::get<7>(spkbodytup) = static_cast<int>(val);
+                  readv.clear();
+                  uint32_t val;
+                  readv.resize(sizeof(val));
+                  f->read(readv.data(), readv.size());
+                  readbytes += readv.size();
+                  std::memcpy(&val, readv.data(), sizeof(val));
+                  switch(i)
+                    {
+                    case 0:
+                      {
+                        spkbodyitem.NAIF_body_id = static_cast<int>(val);
+                        break;
+                      }
+                    case 1:
+                      {
+                        spkbodyitem.NAIF_center_id = static_cast<int>(val);
+                        break;
+                      }
+                    case 2:
+                      {
+                        spkbodyitem.NAIF_ref_frame = static_cast<int>(val);
+                        break;
+                      }
+                    case 3:
+                      {
+                        spkbodyitem.NAIF_spk_data_type = static_cast<int>(val);
+                        break;
+                      }
+                    case 4:
+                      {
+                        spkbodyitem.initial_address = static_cast<int>(val);
+                        break;
+                      }
+                    case 5:
+                      {
+                        spkbodyitem.final_addr = val;
+                        break;
+                      }
+                    default:
+                      break;
+                    }
                 }
             }
-          spkbodyv.push_back(spkbodytup);
+          else
+            {
+              for(uint32_t i = 0; i < NI; i++)
+                {
+                  readv.clear();
+                  uint32_t val;
+                  readv.resize(sizeof(val));
+                  f->read(readv.data(), readv.size());
+                  readbytes += readv.size();
+                  std::memcpy(&val, readv.data(), sizeof(val));
+                  switch(i)
+                    {
+                    case 0:
+                      {
+                        spkbodyitem.NAIF_body_id = static_cast<int>(val);
+                        break;
+                      }
+                    case 1:
+                      {
+                        spkbodyitem.NAIF_center_id = static_cast<int>(val);
+                        break;
+                      }
+                    case 2:
+                      {
+                        spkbodyitem.NAIF_spk_data_type = static_cast<int>(val);
+                        break;
+                      }
+                    case 3:
+                      {
+                        spkbodyitem.initial_address = static_cast<int>(val);
+                        break;
+                      }
+                    case 4:
+                      {
+                        spkbodyitem.final_addr = val;
+                        break;
+                      }
+                    default:
+                      break;
+                    }
+                }
+            }
+          spkbodyv.push_back(spkbodyitem);
           if(ss > readbytes)
             {
               f->seekg(ss - readbytes, std::ios_base::cur);
@@ -414,15 +454,16 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
   int type = -1;
   if(!result->is_open())
     {
-      std::cerr << "Ephemeris file not opened!" << std::endl;
+      std::cerr << "DAFOperations::bodyVect: ephemeris file not opened!"
+                << std::endl;
     }
   else
     {
-      std::vector<std::tuple<double, double, int, int, int, int, int, int>>
-          spkv;
-      auto itfv = std::find_if(filev.begin(), filev.end(), [result](auto &el) {
-        return el.getFile() == result;
-      });
+      std::vector<SPKItem> spkv;
+      auto itfv
+          = std::find_if(filev.begin(), filev.end(), [result](BodyV &el) {
+              return el.getFile() == result;
+            });
       if(itfv != filev.end())
         {
           spkv = (*itfv).getVect();
@@ -433,7 +474,7 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
           BodyV bv;
           bv.setFile(result);
           bv.setVect(spkv);
-          filev.push_back(bv);
+          filev.emplace_back(bv);
         }
 
       result->seekg(0, std::ios_base::beg);
@@ -452,11 +493,12 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
         {
           ephtype = 2;
         }
+
       auto itspk
-          = std::find_if(spkv.begin(), spkv.end(), [NAIFid, JD](auto &el) {
-              if(std::get<2>(el) == NAIFid)
+          = std::find_if(spkv.begin(), spkv.end(), [NAIFid, JD](SPKItem &el) {
+              if(el.NAIF_body_id == NAIFid)
                 {
-                  if(JD >= std::get<0>(el) && JD <= std::get<1>(el))
+                  if(JD >= el.JD_begin && JD <= el.JD_end)
                     {
                       return true;
                     }
@@ -472,19 +514,11 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t *c_beg, uint64_t *c_end,
             });
       if(itspk != spkv.end())
         {
-          *c_beg = std::get<6>(*itspk) - 1;
-          *c_end = std::get<7>(*itspk);
-          if(ephtype == 1)
+          *c_beg = itspk->initial_address - 1;
+          *c_end = itspk->final_addr;
+          if(ephtype == 1 || ephtype == 2)
             {
-              type = std::get<5>(*itspk);
-              *c_beg = std::get<6>(*itspk) - 1;
-              *c_end = std::get<7>(*itspk);
-            }
-          if(ephtype == 2)
-            {
-              type = std::get<4>(*itspk);
-              *c_beg = std::get<5>(*itspk) - 1;
-              *c_end = std::get<6>(*itspk);
+              type = itspk->NAIF_spk_data_type;
             }
         }
     }

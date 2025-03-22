@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(EphemerisEPM VERSION 3.1 LANGUAGES CXX)
+project(EphemerisEPM VERSION 2.2.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,6 +13,7 @@ find_package(Gettext)
 
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-4.0)
 pkg_check_modules(ICU REQUIRED IMPORTED_TARGET icu-i18n)
+pkg_check_modules(ICUUC REQUIRED IMPORTED_TARGET icu-uc)
 pkg_check_modules(GMPXX REQUIRED IMPORTED_TARGET gmpxx)
 
 find_library(MGL mgl2 REQUIRED)
@@ -20,22 +21,36 @@ find_library(MGL mgl2 REQUIRED)
 find_library(SOFA sofa_c REQUIRED)
 
 if(USE_OPENMP)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENMP -fopenmp")
-  add_link_options("-fopenmp")
+  find_package(OpenMP REQUIRED)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENMP ${OpenMP_CXX_FLAGS}")
+  add_link_options("${OpenMP_CXX_FLAGS}")
+endif()
+
+if(GTKMM_VERSION VERSION_LESS "4.10")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEPH_GTK_OLD")
 endif()
 
 add_executable(ephepm)
 
+add_subdirectory(include)
 add_subdirectory(src)
 
-target_include_directories(ephepm PRIVATE include)
+target_include_directories(ephepm
+  PRIVATE include
+  PRIVATE PkgConfig::GTKMM
+  PRIVATE PkgConfig::ICU
+  PRIVATE PkgConfig::ICUUC
+  PRIVATE PkgConfig::GMPXX
+)
 
-target_link_libraries(ephepm PUBLIC
-  PkgConfig::GTKMM
-  PkgConfig::ICU
-  PkgConfig::GMPXX
-  ${MGL}
-  ${SOFA})
+target_link_libraries(ephepm
+  PRIVATE PkgConfig::GTKMM
+  PRIVATE PkgConfig::ICU
+  PRIVATE PkgConfig::ICUUC
+  PRIVATE PkgConfig::GMPXX
+  PRIVATE ${MGL}
+  PRIVATE ${SOFA}
+)
 
 include(GNUInstallDirs)
 

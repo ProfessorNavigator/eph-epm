@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,25 +15,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_MAINWINDOW_H_
-#define INCLUDE_MAINWINDOW_H_
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
 
 #include <BodyListItem.h>
-#include <array>
+#include <CoordKeeper.h>
 #include <atomic>
-#include <giomm-2.68/giomm/file.h>
+#include <filesystem>
 #include <giomm-2.68/giomm/liststore.h>
-#include <glibmm-2.68/glibmm/dispatcher.h>
-#include <glibmm-2.68/glibmm/refptr.h>
-#include <gmpxx.h>
 #include <gtkmm-4.0/gtkmm/applicationwindow.h>
-#include <gtkmm-4.0/gtkmm/columnview.h>
 #include <gtkmm-4.0/gtkmm/dropdown.h>
 #include <gtkmm-4.0/gtkmm/entry.h>
 #include <gtkmm-4.0/gtkmm/label.h>
 #include <gtkmm-4.0/gtkmm/progressbar.h>
-#include <string>
-#include <vector>
+#include <gtkmm-4.0/gtkmm/signallistitemfactory.h>
 
 class MainWindow : public Gtk::ApplicationWindow
 {
@@ -44,18 +39,23 @@ private:
   void
   createWindow();
 
+  void
+  objcombChangeFunc(Gtk::Label *coord, Gtk::Label *equin);
+
+  void
+  xyzCombChancgeFunc();
+
   Glib::RefPtr<Gio::ListStore<BodyListItem>>
   createBodyList();
 
+  Glib::RefPtr<Gtk::SignalListItemFactory>
+  createBodyFactory();
+
+  std::vector<std::tuple<uint8_t, std::string>>
+  formPathV();
+
   void
-  calcCoord(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-            Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-            Gtk::DropDown *timecomb, Gtk::DropDown *belt,
-            Gtk::DropDown *objcomb, Gtk::DropDown *coordcomb,
-            Gtk::DropDown *xyzcomb, Gtk::DropDown *equincomb,
-            Gtk::DropDown *unitcomb, Gtk::Entry *stepent,
-            Gtk::Entry *stepnument, Gtk::Entry *pathent, Gtk::Entry *tttdbent,
-            Gtk::Entry *mlbent, Gtk::Entry *smlent);
+  calcCoord();
 
   void
   aboutProg();
@@ -64,48 +64,46 @@ private:
   errDialog(int variant);
 
   void
-  resultPresenting(std::vector<std::array<mpf_class, 3>> *result,
-                   Gtk::DropDown *belt, Gtk::DropDown *objcomb,
-                   Gtk::DropDown *coordcomb, Gtk::DropDown *xyzcomb,
-                   Gtk::DropDown *equincomb, Gtk::DropDown *unitcomb,
-                   Glib::Dispatcher *result_win_disp);
+  resultPresenting(std::vector<CoordKeeper> *result);
 
   Gtk::Window *
   resultPulseWin(int variant, Gtk::ProgressBar *bar);
 
   void
-  openDialog(Gtk::Entry *pathent);
+  openDialog(Gtk::Entry *entry);
 
   void
-  saveDialog(Gtk::Window *win, Gtk::Label *objlab, Gtk::Label *coordlab,
-             Gtk::Label *equinlab, Gtk::Label *unitlab, Gtk::Label *beltlab,
-             Gtk::ColumnView *view, Gtk::DropDown *objcomb,
-             std::string header_line);
-
-  void
-  saveDialogFunc(Glib::RefPtr<Gio::File> fl, Gtk::Label *objlab,
-                 Gtk::Label *coordlab, Gtk::Label *equinlab,
-                 Gtk::Label *unitlab, Gtk::Label *beltlab,
-                 Gtk::ColumnView *view, Gtk::DropDown *objcomb,
-                 std::string header_line);
-
-  void
-  orbitsGraph(Gtk::Entry *day, Gtk::Entry *month, Gtk::Entry *year,
-              Gtk::Entry *hour, Gtk::Entry *minut, Gtk::Entry *second,
-              Gtk::DropDown *timecomb, Gtk::DropDown *belt,
-              Gtk::DropDown *coordcomb, Gtk::DropDown *equincomb,
-              Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *smlent,
-              Gtk::Entry *scale_ent);
+  orbitsGraph();
 
   bool
-  closeFunc(Gtk::Entry *pathent, Gtk::Entry *tttdbent, Gtk::Entry *mlbent,
-            Gtk::Entry *smlent, Gtk::Entry *scale_ent);
+  closeFunc();
 
-  std::string Sharepath;
+  std::filesystem::path Sharepath;
 
   std::atomic<int> orbits_cancel;
   double JDshow = 0.0;
   double stepnum = -1;
+
+  Gtk::Entry *day;
+  Gtk::Entry *month;
+  Gtk::Entry *year;
+  Gtk::Entry *hour;
+  Gtk::Entry *minut;
+  Gtk::Entry *second;
+  Gtk::DropDown *timecomb;
+  Gtk::DropDown *belt;
+  Gtk::DropDown *objcomb;
+  Gtk::DropDown *coordcomb;
+  Gtk::DropDown *xyzcomb;
+  Gtk::DropDown *equincomb;
+  Gtk::DropDown *unitcomb;
+  Gtk::Entry *stepent;
+  Gtk::Entry *stepnument;
+  Gtk::Entry *pathent;
+  Gtk::Entry *tttdbent;
+  Gtk::Entry *mlbent;
+  Gtk::Entry *smlent;
+  Gtk::Entry *scale_ent;
 };
 
-#endif /* INCLUDE_MAINWINDOW_H_ */
+#endif // MAINWINDOW_H

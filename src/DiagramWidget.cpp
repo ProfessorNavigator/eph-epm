@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Yury Bobylev <bobilev_yury@mail.ru>
+ * Copyright (C) 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,49 +17,28 @@
 
 #include <DiagramWidget.h>
 #include <filesystem>
-#include <gdkmm/display.h>
-#include <gdkmm/general.h>
-#include <gdkmm/monitor.h>
-#include <gdkmm/pixbuf.h>
-#include <gdkmm/surface.h>
-#include <giomm/file.h>
-#include <glibconfig.h>
-#include <glibmm/miscutils.h>
-#include <glibmm/refptr.h>
-#include <glibmm/signalproxy.h>
-#include <glibmm/ustring.h>
-#include <gtkmm/application.h>
-#include <gtkmm/button.h>
-#include <gtkmm/dialog.h>
-#include <gtkmm/enums.h>
-#include <gtkmm/eventcontrollerscroll.h>
-#include <gtkmm/filechooser.h>
-#include <gtkmm/gesturedrag.h>
-#include <gtkmm/grid.h>
-#include <gtkmm/label.h>
-#include <gtkmm/object.h>
-#include <gtkmm/overlay.h>
+#include <glibmm-2.68/glibmm/miscutils.h>
+#include <gtkmm-4.0/gdkmm/general.h>
+#include <gtkmm-4.0/gdkmm/monitor.h>
+#include <gtkmm-4.0/gtkmm/button.h>
+#include <gtkmm-4.0/gtkmm/eventcontrollerscroll.h>
+#include <gtkmm-4.0/gtkmm/gesturedrag.h>
+#include <gtkmm-4.0/gtkmm/grid.h>
+#include <gtkmm-4.0/gtkmm/label.h>
+#include <gtkmm-4.0/gtkmm/overlay.h>
 #include <libintl.h>
-#include <locale>
-#include <memory>
-#include <pangomm/layout.h>
-#include <sigc++/adaptors/bind.h>
-#include <sigc++/connection.h>
-#include <sigc++/functors/mem_fun.h>
 #include <sstream>
 
 #ifndef EPH_GTK_OLD
-#include <giomm/asyncresult.h>
-#include <giomm/cancellable.h>
-#include <gtkmm/error.h>
-#include <gtkmm/filedialog.h>
+#include <gtkmm-4.0/gtkmm/error.h>
+#include <gtkmm-4.0/gtkmm/filedialog.h>
 #include <iostream>
 #endif
 #ifdef EPH_GTK_OLD
-#include <gtkmm/filechooserdialog.h>
+#include <gtkmm-4.0/gtkmm/filechooserdialog.h>
 #endif
 
-DiagramWidget::DiagramWidget(Gtk::ApplicationWindow *mw, mglGraph *gr)
+DiagramWidget::DiagramWidget(Gtk::Window *mw, mglGraph *gr)
 {
   this->mw = mw;
   this->gr = gr;
