@@ -10,6 +10,7 @@ find_package(PkgConfig REQUIRED)
 
 find_package(Intl REQUIRED)
 find_package(Gettext)
+find_package(Threads)
 
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-4.0)
 pkg_check_modules(ICU REQUIRED IMPORTED_TARGET icu-i18n)
@@ -51,6 +52,11 @@ target_link_libraries(ephepm
   PRIVATE ${MGL}
   PRIVATE ${SOFA}
 )
+
+if(Threads_FOUND)
+  target_include_directories(ephepm PRIVATE Threads::Threads)
+  target_link_libraries(ephepm PRIVATE Threads::Threads)
+endif()
 
 include(GNUInstallDirs)
 
