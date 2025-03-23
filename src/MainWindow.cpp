@@ -31,6 +31,7 @@
 #include <gtkmm-4.0/gtkmm/grid.h>
 #include <gtkmm-4.0/gtkmm/stringlist.h>
 #include <iostream>
+#include <libintl.h>
 #include <thread>
 
 #ifndef EPH_GTK_OLD
