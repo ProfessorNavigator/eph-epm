@@ -162,6 +162,10 @@ Coordinates::calculationsXYZ()
         {
           if(cancel->load() > 0 || stop.load())
             {
+              if(pulse_signal)
+                {
+                  pulse_signal();
+                }
               continue;
             }
           uint64_t tdbb, tdbe;
@@ -187,6 +191,10 @@ Coordinates::calculationsXYZ()
                            "coordinates have not been calculated!"
                         << std::endl;
               stop.store(true);
+              if(pulse_signal)
+                {
+                  pulse_signal();
+                }
               continue;
             }
 
@@ -302,6 +310,10 @@ Coordinates::calculationsXYZ()
                             << ", coordinates have not been calculated!"
                             << std::endl;
                   stop.store(true);
+                  if(pulse_signal)
+                    {
+                      pulse_signal();
+                    }
                   continue;
                 }
               else

@@ -66,7 +66,7 @@ private:
   planetOrbCalc(const std::tuple<int, double> &planettup);
 
   void
-  bodyBuilding(int body, mglGraph *graph);
+  bodyBuilding(const int &body);
 
   Gdk::Rectangle
   screenRes();
@@ -84,7 +84,7 @@ private:
   double epb = 0.0;
   double epe = 0.0;
   mglGraph *gr = nullptr;
-  std::mutex *grmtx = nullptr;
+  std::mutex grmtx;
 
 #ifndef USE_OPENMP
   std::mutex cyclemtx;
