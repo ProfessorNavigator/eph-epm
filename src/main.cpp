@@ -35,10 +35,10 @@ main(int argc, char *argv[])
 
   std::string id = "ru.mail.bobilev_yury.EphEPM";
   int exitstat = 0;
+  auto app = EPMApplication::create(id);
 #pragma omp parallel
 #pragma omp masked
   {
-    auto app = EPMApplication::create(id);
     exitstat = app->run(argc, argv);
   }
   if(exitstat != 0)
