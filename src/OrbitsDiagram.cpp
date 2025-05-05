@@ -99,8 +99,12 @@ OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
   this->plot_factor = plot_factor;
 
   omp_set_dynamic(true);
+#ifndef EPH_OPENMP_OLD
   active_lvls = omp_get_max_active_levels();
   omp_set_max_active_levels(omp_get_supported_active_levels());
+#else
+  omp_set_nested(true);
+#endif
 }
 
 OrbitsDiagram::~OrbitsDiagram()
@@ -112,7 +116,11 @@ OrbitsDiagram::~OrbitsDiagram()
   delete dw;
   omp_destroy_lock(&coord_ptr_v_mtx);
   omp_set_dynamic(false);
+#ifndef EPH_OPENMP_OLD
   omp_set_max_active_levels(active_lvls);
+#else
+  omp_set_nested(false);
+#endif
 }
 
 int
