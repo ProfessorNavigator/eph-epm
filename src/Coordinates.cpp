@@ -22,7 +22,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <mutex>
+#include <omp.h>
 
 Coordinates::Coordinates(const int &body, const double &JD, const int &timesc,
                          const int &coordtype, const int &xyz,
@@ -30,7 +30,7 @@ Coordinates::Coordinates(const int &body, const double &JD, const int &timesc,
                          const double &step, const int &stepnum,
                          const std::string &epmpath,
                          const std::string &tttdbpath,
-                         const std::string &smlbpath, std::atomic<int> *cancel)
+                         const std::string &smlbpath)
 {
   this->body = body;
   this->JD = JD;
@@ -43,7 +43,6 @@ Coordinates::Coordinates(const int &body, const double &JD, const int &timesc,
   this->epmpath = std::filesystem::u8path(epmpath);
   this->tttdbpath = std::filesystem::u8path(tttdbpath);
   this->smlbpath = std::filesystem::u8path(smlbpath);
-  this->cancel = cancel;
   this->timesc = timesc;
 }
 
@@ -151,46 +150,56 @@ Coordinates::calculationsXYZ()
           }
       }
 
-      std::atomic<bool> stop = false;
-      std::mutex eph_mtx;
-      std::mutex tdb_mtx;
-      std::mutex sml_mtx;
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+      omp_lock_t eph_mtx;
+      omp_init_lock(&eph_mtx);
+      omp_lock_t tdb_mtx;
+      omp_init_lock(&tdb_mtx);
+      omp_lock_t sml_mtx;
+      omp_init_lock(&sml_mtx);
+#pragma omp parallel
+#pragma omp for
       for(auto it = result.begin(); it != result.end(); it++)
         {
-          if(cancel->load() > 0 || stop.load())
+
+          bool cncl;
+#pragma omp atomic read
+          cncl = cancel;
+          if(cncl)
             {
+#pragma omp cancel for
               if(pulse_signal)
                 {
                   pulse_signal();
                 }
               continue;
             }
+
           uint64_t tdbb, tdbe;
           int tdbtype;
           uint64_t bodyb, bodye;
           int bodytype;
+
           if(tttdbfile.is_open())
             {
-              tdb_mtx.lock();
+              omp_set_lock(&tdb_mtx);
               tdbtype
                   = daf.bodyVect(&tttdbfile, tdbb, tdbe, 1000000001, it->JD);
-              tdb_mtx.unlock();
+              omp_unset_lock(&tdb_mtx);
             }
           else
             {
-              eph_mtx.lock();
+              omp_set_lock(&eph_mtx);
               tdbtype = daf.bodyVect(&ephfile, tdbb, tdbe, 1000000001, it->JD);
-              eph_mtx.unlock();
+              omp_unset_lock(&eph_mtx);
             }
+
           if(tdbtype < 0)
             {
               std::cerr << "Coordinates::calculationsXYZ: cannot find TDB, "
                            "coordinates have not been calculated!"
                         << std::endl;
-              stop.store(true);
+#pragma omp atomic write
+              cancel = true;
               if(pulse_signal)
                 {
                   pulse_signal();
@@ -208,21 +217,21 @@ Coordinates::calculationsXYZ()
                 JDcalc = af.timeTT(it->JD);
                 if(tttdbfile.is_open())
                   {
-                    tdb_mtx.lock();
+                    omp_set_lock(&tdb_mtx);
                     JDfin = mpf_class(JDcalc)
                             - epm.tdbCalc(&tttdbfile, tdbb, tdbe, JDcalc,
                                           tdbtype)
                                   / mpf_class(86400.0);
-                    tdb_mtx.unlock();
+                    omp_unset_lock(&tdb_mtx);
                   }
                 else
                   {
-                    eph_mtx.lock();
+                    omp_set_lock(&eph_mtx);
                     JDfin
                         = mpf_class(JDcalc)
                           - epm.tdbCalc(&ephfile, tdbb, tdbe, JDcalc, tdbtype)
                                 / mpf_class(86400.0);
-                    eph_mtx.unlock();
+                    omp_unset_lock(&eph_mtx);
                   }
                 break;
               }
@@ -242,21 +251,21 @@ Coordinates::calculationsXYZ()
                   }
                 if(tttdbfile.is_open())
                   {
-                    tdb_mtx.lock();
+                    omp_set_lock(&tdb_mtx);
                     JDfin = mpf_class(JDcalc)
                             - epm.tdbCalc(&tttdbfile, tdbb, tdbe, JDcalc,
                                           tdbtype)
                                   / mpf_class(86400.0);
-                    tdb_mtx.unlock();
+                    omp_unset_lock(&tdb_mtx);
                   }
                 else
                   {
-                    eph_mtx.lock();
+                    omp_set_lock(&eph_mtx);
                     JDfin
                         = mpf_class(JDcalc)
                           - epm.tdbCalc(&ephfile, tdbb, tdbe, JDcalc, tdbtype)
                                 / mpf_class(86400.0);
-                    eph_mtx.unlock();
+                    omp_unset_lock(&eph_mtx);
                   }
                 break;
               }
@@ -278,30 +287,32 @@ Coordinates::calculationsXYZ()
             default:
               break;
             }
+
           if(body != -3)
             {
-              eph_mtx.lock();
+              omp_set_lock(&eph_mtx);
               bodytype
                   = daf.bodyVect(&ephfile, bodyb, bodye, body, JDfin.get_d());
-              eph_mtx.unlock();
+              omp_unset_lock(&eph_mtx);
             }
           else
             {
-              eph_mtx.lock();
+              omp_set_lock(&eph_mtx);
               daf.bodyVect(&ephfile, bodyb, bodye, 3, JDfin.get_d());
               bodytype
                   = daf.bodyVect(&ephfile, moonb, moone, 3, JDfin.get_d());
-              eph_mtx.unlock();
+              omp_unset_lock(&eph_mtx);
             }
+
           bool smbody = false;
           if(bodytype < 0)
             {
               if(smlbfile.is_open())
                 {
-                  sml_mtx.lock();
+                  omp_set_lock(&sml_mtx);
                   bodytype = daf.bodyVect(&smlbfile, bodyb, bodye, body,
                                           JDfin.get_d());
-                  sml_mtx.unlock();
+                  omp_unset_lock(&sml_mtx);
                 }
               if(bodytype < 0)
                 {
@@ -309,7 +320,8 @@ Coordinates::calculationsXYZ()
                             << body
                             << ", coordinates have not been calculated!"
                             << std::endl;
-                  stop.store(true);
+#pragma omp atomic write
+                  cancel = true;
                   if(pulse_signal)
                     {
                       pulse_signal();
@@ -326,30 +338,30 @@ Coordinates::calculationsXYZ()
             {
               if(!smbody)
                 {
-                  eph_mtx.lock();
+                  omp_set_lock(&eph_mtx);
                   it->X = epm.bodyCalcX(&ephfile, bodyb, bodye, JDfin, xyz,
                                         bodytype, au);
                   it->Y = epm.bodyCalcY(&ephfile, bodyb, bodye, JDfin, xyz,
                                         bodytype, au);
                   it->Z = epm.bodyCalcZ(&ephfile, bodyb, bodye, JDfin, xyz,
                                         bodytype, au);
-                  eph_mtx.unlock();
+                  omp_unset_lock(&eph_mtx);
                 }
               else
                 {
-                  sml_mtx.lock();
+                  omp_set_lock(&sml_mtx);
                   it->X = epm.bodyCalcX(&smlbfile, bodyb, bodye, JDfin, xyz,
                                         bodytype, au);
                   it->Y = epm.bodyCalcY(&smlbfile, bodyb, bodye, JDfin, xyz,
                                         bodytype, au);
                   it->Z = epm.bodyCalcZ(&smlbfile, bodyb, bodye, JDfin, xyz,
                                         bodytype, au);
-                  sml_mtx.unlock();
+                  omp_unset_lock(&sml_mtx);
                 }
             }
           else
             {
-              eph_mtx.lock();
+              omp_set_lock(&eph_mtx);
               bodymoontype
                   = daf.bodyVect(&ephfile, moonb, moone, 301, JDfin.get_d());
               if(body == 3)
@@ -389,7 +401,7 @@ Coordinates::calculationsXYZ()
                                         bodytype, au)
                           - moonz / rho + moonz;
                 }
-              eph_mtx.unlock();
+              omp_unset_lock(&eph_mtx);
             }
           switch(xyz)
             {
@@ -546,6 +558,11 @@ Coordinates::calculationsXYZ()
               pulse_signal();
             }
         }
+
+      omp_destroy_lock(&eph_mtx);
+      omp_destroy_lock(&tdb_mtx);
+      omp_destroy_lock(&sml_mtx);
+
       if(ephfile.is_open())
         {
           ephfile.close();
@@ -560,4 +577,11 @@ Coordinates::calculationsXYZ()
         }
     }
   return result;
+}
+
+void
+Coordinates::stopAll()
+{
+#pragma omp atomic write
+  cancel = true;
 }

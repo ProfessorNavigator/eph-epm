@@ -3,7 +3,7 @@
 Name=EphEPM
 Comment=EphEPM calculats coordinates of Solar System bodies
 GenericName=EphEPM
-Exec=ephepm
+Exec=env OMP_CANCELLATION=true ephepm
 Icon=ephepm
 Categories=Science;
 Terminal=false

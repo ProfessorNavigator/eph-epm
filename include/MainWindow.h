@@ -20,7 +20,7 @@
 
 #include <BodyListItem.h>
 #include <CoordKeeper.h>
-#include <atomic>
+#include <OrbitsDiagram.h>
 #include <filesystem>
 #include <giomm-2.68/giomm/liststore.h>
 #include <gtkmm-4.0/gtkmm/applicationwindow.h>
@@ -67,7 +67,8 @@ private:
   resultPresenting(std::vector<CoordKeeper> *result);
 
   Gtk::Window *
-  resultPulseWin(const int &variant, Gtk::ProgressBar *bar);
+  resultPulseWin(const int &variant, Gtk::ProgressBar *bar,
+                 OrbitsDiagram *od = nullptr);
 
   void
   openDialog(Gtk::Entry *entry);
@@ -80,7 +81,6 @@ private:
 
   std::filesystem::path Sharepath;
 
-  std::atomic<int> orbits_cancel;
   double JDshow = 0.0;
   double stepnum = -1;
 

@@ -27,6 +27,7 @@
 #include <gtkmm-4.0/gtkmm/label.h>
 #include <gtkmm-4.0/gtkmm/overlay.h>
 #include <libintl.h>
+#include <omp.h>
 #include <sstream>
 
 #ifndef EPH_GTK_OLD
@@ -50,6 +51,13 @@ DiagramWidget::DiagramWidget(Gtk::Window *mw, mglGraph *gr)
   Gdk::Rectangle req = screenRes();
   Height = req.get_height();
   Width = req.get_width();
+  active_lvls = omp_get_max_active_levels();
+  omp_set_max_active_levels(omp_get_supported_active_levels());
+}
+
+DiagramWidget::~DiagramWidget()
+{
+  omp_set_max_active_levels(active_lvls);
 }
 
 void
@@ -362,55 +370,65 @@ DiagramWidget::zoomGraph(Gtk::Entry *entx, Gtk::Entry *enty, Gtk::Entry *entz,
   double pl1, pl2;
   pl1 = (plotincr[2] - plotincr[0]) * 0.1;
   pl2 = (plotincr[3] - plotincr[1]) * 0.1;
-  if(id == 0)
+  switch(id)
     {
-      plotincr[0] = plotincr[0] + pl1;
-      plotincr[1] = plotincr[1] + pl2;
-      plotincr[2] = plotincr[2] - pl1;
-      plotincr[3] = plotincr[3] - pl2;
-    }
-  if(id == 1)
-    {
-      plotincr[0] = plotincr[0] - pl1;
-      plotincr[1] = plotincr[1] - pl2;
-      plotincr[2] = plotincr[2] + pl1;
-      plotincr[3] = plotincr[3] + pl2;
-    }
-  if(id == 2)
-    {
-      pl2 = (plotincr[3] - plotincr[1]) * 0.05;
-      plotincr[1] = plotincr[1] - pl2;
-      plotincr[3] = plotincr[3] - pl2;
-    }
-  if(id == 3)
-    {
-      pl2 = (plotincr[3] - plotincr[1]) * 0.05;
-      plotincr[1] = plotincr[1] + pl2;
-      plotincr[3] = plotincr[3] + pl2;
-    }
-
-  if(id == 4)
-    {
-      pl1 = (plotincr[2] - plotincr[0]) * 0.05;
-      plotincr[0] = plotincr[0] + pl1;
-      plotincr[2] = plotincr[2] + pl1;
-    }
-
-  if(id == 5)
-    {
-      pl1 = (plotincr[2] - plotincr[0]) * 0.05;
-      plotincr[0] = plotincr[0] - pl1;
-      plotincr[2] = plotincr[2] - pl1;
-    }
-  if(id == 6)
-    {
-      plotincr[0] = scale_val1;
-      plotincr[1] = scale_val1;
-      plotincr[2] = scale_val2;
-      plotincr[3] = scale_val2;
-      entx->set_text("50");
-      enty->set_text("0");
-      entz->set_text("60");
+    case 0:
+      {
+        plotincr[0] = plotincr[0] + pl1;
+        plotincr[1] = plotincr[1] + pl2;
+        plotincr[2] = plotincr[2] - pl1;
+        plotincr[3] = plotincr[3] - pl2;
+        break;
+      }
+    case 1:
+      {
+        plotincr[0] = plotincr[0] - pl1;
+        plotincr[1] = plotincr[1] - pl2;
+        plotincr[2] = plotincr[2] + pl1;
+        plotincr[3] = plotincr[3] + pl2;
+        break;
+      }
+    case 2:
+      {
+        pl2 = (plotincr[3] - plotincr[1]) * 0.05;
+        plotincr[1] = plotincr[1] - pl2;
+        plotincr[3] = plotincr[3] - pl2;
+        break;
+      }
+    case 3:
+      {
+        pl2 = (plotincr[3] - plotincr[1]) * 0.05;
+        plotincr[1] = plotincr[1] + pl2;
+        plotincr[3] = plotincr[3] + pl2;
+        break;
+      }
+    case 4:
+      {
+        pl1 = (plotincr[2] - plotincr[0]) * 0.05;
+        plotincr[0] = plotincr[0] + pl1;
+        plotincr[2] = plotincr[2] + pl1;
+        break;
+      }
+    case 5:
+      {
+        pl1 = (plotincr[2] - plotincr[0]) * 0.05;
+        plotincr[0] = plotincr[0] - pl1;
+        plotincr[2] = plotincr[2] - pl1;
+        break;
+      }
+    case 6:
+      {
+        plotincr[0] = scale_val1;
+        plotincr[1] = scale_val1;
+        plotincr[2] = scale_val2;
+        plotincr[3] = scale_val2;
+        entx->set_text("50");
+        enty->set_text("0");
+        entz->set_text("60");
+        break;
+      }
+    default:
+      break;
     }
   rotationFunc(entx, enty, entz, drar);
 }
@@ -425,18 +443,27 @@ DiagramWidget::saveGraph(mglGraph *graph, Gtk::Window *win, const int &mode)
   Glib::RefPtr<Gio::File> fl
       = Gio::File::create_for_path(Glib::get_home_dir());
   fcd->set_initial_folder(fl);
-  if(mode == 0)
+  switch(mode)
     {
-      fcd->set_initial_name("Orbits.jpeg");
+    case 0:
+      {
+        fcd->set_initial_name("Orbits.jpeg");
+        break;
+      }
+    case 1:
+      {
+        fcd->set_initial_name("Orbits.png");
+        break;
+      }
+    case 2:
+      {
+        fcd->set_initial_name("Orbits.svg");
+        break;
+      }
+    default:
+      break;
     }
-  else if(mode == 1)
-    {
-      fcd->set_initial_name("Orbits.png");
-    }
-  else if(mode == 2)
-    {
-      fcd->set_initial_name("Orbits.svg");
-    }
+
   Glib::RefPtr<Gio::Cancellable> cncl = Gio::Cancellable::create();
   fcd->save(
       *win,

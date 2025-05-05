@@ -24,13 +24,14 @@
 #include <gtkmm-4.0/gtkmm/window.h>
 #include <mgl2/mgl.h>
 #include <string>
-#include <tuple>
 #include <vector>
 
 class DiagramWidget
 {
 public:
   DiagramWidget(Gtk::Window *mw, mglGraph *gr);
+
+  ~DiagramWidget();
 
   void
   diagramPlot();
@@ -72,6 +73,8 @@ private:
   std::string Sharepath;
   double scale_val1 = -1143583.890685;
   double scale_val2 = 1143584.890685;
+
+  int active_lvls;
 };
 
 #endif // DIAGRAMWIDGET_H

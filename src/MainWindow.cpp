@@ -19,26 +19,26 @@
 #include <Coordinates.h>
 #include <DAFOperations.h>
 #include <MainWindow.h>
-#include <OrbitsDiagram.h>
 #include <ResultWindow.h>
 #include <fstream>
 #include <glibmm-2.68/glibmm/dispatcher.h>
 #include <glibmm-2.68/glibmm/main.h>
 #include <glibmm-2.68/glibmm/miscutils.h>
 #include <gtkmm-4.0/gtkmm/aboutdialog.h>
+#include <gtkmm-4.0/gtkmm/box.h>
 #include <gtkmm-4.0/gtkmm/button.h>
 #include <gtkmm-4.0/gtkmm/cssprovider.h>
 #include <gtkmm-4.0/gtkmm/grid.h>
+#include <gtkmm-4.0/gtkmm/settings.h>
 #include <gtkmm-4.0/gtkmm/stringlist.h>
 #include <iostream>
 #include <libintl.h>
-#include <thread>
+#include <omp.h>
 
 #ifndef EPH_GTK_OLD
 #include <gtkmm-4.0/gtkmm/error.h>
 #include <gtkmm-4.0/gtkmm/filedialog.h>
 #endif
-
 #ifdef EPH_GTK_OLD
 #include <gtkmm-4.0/gtkmm/filechooserdialog.h>
 #endif
@@ -73,9 +73,10 @@ MainWindow::MainWindow()
     }
   css_provider->load_from_data(styles);
   Glib::RefPtr<Gdk::Display> disp = this->get_display();
+  Glib::RefPtr<Gtk::Settings> settings = Gtk::Settings::get_for_display(disp);
+  settings->property_gtk_theme_name().set_value("Adwaita");
   Gtk::StyleContext::add_provider_for_display(
       disp, css_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
-  orbits_cancel.store(0);
   createWindow();
 }
 
@@ -85,23 +86,29 @@ MainWindow::createWindow()
   this->set_title("EphEPM");
   this->set_name("mainWindow");
 
-  Gtk::Grid *grid = Gtk::make_managed<Gtk::Grid>();
-  grid->set_halign(Gtk::Align::CENTER);
-  this->set_child(*grid);
+  Gtk::Box *v_box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+  v_box->set_halign(Gtk::Align::FILL);
+  v_box->set_valign(Gtk::Align::FILL);
+  this->set_child(*v_box);
 
-  Gtk::Label *dateinput = Gtk::make_managed<Gtk::Label>();
-  dateinput->set_use_markup(true);
-  dateinput->set_markup(Glib::ustring("<b>") + gettext("Date and time input")
-                        + "</b>");
-  dateinput->set_halign(Gtk::Align::CENTER);
-  dateinput->set_margin(5);
-  grid->attach(*dateinput, 0, 0, 6, 1);
+  Gtk::Label *lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_use_markup(true);
+  lab->set_markup(Glib::ustring("<b>") + gettext("Date and time input")
+                  + "</b>");
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_margin(5);
+  v_box->append(*lab);
 
-  Gtk::Label *daylab = Gtk::make_managed<Gtk::Label>();
-  daylab->set_text(gettext("Day"));
-  daylab->set_halign(Gtk::Align::CENTER);
-  daylab->set_margin(5);
-  grid->attach(*daylab, 0, 1, 1, 1);
+  Gtk::Grid *extra_grid = Gtk::make_managed<Gtk::Grid>();
+  extra_grid->set_halign(Gtk::Align::CENTER);
+  extra_grid->set_valign(Gtk::Align::FILL);
+  v_box->append(*extra_grid);
+
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Day"));
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_margin(5);
+  extra_grid->attach(*lab, 0, 0, 1, 1);
 
   day = Gtk::make_managed<Gtk::Entry>();
   day->set_halign(Gtk::Align::CENTER);
@@ -110,13 +117,13 @@ MainWindow::createWindow()
   day->set_max_width_chars(2);
   day->set_alignment(0.5);
   day->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*day, 0, 2, 1, 1);
+  extra_grid->attach(*day, 0, 1, 1, 1);
 
-  Gtk::Label *monthlab = Gtk::make_managed<Gtk::Label>();
-  monthlab->set_text(gettext("Month"));
-  monthlab->set_halign(Gtk::Align::CENTER);
-  monthlab->set_margin(5);
-  grid->attach(*monthlab, 1, 1, 1, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Month"));
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_margin(5);
+  extra_grid->attach(*lab, 1, 0, 1, 1);
 
   month = Gtk::make_managed<Gtk::Entry>();
   month->set_halign(Gtk::Align::CENTER);
@@ -125,13 +132,13 @@ MainWindow::createWindow()
   month->set_max_width_chars(2);
   month->set_alignment(0.5);
   month->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*month, 1, 2, 1, 1);
+  extra_grid->attach(*month, 1, 1, 1, 1);
 
-  Gtk::Label *yearlab = Gtk::make_managed<Gtk::Label>();
-  yearlab->set_text(gettext("Year"));
-  yearlab->set_halign(Gtk::Align::CENTER);
-  yearlab->set_margin(5);
-  grid->attach(*yearlab, 2, 1, 1, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Year"));
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_margin(5);
+  extra_grid->attach(*lab, 2, 0, 1, 1);
 
   year = Gtk::make_managed<Gtk::Entry>();
   year->set_halign(Gtk::Align::CENTER);
@@ -140,13 +147,13 @@ MainWindow::createWindow()
   year->set_max_width_chars(6);
   year->set_alignment(0.5);
   year->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*year, 2, 2, 1, 1);
+  extra_grid->attach(*year, 2, 1, 1, 1);
 
-  Gtk::Label *hourlab = Gtk::make_managed<Gtk::Label>();
-  hourlab->set_text(gettext("Hours"));
-  hourlab->set_halign(Gtk::Align::CENTER);
-  hourlab->set_margin(5);
-  grid->attach(*hourlab, 3, 1, 1, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Hours"));
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_margin(5);
+  extra_grid->attach(*lab, 3, 0, 1, 1);
 
   hour = Gtk::make_managed<Gtk::Entry>();
   hour->set_halign(Gtk::Align::CENTER);
@@ -155,13 +162,13 @@ MainWindow::createWindow()
   hour->set_max_width_chars(2);
   hour->set_alignment(0.5);
   hour->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*hour, 3, 2, 1, 1);
+  extra_grid->attach(*hour, 3, 1, 1, 1);
 
-  Gtk::Label *minutlab = Gtk::make_managed<Gtk::Label>();
-  minutlab->set_text(gettext("Minutes"));
-  minutlab->set_halign(Gtk::Align::CENTER);
-  minutlab->set_margin(5);
-  grid->attach(*minutlab, 4, 1, 1, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Minutes"));
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_margin(5);
+  extra_grid->attach(*lab, 4, 0, 1, 1);
 
   minut = Gtk::make_managed<Gtk::Entry>();
   minut->set_halign(Gtk::Align::CENTER);
@@ -170,13 +177,13 @@ MainWindow::createWindow()
   minut->set_max_width_chars(2);
   minut->set_alignment(0.5);
   minut->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*minut, 4, 2, 1, 1);
+  extra_grid->attach(*minut, 4, 1, 1, 1);
 
-  Gtk::Label *secondlab = Gtk::make_managed<Gtk::Label>();
-  secondlab->set_text(gettext("Seconds"));
-  secondlab->set_halign(Gtk::Align::CENTER);
-  secondlab->set_margin(5);
-  grid->attach(*secondlab, 5, 1, 1, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Seconds"));
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_margin(5);
+  extra_grid->attach(*lab, 5, 0, 1, 1);
 
   second = Gtk::make_managed<Gtk::Entry>();
   second->set_halign(Gtk::Align::CENTER);
@@ -185,13 +192,16 @@ MainWindow::createWindow()
   second->set_max_width_chars(7);
   second->set_alignment(0.5);
   second->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*second, 5, 2, 1, 1);
+  extra_grid->attach(*second, 5, 1, 1, 1);
 
-  Gtk::Label *timelab = Gtk::make_managed<Gtk::Label>();
-  timelab->set_text(gettext("Time: "));
-  timelab->set_halign(Gtk::Align::START);
-  timelab->set_margin(5);
-  grid->attach(*timelab, 0, 3, 1, 1);
+  Gtk::Box *h_box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+  extra_grid->attach(*h_box, 0, 2, 6, 1);
+
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Time:"));
+  lab->set_halign(Gtk::Align::END);
+  lab->set_margin(5);
+  h_box->append(*lab);
 
   std::vector<Glib::ustring> list;
   list.push_back("UTC");
@@ -202,13 +212,13 @@ MainWindow::createWindow()
   timecomb->set_halign(Gtk::Align::START);
   timecomb->set_margin(5);
   timecomb->set_selected(0);
-  grid->attach(*timecomb, 1, 3, 1, 1);
+  h_box->append(*timecomb);
 
-  Gtk::Label *beltlab = Gtk::make_managed<Gtk::Label>();
-  beltlab->set_text(gettext("Hour belt: "));
-  beltlab->set_halign(Gtk::Align::START);
-  beltlab->set_margin(5);
-  grid->attach(*beltlab, 2, 3, 2, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Hour belt:"));
+  lab->set_halign(Gtk::Align::END);
+  lab->set_margin(5);
+  h_box->append(*lab);
 
   std::stringstream strm;
   std::locale loc("C");
@@ -235,20 +245,22 @@ MainWindow::createWindow()
   belt->set_halign(Gtk::Align::START);
   belt->set_margin(5);
   belt->set_selected(12);
-  grid->attach(*belt, 3, 3, 2, 1);
+  h_box->append(*belt);
 
-  Gtk::Label *inpparl = Gtk::make_managed<Gtk::Label>();
-  inpparl->set_margin(5);
-  inpparl->set_halign(Gtk::Align::CENTER);
-  inpparl->set_markup(Glib::ustring("<b>") + gettext("Parameters input")
-                      + "</b>");
-  grid->attach(*inpparl, 0, 4, 6, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_margin(5);
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_markup(Glib::ustring("<b>") + gettext("Parameters input") + "</b>");
+  v_box->append(*lab);
 
-  Gtk::Label *obj = Gtk::make_managed<Gtk::Label>();
-  obj->set_text(gettext("Object: "));
-  obj->set_halign(Gtk::Align::START);
-  obj->set_margin(5);
-  grid->attach(*obj, 0, 5, 1, 1);
+  h_box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+  v_box->append(*h_box);
+
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Object:"));
+  lab->set_halign(Gtk::Align::END);
+  lab->set_margin(5);
+  h_box->append(*lab);
 
   Glib::RefPtr<Gio::ListStore<BodyListItem>> bodylist;
   bodylist = createBodyList();
@@ -274,13 +286,16 @@ MainWindow::createWindow()
   objcomb->set_margin(5);
   objcomb->set_selected(0);
   objcomb->set_enable_search(true);
-  grid->attach(*objcomb, 1, 5, 2, 1);
+  h_box->append(*objcomb);
+
+  h_box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+  v_box->append(*h_box);
 
   Gtk::Label *coord = Gtk::make_managed<Gtk::Label>();
-  coord->set_text(gettext("Coordinates: "));
-  coord->set_halign(Gtk::Align::START);
+  coord->set_text(gettext("Coordinates:"));
+  coord->set_halign(Gtk::Align::END);
   coord->set_margin(5);
-  grid->attach(*coord, 0, 6, 1, 1);
+  h_box->append(*coord);
 
   list.clear();
   list.push_back(gettext("Equatorial"));
@@ -290,7 +305,13 @@ MainWindow::createWindow()
   coordcomb->set_halign(Gtk::Align::START);
   coordcomb->set_margin(5);
   coordcomb->set_selected(0);
-  grid->attach(*coordcomb, 1, 6, 2, 1);
+  h_box->append(*coordcomb);
+
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_margin(5);
+  lab->set_halign(Gtk::Align::END);
+  lab->set_text(gettext("Coordinates/Speed:"));
+  h_box->append(*lab);
 
   list.clear();
   list.push_back("X, Y, Z");
@@ -300,13 +321,16 @@ MainWindow::createWindow()
   xyzcomb->set_halign(Gtk::Align::START);
   xyzcomb->set_margin(5);
   xyzcomb->set_selected(0);
-  grid->attach(*xyzcomb, 3, 6, 2, 1);
+  h_box->append(*xyzcomb);
+
+  h_box = Gtk::make_managed<Gtk::Box>();
+  v_box->append(*h_box);
 
   Gtk::Label *equin = Gtk::make_managed<Gtk::Label>();
-  equin->set_text(gettext("Equator and equinox: "));
-  equin->set_halign(Gtk::Align::START);
+  equin->set_text(gettext("Equator and equinox:"));
+  equin->set_halign(Gtk::Align::END);
   equin->set_margin(5);
-  grid->attach(*equin, 0, 7, 2, 1);
+  h_box->append(*equin);
 
   list.clear();
   list.push_back(gettext("Mean (J2000)"));
@@ -317,13 +341,16 @@ MainWindow::createWindow()
   equincomb->set_halign(Gtk::Align::START);
   equincomb->set_margin(5);
   equincomb->set_selected(0);
-  grid->attach(*equincomb, 2, 7, 3, 1);
+  h_box->append(*equincomb);
 
-  Gtk::Label *unit = Gtk::make_managed<Gtk::Label>();
-  unit->set_text(gettext("Units of measurement: "));
-  unit->set_halign(Gtk::Align::START);
-  unit->set_margin(5);
-  grid->attach(*unit, 0, 8, 2, 1);
+  h_box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+  v_box->append(*h_box);
+
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Units of measurement:"));
+  lab->set_halign(Gtk::Align::END);
+  lab->set_margin(5);
+  h_box->append(*lab);
 
   list.clear();
   list.push_back(gettext("Astronomical units"));
@@ -334,20 +361,22 @@ MainWindow::createWindow()
   unitcomb->set_halign(Gtk::Align::START);
   unitcomb->set_margin(5);
   unitcomb->set_selected(0);
-  grid->attach(*unitcomb, 2, 8, 3, 1);
   Glib::PropertyProxy<guint> sel = objcomb->property_selected();
   sel.signal_changed().connect(
       std::bind(&MainWindow::objcombChangeFunc, this, coord, equin));
-
   Glib::PropertyProxy<guint> sel2 = xyzcomb->property_selected();
   sel2.signal_changed().connect(
       std::bind(&MainWindow::xyzCombChancgeFunc, this));
+  h_box->append(*unitcomb);
 
-  Gtk::Label *step = Gtk::make_managed<Gtk::Label>();
-  step->set_text(gettext("Step size (days): "));
-  step->set_halign(Gtk::Align::START);
-  step->set_margin(5);
-  grid->attach(*step, 0, 9, 1, 1);
+  h_box = Gtk::make_managed<Gtk::Box>();
+  v_box->append(*h_box);
+
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Step size (days):"));
+  lab->set_halign(Gtk::Align::END);
+  lab->set_margin(5);
+  h_box->append(*lab);
 
   stepent = Gtk::make_managed<Gtk::Entry>();
   stepent->set_halign(Gtk::Align::START);
@@ -355,13 +384,13 @@ MainWindow::createWindow()
   stepent->set_max_width_chars(4);
   stepent->set_alignment(0.5);
   stepent->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*stepent, 1, 9, 1, 1);
+  h_box->append(*stepent);
 
-  Gtk::Label *stepnum = Gtk::make_managed<Gtk::Label>();
-  stepnum->set_text(gettext("Number of steps: "));
-  stepnum->set_halign(Gtk::Align::END);
-  stepnum->set_margin(5);
-  grid->attach(*stepnum, 2, 9, 2, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_text(gettext("Number of steps:"));
+  lab->set_halign(Gtk::Align::END);
+  lab->set_margin(5);
+  h_box->append(*lab);
 
   stepnument = Gtk::make_managed<Gtk::Entry>();
   stepnument->set_halign(Gtk::Align::START);
@@ -369,18 +398,31 @@ MainWindow::createWindow()
   stepnument->set_max_width_chars(4);
   stepnument->set_alignment(0.5);
   stepnument->set_input_purpose(Gtk::InputPurpose::DIGITS);
-  grid->attach(*stepnument, 4, 9, 1, 1);
+  h_box->append(*stepnument);
 
-  Gtk::Label *pathlab = Gtk::make_managed<Gtk::Label>();
-  pathlab->set_halign(Gtk::Align::START);
-  pathlab->set_margin(5);
-  pathlab->set_text(gettext("Path to ephemerides file:"));
-  grid->attach(*pathlab, 0, 10, 2, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_margin(5);
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_use_markup(true);
+  lab->set_markup(Glib::ustring("<b>") + gettext("Ephemeris files") + "</b>");
+  v_box->append(*lab);
+
+  extra_grid = Gtk::make_managed<Gtk::Grid>();
+  extra_grid->set_halign(Gtk::Align::FILL);
+  extra_grid->set_valign(Gtk::Align::FILL);
+  v_box->append(*extra_grid);
+
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_halign(Gtk::Align::START);
+  lab->set_margin(5);
+  lab->set_text(gettext("Path to ephemerides file:"));
+  extra_grid->attach(*lab, 0, 0, 1, 1);
 
   std::vector<std::tuple<uint8_t, std::string>> pathv = formPathV();
 
   pathent = Gtk::make_managed<Gtk::Entry>();
   pathent->set_margin(5);
+  pathent->set_width_chars(50);
   auto itpv = std::find_if(pathv.begin(), pathv.end(),
                            [](std::tuple<uint8_t, std::string> &el) {
                              return std::get<0>(el) == 1;
@@ -389,7 +431,7 @@ MainWindow::createWindow()
     {
       pathent->set_text(Glib::ustring(std::get<1>(*itpv)));
     }
-  grid->attach(*pathent, 0, 11, 3, 1);
+  extra_grid->attach(*pathent, 0, 1, 1, 1);
 
   Gtk::Button *openb = Gtk::make_managed<Gtk::Button>();
   openb->set_margin(5);
@@ -398,7 +440,7 @@ MainWindow::createWindow()
   openb->set_name("open_button");
   openb->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), pathent));
-  grid->attach(*openb, 3, 11, 1, 1);
+  extra_grid->attach(*openb, 1, 1, 1, 1);
 
   Gtk::Button *clearbut = Gtk::make_managed<Gtk::Button>();
   clearbut->set_margin(5);
@@ -408,16 +450,17 @@ MainWindow::createWindow()
   clearbut->signal_clicked().connect([this] {
     pathent->set_text("");
   });
-  grid->attach(*clearbut, 4, 11, 1, 1);
+  extra_grid->attach(*clearbut, 2, 1, 1, 1);
 
-  pathlab = Gtk::make_managed<Gtk::Label>();
-  pathlab->set_halign(Gtk::Align::START);
-  pathlab->set_margin(5);
-  pathlab->set_text(gettext("Path to TT-TDB file:"));
-  grid->attach(*pathlab, 0, 12, 2, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_halign(Gtk::Align::START);
+  lab->set_margin(5);
+  lab->set_text(gettext("Path to TT-TDB file:"));
+  extra_grid->attach(*lab, 0, 2, 1, 1);
 
   tttdbent = Gtk::make_managed<Gtk::Entry>();
   tttdbent->set_margin(5);
+  tttdbent->set_width_chars(50);
   itpv = std::find_if(pathv.begin(), pathv.end(), [](auto &el) {
     return std::get<0>(el) == 2;
   });
@@ -425,7 +468,7 @@ MainWindow::createWindow()
     {
       tttdbent->set_text(Glib::ustring(std::get<1>(*itpv)));
     }
-  grid->attach(*tttdbent, 0, 13, 3, 1);
+  extra_grid->attach(*tttdbent, 0, 3, 1, 1);
 
   openb = Gtk::make_managed<Gtk::Button>();
   openb->set_margin(5);
@@ -434,7 +477,7 @@ MainWindow::createWindow()
   openb->set_name("open_button");
   openb->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), tttdbent));
-  grid->attach(*openb, 3, 13, 1, 1);
+  extra_grid->attach(*openb, 1, 3, 1, 1);
 
   clearbut = Gtk::make_managed<Gtk::Button>();
   clearbut->set_margin(5);
@@ -444,16 +487,17 @@ MainWindow::createWindow()
   clearbut->signal_clicked().connect([this] {
     tttdbent->set_text("");
   });
-  grid->attach(*clearbut, 4, 13, 1, 1);
+  extra_grid->attach(*clearbut, 2, 3, 1, 1);
 
-  pathlab = Gtk::make_managed<Gtk::Label>();
-  pathlab->set_halign(Gtk::Align::START);
-  pathlab->set_margin(5);
-  pathlab->set_text(gettext("Path to Moon libration file:"));
-  grid->attach(*pathlab, 0, 14, 2, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_halign(Gtk::Align::START);
+  lab->set_margin(5);
+  lab->set_text(gettext("Path to Moon libration file:"));
+  extra_grid->attach(*lab, 0, 4, 1, 1);
 
   mlbent = Gtk::make_managed<Gtk::Entry>();
   mlbent->set_margin(5);
+  mlbent->set_width_chars(50);
   itpv = std::find_if(pathv.begin(), pathv.end(), [](auto &el) {
     return std::get<0>(el) == 3;
   });
@@ -461,7 +505,7 @@ MainWindow::createWindow()
     {
       mlbent->set_text(Glib::ustring(std::get<1>(*itpv)));
     }
-  grid->attach(*mlbent, 0, 15, 3, 1);
+  extra_grid->attach(*mlbent, 0, 5, 1, 1);
 
   openb = Gtk::make_managed<Gtk::Button>();
   openb->set_margin(5);
@@ -470,7 +514,7 @@ MainWindow::createWindow()
   openb->set_name("open_button");
   openb->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), mlbent));
-  grid->attach(*openb, 3, 15, 1, 1);
+  extra_grid->attach(*openb, 1, 5, 1, 1);
 
   clearbut = Gtk::make_managed<Gtk::Button>();
   clearbut->set_margin(5);
@@ -480,16 +524,17 @@ MainWindow::createWindow()
   clearbut->signal_clicked().connect([this] {
     mlbent->set_text("");
   });
-  grid->attach(*clearbut, 4, 15, 1, 1);
+  extra_grid->attach(*clearbut, 2, 5, 1, 1);
 
-  pathlab = Gtk::make_managed<Gtk::Label>();
-  pathlab->set_halign(Gtk::Align::START);
-  pathlab->set_margin(5);
-  pathlab->set_text(gettext("Path to small bodies file:"));
-  grid->attach(*pathlab, 0, 16, 2, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_halign(Gtk::Align::START);
+  lab->set_margin(5);
+  lab->set_text(gettext("Path to small bodies file:"));
+  extra_grid->attach(*lab, 0, 6, 1, 1);
 
   smlent = Gtk::make_managed<Gtk::Entry>();
   smlent->set_margin(5);
+  smlent->set_width_chars(50);
   itpv = std::find_if(pathv.begin(), pathv.end(), [](auto &el) {
     return std::get<0>(el) == 5;
   });
@@ -497,7 +542,7 @@ MainWindow::createWindow()
     {
       smlent->set_text(Glib::ustring(std::get<1>(*itpv)));
     }
-  grid->attach(*smlent, 0, 17, 3, 1);
+  extra_grid->attach(*smlent, 0, 7, 1, 1);
 
   openb = Gtk::make_managed<Gtk::Button>();
   openb->set_margin(5);
@@ -506,7 +551,7 @@ MainWindow::createWindow()
   openb->set_name("open_button");
   openb->signal_clicked().connect(
       sigc::bind(sigc::mem_fun(*this, &MainWindow::openDialog), smlent));
-  grid->attach(*openb, 3, 17, 1, 1);
+  extra_grid->attach(*openb, 1, 7, 1, 1);
 
   clearbut = Gtk::make_managed<Gtk::Button>();
   clearbut->set_margin(5);
@@ -516,17 +561,28 @@ MainWindow::createWindow()
   clearbut->signal_clicked().connect([this] {
     smlent->set_text("");
   });
-  grid->attach(*clearbut, 4, 17, 1, 1);
+  extra_grid->attach(*clearbut, 2, 7, 1, 1);
 
-  Gtk::Label *scale_lab = Gtk::make_managed<Gtk::Label>();
-  scale_lab->set_margin(5);
-  scale_lab->set_halign(Gtk::Align::START);
-  scale_lab->set_text(gettext("Diagram scale factor:"));
-  grid->attach(*scale_lab, 0, 18, 2, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_margin(5);
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_use_markup(true);
+  lab->set_markup(Glib::ustring("<b>") + gettext("Scale") + "</b>");
+  v_box->append(*lab);
+
+  h_box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+  v_box->append(*h_box);
+
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_margin(5);
+  lab->set_halign(Gtk::Align::END);
+  lab->set_text(gettext("Diagram scale factor:"));
+  h_box->append(*lab);
 
   scale_ent = Gtk::make_managed<Gtk::Entry>();
   scale_ent->set_margin(5);
-  scale_ent->set_halign(Gtk::Align::FILL);
+  scale_ent->set_halign(Gtk::Align::START);
+  scale_ent->set_width_chars(10);
   itpv = std::find_if(pathv.begin(), pathv.end(),
                       [](std::tuple<uint8_t, std::string> &el) {
                         return std::get<0>(el) == 4;
@@ -546,8 +602,18 @@ MainWindow::createWindow()
     {
       scale_ent->set_text("0.00000001");
     }
+  h_box->append(*scale_ent);
 
-  grid->attach(*scale_ent, 0, 19, 1, 1);
+  lab = Gtk::make_managed<Gtk::Label>();
+  lab->set_margin(5);
+  lab->set_halign(Gtk::Align::CENTER);
+  lab->set_use_markup(true);
+  lab->set_markup(Glib::ustring("<b>") + gettext("Operations") + "</b>");
+  v_box->append(*lab);
+
+  h_box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+  h_box->set_halign(Gtk::Align::CENTER);
+  v_box->append(*h_box);
 
   Gtk::Button *calc = Gtk::make_managed<Gtk::Button>();
   calc->set_halign(Gtk::Align::CENTER);
@@ -555,7 +621,7 @@ MainWindow::createWindow()
   calc->set_label(gettext("Calculate coordinates"));
   calc->set_name("button");
   calc->signal_clicked().connect(std::bind(&MainWindow::calcCoord, this));
-  grid->attach(*calc, 0, 20, 2, 1);
+  h_box->append(*calc);
 
   Gtk::Button *orb = Gtk::make_managed<Gtk::Button>();
   orb->set_halign(Gtk::Align::CENTER);
@@ -563,7 +629,7 @@ MainWindow::createWindow()
   orb->set_label(gettext("Orbits"));
   orb->set_name("button");
   orb->signal_clicked().connect(std::bind(&MainWindow::orbitsGraph, this));
-  grid->attach(*orb, 2, 20, 1, 1);
+  h_box->append(*orb);
 
   Gtk::Button *about = Gtk::make_managed<Gtk::Button>();
   about->set_halign(Gtk::Align::CENTER);
@@ -572,7 +638,7 @@ MainWindow::createWindow()
   about->set_name("button");
   about->signal_clicked().connect(
       sigc::mem_fun(*this, &MainWindow::aboutProg));
-  grid->attach(*about, 5, 20, 1, 1);
+  h_box->append(*about);
 
   this->signal_close_request().connect(std::bind(&MainWindow::closeFunc, this),
                                        false);
@@ -1261,22 +1327,28 @@ MainWindow::calcCoord()
     }
   Coordinates *calc = new Coordinates(
       naifid, JDcalc, static_cast<int>(timecomb->get_selected()), coordtype,
-      xyz, theory, unit, stepnum, stepnumbernum, pathstr, tttdbstr, smlstr,
-      &orbits_cancel);
+      xyz, theory, unit, stepnum, stepnumbernum, pathstr, tttdbstr, smlstr);
   std::vector<CoordKeeper> *result = new std::vector<CoordKeeper>;
   Glib::Dispatcher *result_win_disp = new Glib::Dispatcher;
   result_win_disp->connect([result, this, result_win_disp, info_win] {
     std::unique_ptr<Glib::Dispatcher> disp(result_win_disp);
     info_win->close();
+    omp_set_dynamic(false);
     resultPresenting(result);
   });
 
-  std::thread coordthr([calc, result_win_disp, result] {
-    *result = calc->calculationsXYZ();
-    delete calc;
-    result_win_disp->emit();
-  });
-  coordthr.detach();
+#pragma omp masked
+  {
+    omp_set_dynamic(true);
+    omp_event_handle_t event;
+#pragma omp task detach(event)
+    {
+      *result = calc->calculationsXYZ();
+      delete calc;
+      result_win_disp->emit();
+      omp_fulfill_event(event);
+    }
+  }
 }
 
 void
@@ -1381,9 +1453,9 @@ MainWindow::errDialog(const int &variant)
 }
 
 Gtk::Window *
-MainWindow::resultPulseWin(const int &variant, Gtk::ProgressBar *bar)
+MainWindow::resultPulseWin(const int &variant, Gtk::ProgressBar *bar,
+                           OrbitsDiagram *od)
 {
-  orbits_cancel.store(0);
   Gtk::Window *window = new Gtk::Window;
   window->set_application(this->get_application());
   window->set_name("mainWindow");
@@ -1427,8 +1499,11 @@ MainWindow::resultPulseWin(const int &variant, Gtk::ProgressBar *bar)
         cancel->set_halign(Gtk::Align::CENTER);
         cancel->set_margin(5);
         cancel->set_label(gettext("Cancel"));
-        cancel->signal_clicked().connect([this, cancel, calclab, bar] {
-          this->orbits_cancel.store(1);
+        cancel->signal_clicked().connect([this, cancel, calclab, bar, od] {
+          if(od)
+            {
+              od->stopAll();
+            }
           cancel->set_visible(false);
           bar->set_visible(false);
           calclab->set_text(gettext("Canceling..."));
@@ -1772,21 +1847,13 @@ MainWindow::orbitsGraph()
     {
       Gtk::ProgressBar *bar = Gtk::make_managed<Gtk::ProgressBar>();
       bar->set_fraction(0.0);
-      OrbitsDiagram *od
-          = new OrbitsDiagram(this, pathstr, tttdbstr, smlstr, JDcalc,
-                              static_cast<int>(timecomb->get_selected()),
-                              static_cast<int>(coordcomb->get_selected()),
-                              static_cast<int>(equincomb->get_selected()),
-                              plot_fact, &orbits_cancel);
-      if(orbits_cancel.load() != 0)
-        {
-          delete od;
-          errDialog(11);
-          orbits_cancel.store(0);
-          return void();
-        }
+      OrbitsDiagram *od = new OrbitsDiagram(
+          this, pathstr, tttdbstr, smlstr, JDcalc,
+          static_cast<int>(timecomb->get_selected()),
+          static_cast<int>(coordcomb->get_selected()),
+          static_cast<int>(equincomb->get_selected()), plot_fact);
 
-      Gtk::Window *win = resultPulseWin(1, bar);
+      Gtk::Window *win = resultPulseWin(1, bar, od);
       double sz = static_cast<double>(od->calculateSize());
       std::shared_ptr<Glib::Dispatcher> pulse_disp
           = std::make_shared<Glib::Dispatcher>();
@@ -1794,20 +1861,26 @@ MainWindow::orbitsGraph()
           = std::make_shared<Glib::Dispatcher>();
       std::shared_ptr<Glib::Dispatcher> canceled_disp
           = std::make_shared<Glib::Dispatcher>();
-      std::shared_ptr<std::mutex> pulsemtx = std::make_shared<std::mutex>();
+
+      omp_lock_t *omp_mtx = new omp_lock_t;
+      omp_init_lock(omp_mtx);
+      std::shared_ptr<omp_lock_t> pulsemtx(omp_mtx, [](omp_lock_t *omp_mtx) {
+        omp_destroy_lock(omp_mtx);
+        delete omp_mtx;
+      });
       std::shared_ptr<double> frac = std::make_shared<double>(0.0);
       pulse_disp->connect([bar, frac] {
         bar->set_fraction(*frac);
       });
 
       od->pulse_signal = [pulse_disp, frac, sz, pulsemtx, bar] {
-        pulsemtx->lock();
+        omp_set_lock(pulsemtx.get());
         *frac = *frac + 1.0 / sz;
         if(*frac - bar->get_fraction() > 0.01)
           {
             pulse_disp->emit();
           }
-        pulsemtx->unlock();
+        omp_unset_lock(pulsemtx.get());
       };
 
       od->diagram_close = [od] {
@@ -1832,10 +1905,15 @@ MainWindow::orbitsGraph()
         canceled_disp->emit();
       };
 
-      std::thread thr([od] {
-        od->calculateOrbits();
-      });
-      thr.detach();
+#pragma omp masked
+      {
+        omp_event_handle_t event;
+#pragma omp task detach(event)
+        {
+          od->calculateOrbits();
+          omp_fulfill_event(event);
+        }
+      }
     }
   else
     {

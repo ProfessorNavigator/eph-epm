@@ -16,7 +16,6 @@
  */
 
 #include <AuxFunc.h>
-#include <Coordinates.h>
 #include <OrbitsDiagram.h>
 #include <algorithm>
 #include <cmath>
@@ -27,19 +26,11 @@
 #include <mgl2/data.h>
 #include <mgl2/type.h>
 
-#ifndef USE_OPENMP
-#include <thread>
-#endif
-#ifdef USE_OPENMP
-#include <omp.h>
-#endif
-
 OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
                              const std::string &tttdbpath,
                              const std::string &smlpath, const double &JD,
                              const int &timesc, const int &coordtype,
-                             const int &theory, const double &plot_factor,
-                             std::atomic<int> *cancel)
+                             const int &theory, const double &plot_factor)
 {
   this->mw = mw;
   this->ephpath = ephpath;
@@ -47,8 +38,8 @@ OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
   this->smlpath = smlpath;
   this->JD = JD;
   daf = new DAFOperations();
-  gr = new mglGraph;  
-  this->cancel = cancel;
+  gr = new mglGraph;
+  omp_init_lock(&coord_ptr_v_mtx);
   Gdk::Rectangle req = screenRes();
   Height = req.get_height();
   Width = req.get_width();
@@ -61,13 +52,6 @@ OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
   f.open(ephp, std::ios_base::in | std::ios_base::binary);
   if(f.is_open())
     {
-      std::string ephtype = daf->fileVersion(&f);
-      std::string::size_type n;
-      n = ephtype.find("epm");
-      if(n != std::string::npos)
-        {
-          EPM = true;
-        }
       chv = daf->bodiesVector(&f);
       f.close();
     }
@@ -107,22 +91,28 @@ OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
             }
           else
             {
-              this->cancel->store(1);
+#pragma omp atomic write
+              cancel = true;
             }
         }
     }
   this->plot_factor = plot_factor;
+
+  omp_set_dynamic(true);
+  active_lvls = omp_get_max_active_levels();
+  omp_set_max_active_levels(omp_get_supported_active_levels());
 }
 
 OrbitsDiagram::~OrbitsDiagram()
 {
   delete daf;
-  grmtx.lock();
   gr->SetPlotFactor(0);
   gr->Zoom(0.0, 0.0, 1.0, 1.0);
-  grmtx.unlock();
   delete gr;
   delete dw;
+  omp_destroy_lock(&coord_ptr_v_mtx);
+  omp_set_dynamic(false);
+  omp_set_max_active_levels(active_lvls);
 }
 
 int
@@ -169,6 +159,19 @@ OrbitsDiagram::calculateSize()
       result = static_cast<int>(std::ceil(summa));
     }
   return result;
+}
+
+void
+OrbitsDiagram::stopAll()
+{
+#pragma omp atomic write
+  cancel = true;
+  omp_set_lock(&coord_ptr_v_mtx);
+  for(size_t i = 0; i < coord_ptr_v.size(); i++)
+    {
+      coord_ptr_v[i]->stopAll();
+    }
+  omp_unset_lock(&coord_ptr_v_mtx);
 }
 
 void
@@ -234,7 +237,7 @@ OrbitsDiagram::calculateOrbits()
 
       Coordinates *coord = new Coordinates(
           std::get<0>(*itpl), JDbeg, timesc, coordtype, 0, theory, 0,
-          period * scale_factor, stepnum, ephpath, tttdbpath, smlpath, cancel);
+          period * scale_factor, stepnum, ephpath, tttdbpath, smlpath);
       coord->pulse_signal = [this] {
         if(pulse_signal)
           {
@@ -242,7 +245,17 @@ OrbitsDiagram::calculateOrbits()
           }
       };
 
+      omp_set_lock(&coord_ptr_v_mtx);
+      coord_ptr_v.push_back(coord);
+      omp_unset_lock(&coord_ptr_v_mtx);
+
       resultsed = coord->calculationsXYZ();
+
+      omp_set_lock(&coord_ptr_v_mtx);
+      coord_ptr_v.erase(
+          std::remove(coord_ptr_v.begin(), coord_ptr_v.end(), coord),
+          coord_ptr_v.end());
+      omp_unset_lock(&coord_ptr_v_mtx);
       delete coord;
       double rng = 0.0;
       for(int i = 0; i < 3; i++)
@@ -333,7 +346,6 @@ OrbitsDiagram::calculateOrbits()
                 }
             }
         }
-      grmtx.lock();
       gr->SetSize(Width, Height);
       gr->SetRanges(-rng, rng, -rng, rng, -rng, rng);
       gr->Rotate(50, 60, 0);
@@ -341,55 +353,33 @@ OrbitsDiagram::calculateOrbits()
       gr->Axis("^x", "k");
       gr->SetPlotFactor(plot_factor);
       gr->SetQuality(3);
-      grmtx.unlock();
 
-#ifdef USE_OPENMP
-#pragma omp parallel for
-      for(size_t i = 0; i < bodyv.size(); i++)
+#pragma omp parallel
+#pragma omp for
+      for(auto it = bodyv.begin(); it != bodyv.end(); it++)
         {
-          if(cancel->load() > 0)
+          bool cncl;
+#pragma omp atomic read
+          cncl = cancel;
+          if(cncl)
             {
+#pragma omp cancel for
               continue;
             }
-          std::tuple<int, double> planettup = bodyv[i];
-          planetOrbCalc(planettup);
+          planetOrbCalc(*it);
         }
-#endif
-
-#ifndef USE_OPENMP
-      for(size_t i = 0; i < bodyv.size(); i++)
-        {
-          if(cancel->load() > 0)
-            {
-              break;
-            }
-          std::unique_lock<std::mutex> ulock(cyclemtx);
-          thrnum++;
-          thread_reg.wait(ulock, [this] {
-            return this->thrnum <= std::thread::hardware_concurrency();
-          });
-          std::tuple<int, double> planettup;
-          planettup = bodyv[i];
-          std::thread thr(
-              std::bind(&OrbitsDiagram::planetOrbCalc, this, planettup));
-          thr.detach();
-        }
-#endif
     }
 
-#ifndef USE_OPENMP
-  std::unique_lock<std::mutex> ulock(cyclemtx);
-  thread_reg.wait(ulock, [this] {
-    return this->thrnum == 0;
-  });
-#endif
-
-  if(cancel->load() > 0)
+  bool cncl;
+#pragma omp atomic read
+  cncl = cancel;
+  if(cncl)
     {
       if(canceled_signal)
         {
           canceled_signal();
-          cancel->store(0);
+#pragma omp atomic write
+          cancel = false;
         }
     }
   else
@@ -463,14 +453,24 @@ OrbitsDiagram::planetOrbCalc(const std::tuple<int, double> &planettup)
 
       Coordinates *coord = new Coordinates(
           body, JDbeg, timesc, coordtype, 0, theory, 0, period * scale_factor,
-          stepnum, ephpath, tttdbpath, smlpath, cancel);
+          stepnum, ephpath, tttdbpath, smlpath);
       coord->pulse_signal = [this] {
         if(this->pulse_signal)
           {
             this->pulse_signal();
           }
       };
+
+      omp_set_lock(&coord_ptr_v_mtx);
+      coord_ptr_v.push_back(coord);
+      omp_unset_lock(&coord_ptr_v_mtx);
+
       result = coord->calculationsXYZ();
+      omp_set_lock(&coord_ptr_v_mtx);
+      coord_ptr_v.erase(
+          std::remove(coord_ptr_v.begin(), coord_ptr_v.end(), coord),
+          coord_ptr_v.end());
+      omp_unset_lock(&coord_ptr_v_mtx);
       delete coord;
     }
   else
@@ -492,7 +492,6 @@ OrbitsDiagram::planetOrbCalc(const std::tuple<int, double> &planettup)
     }
   mglData x(X), y(Y), z(Z);
 
-  grmtx.lock();
   switch(body)
     {
     case 1:
@@ -598,14 +597,7 @@ OrbitsDiagram::planetOrbCalc(const std::tuple<int, double> &planettup)
     default:
       break;
     }
-  grmtx.unlock();
   bodyBuilding(body);
-
-#ifndef USE_OPENMP
-  std::lock_guard<std::mutex> lglock(cyclemtx);
-  thrnum--;
-  thread_reg.notify_one();
-#endif
 }
 
 void
@@ -619,9 +611,8 @@ OrbitsDiagram::diagramPlot()
 void
 OrbitsDiagram::bodyBuilding(const int &body)
 {
-  Coordinates *coord
-      = new Coordinates(body, JD, timesc, coordtype, 0, theory, 0, 1.0, 1,
-                        ephpath, tttdbpath, smlpath, cancel);
+  Coordinates *coord = new Coordinates(body, JD, timesc, coordtype, 0, theory,
+                                       0, 1.0, 1, ephpath, tttdbpath, smlpath);
   coord->pulse_signal = [this] {
     if(this->pulse_signal)
       {
@@ -629,12 +620,19 @@ OrbitsDiagram::bodyBuilding(const int &body)
       }
   };
 
+  omp_set_lock(&coord_ptr_v_mtx);
+  coord_ptr_v.push_back(coord);
+  omp_unset_lock(&coord_ptr_v_mtx);
+
   std::vector<CoordKeeper> result;
   result = coord->calculationsXYZ();
+
+  omp_set_lock(&coord_ptr_v_mtx);
+  coord_ptr_v.erase(std::remove(coord_ptr_v.begin(), coord_ptr_v.end(), coord),
+                    coord_ptr_v.end());
+  omp_unset_lock(&coord_ptr_v_mtx);
+
   delete coord;
-  std::vector<double> X;
-  std::vector<double> Y;
-  std::vector<double> Z;
   double Rv = 0.0;
   double Rh2 = 0.0;
   double Rh = 0.0;
@@ -848,14 +846,43 @@ OrbitsDiagram::bodyBuilding(const int &body)
   mpf_class vl1 = Rh / 149597870.7;
   mpf_class vl2 = Rh2 / 149597870.7;
   mpf_class vl3 = Rv / 149597870.7;
-  for(double phi = -M_PI / 2.0; phi <= lim1; phi += add)
+
+  std::vector<double> X;
+  std::vector<double> Y;
+  std::vector<double> Z;
+  omp_lock_t xyz_mtx;
+  omp_init_lock(&xyz_mtx);
+
+  std::vector<double> phi_v;
+  std::vector<double> tet_v;
+  {
+    double val = -M_PI / 2.0;
+    while(val <= lim1)
+      {
+        phi_v.push_back(val);
+        val += add;
+      }
+
+    val = 0.0;
+    while(val <= lim2)
+      {
+        tet_v.push_back(val);
+        val += add;
+      }
+  }
+
+#pragma omp parallel
+#pragma omp for
+  for(auto it_phi = phi_v.begin(); it_phi != phi_v.end(); it_phi++)
     {
-      for(double tet = 0.0; tet <= lim2; tet += add)
+#pragma omp parallel
+#pragma omp for
+      for(auto it_tet = tet_v.begin(); it_tet != tet_v.end(); it_tet++)
         {
           mpf_class xyz[3];
-          xyz[0] = vl1 * af.Cos(phi) * af.Cos(tet);
-          xyz[1] = vl2 * af.Cos(phi) * af.Sin(tet);
-          xyz[2] = vl3 * af.Sin(phi);
+          xyz[0] = vl1 * af.Cos(*it_phi) * af.Cos(*it_tet);
+          xyz[1] = vl2 * af.Cos(*it_phi) * af.Sin(*it_tet);
+          xyz[2] = vl3 * af.Sin(*it_phi);
           mpf_class result[3];
           af.rotateXYZ(xyz, 0.0, bet, alf, result);
           mpf_class Oldx(result[0]);
@@ -901,11 +928,16 @@ OrbitsDiagram::bodyBuilding(const int &body)
               break;
             }
 
+          omp_set_lock(&xyz_mtx);
           X.push_back(x + Newx.get_d());
           Y.push_back(y + Newy.get_d());
           Z.push_back(z + Newz.get_d());
+          omp_unset_lock(&xyz_mtx);
         }
     }
+
+  omp_destroy_lock(&xyz_mtx);
+
   mglData Xb(X), Yb(Y), Zb(Z);
   X.clear();
   Y.clear();
@@ -927,7 +959,6 @@ OrbitsDiagram::bodyBuilding(const int &body)
   double fontsize = plot_factor * 5 * 1000000;
   if(x != 0.0 || y != 0.0 || z != 0.0)
     {
-      grmtx.lock();
       switch(body)
         {
         case 10:
@@ -986,9 +1017,8 @@ OrbitsDiagram::bodyBuilding(const int &body)
             gr->Puts(p, af.utf8to(gettext("Saturn")).c_str(), "{xE0B978}",
                      fontsize * 3);
             gr->Plot(lX, lY, lZ, "{xE0B978}");
-            grmtx.unlock();
 
-            std::vector<double> Xrb1;
+            /*std::vector<double> Xrb1;
             std::vector<double> Yrb1;
             std::vector<double> Zrb1;
 
@@ -1331,13 +1361,487 @@ OrbitsDiagram::bodyBuilding(const int &body)
                 Yre4.push_back(y + Newy.get_d());
                 Zre4.push_back(z + Newz.get_d());
               }
+
             mglData xrb1(Xrb1), yrb1(Yrb1), zrb1(Zrb1);
             mglData xre1(Xre1), yre1(Yre1), zre1(Zre1);
             mglData xre2(Xre2), yre2(Yre2), zre2(Zre2);
             mglData xre3(Xre3), yre3(Yre3), zre3(Zre3);
             mglData xrb4(Xrb4), yrb4(Yrb4), zrb4(Zrb4);
-            mglData xre4(Xre4), yre4(Yre4), zre4(Zre4);
-            grmtx.lock();
+            mglData xre4(Xre4), yre4(Yre4), zre4(Zre4);*/
+            struct ring_val
+            {
+              double fi;
+
+              double Xrb1;
+              double Yrb1;
+              double Zrb1;
+
+              double Xre1;
+              double Yre1;
+              double Zre1;
+
+              double Xre2;
+              double Yre2;
+              double Zre2;
+
+              double Xre3;
+              double Yre3;
+              double Zre3;
+
+              double Xrb4;
+              double Yrb4;
+              double Zrb4;
+
+              double Xre4;
+              double Yre4;
+              double Zre4;
+            };
+
+            std::vector<ring_val> ring_vect;
+
+            {
+              double val = 0.0;
+              while(val < lim2)
+                {
+                  ring_val vl;
+                  vl.fi = val;
+                  ring_vect.push_back(vl);
+                  val += add;
+                }
+            }
+
+            mpf_class au = 149597870.7;
+            mpf_class mult1 = mpf_class(67000.0) / au;
+            mpf_class mult2 = mpf_class(74500.0) / au;
+            mpf_class mult3 = mpf_class(92000.0) / au;
+            mpf_class mult4 = mpf_class(117580.0) / au;
+            mpf_class mult5 = mpf_class(122170.0) / au;
+            mpf_class mult6 = mpf_class(136775.0) / au;
+#pragma omp parallel
+#pragma omp for
+            for(auto it_rv = ring_vect.begin(); it_rv != ring_vect.end();
+                it_rv++)
+              {
+                mpf_class xyz[3];
+                xyz[0] = mult1 * af.Cos(it_rv->fi);
+                xyz[1] = mult1 * af.Sin(it_rv->fi);
+                xyz[2] = 0.0;
+                mpf_class result[3];
+                af.rotateXYZ(xyz, 0.0, bet, alf, result);
+                mpf_class Oldx(result[0]);
+                mpf_class Oldy(result[1]);
+                mpf_class Oldz(result[2]);
+                mpf_class Newx, Newy, Newz;
+                switch(coordtype)
+                  {
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+
+                it_rv->Xrb1 = x + Newx.get_d();
+                it_rv->Yrb1 = y + Newy.get_d();
+                it_rv->Zrb1 = z + Newz.get_d();
+                xyz[0] = mult2 * af.Cos(it_rv->fi);
+                xyz[1] = mult2 * af.Sin(it_rv->fi);
+                xyz[2] = 0.0;
+                af.rotateXYZ(xyz, 0.0, bet, alf, result);
+                Oldx = result[0];
+                Oldy = result[1];
+                Oldz = result[2];
+
+                switch(coordtype)
+                  {
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+
+                it_rv->Xre1 = x + Newx.get_d();
+                it_rv->Yre1 = y + Newy.get_d();
+                it_rv->Zre1 = z + Newz.get_d();
+
+                xyz[0] = mult3 * af.Cos(it_rv->fi);
+                xyz[1] = mult3 * af.Sin(it_rv->fi);
+                xyz[2] = 0.0;
+                af.rotateXYZ(xyz, 0.0, bet, alf, result);
+                Oldx = result[0];
+                Oldy = result[1];
+                Oldz = result[2];
+
+                switch(coordtype)
+                  {
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+
+                it_rv->Xre2 = x + Newx.get_d();
+                it_rv->Yre2 = y + Newy.get_d();
+                it_rv->Zre2 = z + Newz.get_d();
+
+                xyz[0] = mult4 * af.Cos(it_rv->fi);
+                xyz[1] = mult4 * af.Sin(it_rv->fi);
+                xyz[2] = 0.0;
+                af.rotateXYZ(xyz, 0.0, bet, alf, result);
+                Oldx = result[0];
+                Oldy = result[1];
+                Oldz = result[2];
+
+                switch(coordtype)
+                  {
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+
+                it_rv->Xre3 = x + Newx.get_d();
+                it_rv->Yre3 = y + Newy.get_d();
+                it_rv->Zre3 = z + Newz.get_d();
+
+                xyz[0] = mult5 * af.Cos(it_rv->fi);
+                xyz[1] = mult5 * af.Sin(it_rv->fi);
+                xyz[2] = 0.0;
+                af.rotateXYZ(xyz, 0.0, bet, alf, result);
+                Oldx = result[0];
+                Oldy = result[1];
+                Oldz = result[2];
+
+                switch(coordtype)
+                  {
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
+                            break;
+                          }
+                        case 2:
+                          {
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+                it_rv->Xrb4 = x + Newx.get_d();
+                it_rv->Yrb4 = y + Newy.get_d();
+                it_rv->Zrb4 = z + Newz.get_d();
+
+                xyz[0] = mult6 * af.Cos(it_rv->fi);
+                xyz[1] = mult6 * af.Sin(it_rv->fi);
+                xyz[2] = 0.0;
+                af.rotateXYZ(xyz, 0.0, bet, alf, result);
+                Oldx = result[0];
+                Oldy = result[1];
+                Oldz = result[2];
+
+                switch(coordtype)
+                  {
+                  case 0:
+                    {
+                      switch(theory)
+                        {
+                        case 0:
+                          {
+                            Newx = Oldx;
+                            Newy = Oldy;
+                            Newz = Oldz;
+                            break;
+                          }
+                        case 1:
+                          {
+                            af.precession(Oldx, Oldy, Oldz, Newx, Newy, Newz,
+                                          JD);
+                            break;
+                          }
+                        case 3:
+                          {
+                            af.precessionNnut(Oldx, Oldy, Oldz, Newx, Newy,
+                                              Newz, JD);
+                            break;
+                          }
+                        default:
+                          break;
+                        }
+                      break;
+                    }
+                  case 1:
+                    {
+                      af.toEcliptic(Oldx, Oldy, Oldz, Newx, Newy, Newz, JD,
+                                    theory);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+                it_rv->Xre4 = x + Newx.get_d();
+                it_rv->Yre4 = y + Newy.get_d();
+                it_rv->Zre4 = z + Newz.get_d();
+              }
+
+            mglData xrb1, yrb1, zrb1;
+            mglData xre1, yre1, zre1;
+            mglData xre2, yre2, zre2;
+            mglData xre3, yre3, zre3;
+            mglData xrb4, yrb4, zrb4;
+            mglData xre4, yre4, zre4;
+
+#pragma omp parallel
+#pragma omp for
+            for(int i = 1; i <= 6; i++)
+              {
+                std::vector<double> vl_v1;
+                vl_v1.reserve(ring_vect.size());
+                std::vector<double> vl_v2;
+                vl_v2.reserve(ring_vect.size());
+                std::vector<double> vl_v3;
+                vl_v3.reserve(ring_vect.size());
+                switch(i)
+                  {
+                  case 1:
+                    {
+                      for(auto it_rv = ring_vect.begin();
+                          it_rv != ring_vect.end(); it_rv++)
+                        {
+                          vl_v1.push_back(it_rv->Xrb1);
+                          vl_v2.push_back(it_rv->Yrb1);
+                          vl_v3.push_back(it_rv->Zrb1);
+                        }
+                      xrb1.Set(vl_v1);
+                      yrb1.Set(vl_v2);
+                      zrb1.Set(vl_v3);
+                      break;
+                    }
+                  case 2:
+                    {
+                      for(auto it_rv = ring_vect.begin();
+                          it_rv != ring_vect.end(); it_rv++)
+                        {
+                          vl_v1.push_back(it_rv->Xre1);
+                          vl_v2.push_back(it_rv->Yre1);
+                          vl_v3.push_back(it_rv->Zre1);
+                        }
+                      xre1.Set(vl_v1);
+                      yre1.Set(vl_v2);
+                      zre1.Set(vl_v3);
+                      break;
+                    }
+                  case 3:
+                    {
+                      for(auto it_rv = ring_vect.begin();
+                          it_rv != ring_vect.end(); it_rv++)
+                        {
+                          vl_v1.push_back(it_rv->Xre2);
+                          vl_v2.push_back(it_rv->Yre2);
+                          vl_v3.push_back(it_rv->Zre2);
+                        }
+                      xre2.Set(vl_v1);
+                      yre2.Set(vl_v2);
+                      zre2.Set(vl_v3);
+                      break;
+                    }
+                  case 4:
+                    {
+                      for(auto it_rv = ring_vect.begin();
+                          it_rv != ring_vect.end(); it_rv++)
+                        {
+                          vl_v1.push_back(it_rv->Xre3);
+                          vl_v2.push_back(it_rv->Yre3);
+                          vl_v3.push_back(it_rv->Zre3);
+                        }
+                      xre3.Set(vl_v1);
+                      yre3.Set(vl_v2);
+                      zre3.Set(vl_v3);
+                      break;
+                    }
+                  case 5:
+                    {
+                      for(auto it_rv = ring_vect.begin();
+                          it_rv != ring_vect.end(); it_rv++)
+                        {
+                          vl_v1.push_back(it_rv->Xrb4);
+                          vl_v2.push_back(it_rv->Yrb4);
+                          vl_v3.push_back(it_rv->Zrb4);
+                        }
+                      xrb4.Set(vl_v1);
+                      yrb4.Set(vl_v2);
+                      zrb4.Set(vl_v3);
+                      break;
+                    }
+                  case 6:
+                    {
+                      for(auto it_rv = ring_vect.begin();
+                          it_rv != ring_vect.end(); it_rv++)
+                        {
+                          vl_v1.push_back(it_rv->Xre4);
+                          vl_v2.push_back(it_rv->Yre4);
+                          vl_v3.push_back(it_rv->Zre4);
+                        }
+                      xre4.Set(vl_v1);
+                      yre4.Set(vl_v2);
+                      zre4.Set(vl_v3);
+                      break;
+                    }
+                  default:
+                    break;
+                  }
+              }
+
             gr->Plot(xrb1, yrb1, zrb1, "{x564D48}");
             gr->Plot(xre1, yre1, zre1, "{x564D48}");
             gr->Region(xrb1, yrb1, zrb1, xre1, yre1, zre1, "{x564D48}");
@@ -1465,7 +1969,6 @@ OrbitsDiagram::bodyBuilding(const int &body)
         default:
           break;
         }
-      grmtx.unlock();
     }
 }
 

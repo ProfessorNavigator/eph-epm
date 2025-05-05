@@ -19,7 +19,6 @@
 #define COORDINATES_H
 
 #include <CoordKeeper.h>
-#include <atomic>
 #include <filesystem>
 #include <functional>
 #include <gmpxx.h>
@@ -37,10 +36,13 @@ public:
               const int &coordtype, const int &xyz, const int &theory,
               const int &unit, const double &step, const int &stepnum,
               const std::string &epmpath, const std::string &tttdbpath,
-              const std::string &smlbpath, std::atomic<int> *cancel);
+              const std::string &smlbpath);
 
   std::vector<CoordKeeper>
   calculationsXYZ();
+
+  void
+  stopAll();
 
   std::function<void()> pulse_signal;
 
@@ -56,8 +58,8 @@ private:
   std::filesystem::path epmpath;
   std::filesystem::path tttdbpath;
   std::filesystem::path smlbpath;
-  std::atomic<int> *cancel = nullptr;
   int timesc = 0;
+  bool cancel = false;
 };
 
 #endif // COORDINATES_H

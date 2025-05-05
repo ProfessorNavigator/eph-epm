@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <iostream>
 #include <libintl.h>
+#include <omp.h>
 #include <string>
 
 int
@@ -32,21 +33,14 @@ main(int argc, char *argv[])
   bind_textdomain_codeset("ephepm", "UTF-8");
   textdomain("ephepm");
 
-#ifdef __linux
-  {
-    int res = setenv("GTK_THEME", "Adwaita", 1);
-    if(res < 0)
-      {
-        std::cout << "EphemerisEPM main setenv error: " << std::strerror(errno)
-                  << std::endl;
-      }
-  }
-#endif
-
   std::string id = "ru.mail.bobilev_yury.EphEPM";
-  auto app = EPMApplication::create(id);
   int exitstat = 0;
-  exitstat = app->run(argc, argv);
+#pragma omp parallel
+#pragma omp masked
+  {
+    auto app = EPMApplication::create(id);
+    exitstat = app->run(argc, argv);
+  }
   if(exitstat != 0)
     {
       std::cerr << "EphEPM exit status is not 0: " << exitstat << std::endl;

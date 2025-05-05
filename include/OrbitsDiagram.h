@@ -19,19 +19,16 @@
 #define ORBITSDIAGRAM_H
 
 #include <CoordKeeper.h>
+#include <Coordinates.h>
 #include <DAFOperations.h>
 #include <DiagramWidget.h>
-#include <atomic>
 #include <functional>
 #include <gmpxx.h>
 #include <mgl2/mgl.h>
-#include <mutex>
+#include <omp.h>
 #include <string>
 #include <tuple>
 #include <vector>
-#ifndef USE_OPENMP
-#include <condition_variable>
-#endif
 
 class OrbitsDiagram
 {
@@ -39,13 +36,15 @@ public:
   OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
                 const std::string &tttdbpath, const std::string &smlpath,
                 const double &JD, const int &timesc, const int &coordtype,
-                const int &theory, const double &plot_factor,
-                std::atomic<int> *cancel);
+                const int &theory, const double &plot_factor);
 
   virtual ~OrbitsDiagram();
 
   int
   calculateSize();
+
+  void
+  stopAll();
 
   std::function<void()> pulse_signal;
 
@@ -84,23 +83,20 @@ private:
   double epb = 0.0;
   double epe = 0.0;
   mglGraph *gr = nullptr;
-  std::mutex grmtx;
-
-#ifndef USE_OPENMP
-  std::mutex cyclemtx;
-  std::condition_variable thread_reg;
-  unsigned int thrnum = 0;
-#endif
 
   double scale_factor = 0.001;
-  std::atomic<int> *cancel = nullptr;
+  bool cancel = false;
   int Width = 0;
   int Height = 0;
   double plot_factor = 0.000000001;
   int coordtype = 0;
   int theory = 0;
   std::vector<CoordKeeper> resultsed;
-  bool EPM = false;
+
+  std::vector<Coordinates *> coord_ptr_v;
+  omp_lock_t coord_ptr_v_mtx;
+
+  int active_lvls;
 };
 
 #endif // ORBITSDIAGRAM_H
