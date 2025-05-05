@@ -15,7 +15,10 @@ pkg_check_modules(ICU REQUIRED IMPORTED_TARGET icu-i18n)
 pkg_check_modules(ICUUC REQUIRED IMPORTED_TARGET icu-uc)
 pkg_check_modules(GMPXX REQUIRED IMPORTED_TARGET gmpxx)
 
-find_package(MathGL2)
+find_library(MGL mgl2)
+if(NOT MGL)
+  find_library(MGL mgl REQUIRED)
+endif()
 
 find_library(SOFA sofa_c REQUIRED)
 
@@ -63,19 +66,9 @@ target_link_libraries(ephepm
   PRIVATE ${ICUUC_LINK_LIBRARIES}
   PRIVATE ${GMPXX_LINK_LIBRARIES}
   PRIVATE ${SOFA}
+  PRIVATE ${MGL}
   PRIVATE ${OpenMP_CXX_LIBRARIES}
 )
-
-if(MathGL2_FOUND)
-  message(NOTICE "-- MathGL2 package found")
-  target_link_libraries(ephepm PRIVATE mgl)
-else()
-  message(NOTICE "-- MathGL2 package not found")
-  find_library(MGL mgl2)
-  if(NOT MGL)
-    find_library(MGL mgl REQUIRED)
-  endif()
-endif()
 
 include(GNUInstallDirs)
 
