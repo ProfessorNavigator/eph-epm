@@ -19,7 +19,7 @@
 int
 main()
 {
-  int lvls = omp_get_max_active_levels();
+  int lvls = omp_get_supported_active_levels();
   std::cout << "OpenMP supported levels: " << lvls << std::endl;
   return 0;
 }
