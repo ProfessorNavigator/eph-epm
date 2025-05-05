@@ -30,6 +30,12 @@ else()
   if(NOT OMP_TEST)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEPH_OPENMP_OLD")
   endif()
+  try_compile(OMP_TASK_TEST "${CMAKE_BINARY_DIR}/omp_task_test" "${PROJECT_SOURCE_DIR}/omp_task_test" OmpTaskTest)
+  if(OMP_TASK_TEST)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEPH_OMP_TASK")
+  else()
+    find_package(Threads QUIET)
+  endif()
 endif()
 
 add_executable(ephepm)
@@ -74,6 +80,10 @@ target_link_libraries(ephepm
   PRIVATE ${MGL}
   PRIVATE ${OpenMP_CXX_LIBRARIES}
 )
+
+if(Threads_FOUND)
+  target_link_libraries(ephepm PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+endif()
 
 include(GNUInstallDirs)
 

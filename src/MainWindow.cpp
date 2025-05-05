@@ -42,6 +42,9 @@
 #ifdef EPH_GTK_OLD
 #include <gtkmm-4.0/gtkmm/filechooserdialog.h>
 #endif
+#ifndef EPH_OMP_TASK
+#include <thread>
+#endif
 
 MainWindow::MainWindow()
 {
@@ -1337,6 +1340,7 @@ MainWindow::calcCoord()
     resultPresenting(result);
   });
 
+#ifdef EPH_OMP_TASK
 #pragma omp masked
   {
     omp_set_dynamic(true);
@@ -1349,6 +1353,14 @@ MainWindow::calcCoord()
       omp_fulfill_event(event);
     }
   }
+#else
+  std::thread thr([result, calc, result_win_disp] {
+    *result = calc->calculationsXYZ();
+    delete calc;
+    result_win_disp->emit();
+  });
+  thr.detach();
+#endif
 }
 
 void
@@ -1904,7 +1916,7 @@ MainWindow::orbitsGraph()
       od->canceled_signal = [canceled_disp] {
         canceled_disp->emit();
       };
-
+#ifdef EPH_OMP_TASK
 #pragma omp masked
       {
         omp_event_handle_t event;
@@ -1914,6 +1926,10 @@ MainWindow::orbitsGraph()
           omp_fulfill_event(event);
         }
       }
+#else
+      std::thread thr(std::bind(&OrbitsDiagram::calculateOrbits, od));
+      thr.detach();
+#endif
     }
   else
     {
