@@ -10,7 +10,8 @@ EphEPM использует эфемериды [EPM](https://iaaras.ru/dept/ephe
 `git clone https://github.com/ProfessorNavigator/eph-epm.git`\
 `cd eph-epm`\
 `cmake -DCMAKE_BUILD_TYPE=Release -B _build`\
-`make -C _build install`
+`cmake --build _build`\
+`cmake --install _build`
 
 Вам могут потребоваться права суперпользователя для выполнения установки.
 
@@ -22,10 +23,11 @@ EphEPM использует эфемериды [EPM](https://iaaras.ru/dept/ephe
 
 `mkdir /c/EphEPM`\
 `cd /c/EphEPM`\
-`git clone https://gitflic.ru/project/professornavigator/eph-epm.git`\
+`git clone https://github.com/ProfessorNavigator/eph-epm.git`\
 `cd eph-epm`\
 `cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/ucrt64 -DCMAKE_CXX_FLAGS="-mwindows" -G"MinGW Makefiles" -B _build`\
-`mingw32-make -C _build install`
+`cmake --build _build`\
+`cmake --install _build`
 
 Если процесс установки завершился корректно, то в папке `msys_directory/<префикс>/bin` появится исполняемый файл ephepm.exe. Иконка для создания ярлыка на рабочем столе может быть найдена в `msys_folder/<префикс>/share/icons/hicolor/256x256/apps/ephepm.ico`.
 
@@ -35,9 +37,9 @@ EphEPM использует эфемериды [EPM](https://iaaras.ru/dept/ephe
 
 Для компиляции EphEPM используется сборочная система cmake. Кроме того вам также может потребоваться установить make или ninja.
 
-Кроме того вам потребуются: [gtkmm-4.0](http://www.gtkmm.org/), [icu](https://icu.unicode.org/) (версия >= 69), [mathgl](http://mathgl.sourceforge.net/), [SOFA](https://iausofa.org/) (линкуется в большинстве случаев статически, поэтому для работы скорее всего не потребуется) и [gmp](https://gmplib.org/) (вам нужна библиотека gmpxx). Все библиотеки должны иметь заголовочные файлы (для компиляции, в работе программы не требуются), поэтому если вы например используете Debian Linux, вам потребуются ...-dev версии пакетов.
+Также вам потребуются: [gtkmm-4.0](http://www.gtkmm.org/), [icu](https://icu.unicode.org/) (версия >= 69), [mathgl](http://mathgl.sourceforge.net/), [SOFA](https://iausofa.org/) (линкуется в большинстве случаев статически, поэтому для работы скорее всего не потребуется) и [gmp](https://gmplib.org/) (вам нужна библиотека gmpxx). Все библиотеки должны иметь заголовочные файлы (для компиляции, в работе программы не требуются), поэтому если вы например используете Debian Linux, вам потребуются ...-dev версии пакетов.
 
-Если вы намереваетесь собрать EphEPM с поддержкой openmp, то вам также может потребоваться установить соответствующую библиотеку для используемого компилятора.
+Начиная с версии 2.3 компилятор обязательно должен иметь поддержку OpenMP.
 
 ## Использование
 
