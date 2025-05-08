@@ -71,7 +71,7 @@ Coordinates::calculationsXYZ()
 
   if(!ephfile.is_open())
     {
-      std::cerr << "Cannot open ephemeris file" << std::endl;
+      std::cout << "Cannot open ephemeris file" << std::endl;
       if(tttdbfile.is_open())
         {
           tttdbfile.close();
@@ -195,7 +195,7 @@ Coordinates::calculationsXYZ()
 
           if(tdbtype < 0)
             {
-              std::cerr << "Coordinates::calculationsXYZ: cannot find TDB, "
+              std::cout << "Coordinates::calculationsXYZ: cannot find TDB, "
                            "coordinates have not been calculated!"
                         << std::endl;
 #pragma omp atomic write
@@ -316,7 +316,7 @@ Coordinates::calculationsXYZ()
                 }
               if(bodytype < 0)
                 {
-                  std::cerr << "Coordinates::calculationsXYZ: cannot find "
+                  std::cout << "Coordinates::calculationsXYZ: cannot find "
                             << body
                             << ", coordinates have not been calculated!"
                             << std::endl;
@@ -562,6 +562,15 @@ Coordinates::calculationsXYZ()
       omp_destroy_lock(&eph_mtx);
       omp_destroy_lock(&tdb_mtx);
       omp_destroy_lock(&sml_mtx);
+
+      bool cncl;
+#pragma omp atomic read
+      cncl = cancel;
+
+      if(cncl)
+        {
+          result.clear();
+        }
 
       if(ephfile.is_open())
         {

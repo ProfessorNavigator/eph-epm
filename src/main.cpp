@@ -43,7 +43,7 @@ main(int argc, char *argv[])
   }
   if(exitstat != 0)
     {
-      std::cerr << "EphEPM exit status is not 0: " << exitstat << std::endl;
+      std::cout << "EphEPM exit status is not 0: " << exitstat << std::endl;
     }
   return exitstat;
 }

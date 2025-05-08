@@ -32,7 +32,7 @@ DAFOperations::fileVersion(std::fstream *f)
   std::string result;
   if(!f->is_open())
     {
-      std::cerr << "Ephemeris file not opened!" << std::endl;
+      std::cout << "Ephemeris file not opened!" << std::endl;
       result = "ERROR";
       f->close();
     }
@@ -101,7 +101,7 @@ DAFOperations::epochCheckUTC(const int &day, const int &month, const int &year,
   f.open(filepath, std::ios_base::in | std::ios_base::binary);
   if(!f.is_open())
     {
-      std::cerr << "DAFOperations::epochCheckUTC: Ephemeris file not opened!"
+      std::cout << "DAFOperations::epochCheckUTC: Ephemeris file not opened!"
                 << std::endl;
       result = false;
     }
@@ -188,7 +188,7 @@ DAFOperations::epochCheckUTC(const double &JD, const int &timesc, double &epb,
   f.open(filepath, std::ios_base::in | std::ios_base::binary);
   if(!f.is_open())
     {
-      std::cerr << "DAFOperations::epochCheckUTC: Ephemeris file not opened!"
+      std::cout << "DAFOperations::epochCheckUTC: Ephemeris file not opened!"
                 << std::endl;
       result = false;
     }
@@ -455,7 +455,7 @@ DAFOperations::bodyVect(std::fstream *result, uint64_t &c_beg, uint64_t &c_end,
   int type = -1;
   if(!result->is_open())
     {
-      std::cerr << "DAFOperations::bodyVect: ephemeris file not opened!"
+      std::cout << "DAFOperations::bodyVect: ephemeris file not opened!"
                 << std::endl;
     }
   else
