@@ -76,6 +76,9 @@ public:
   Cos(const mpf_class &x);
 
   mpf_class
-  Sin(const mpf_class &x);  
+  Sin(const mpf_class &x);
+
+  std::string
+  utf8to(const std::string &line);
 };
 #endif // AUXFUNC_H
