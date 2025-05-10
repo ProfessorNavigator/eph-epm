@@ -36,6 +36,17 @@ main(int argc, char *argv[])
   std::string id = "ru.mail.bobilev_yury.EphEPM";
   int exitstat = 0;
   auto app = EPMApplication::create(id);
+  {
+    char *loc = std::setlocale(LC_CTYPE, "C.UTF-8");
+    if(loc)
+      {
+        std::cout << "EphEPM locale set to " << loc << std::endl;
+      }
+    else
+      {
+        std::cout << "Failed to set EphEPM locale" << std::endl;
+      }
+  }
 #pragma omp parallel
 #pragma omp masked
   {

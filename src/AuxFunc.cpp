@@ -17,14 +17,7 @@
 
 #include <AuxFunc.h>
 #include <cmath>
-#include <iostream>
 #include <sofa.h>
-#include <unicode/ucnv.h>
-#include <unicode/unistr.h>
-#include <unicode/urename.h>
-#include <unicode/utypes.h>
-#include <unicode/uversion.h>
-#include <vector>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -645,53 +638,6 @@ AuxFunc::Cos(const mpf_class &x)
       add = add * mul / (i * (i - 1));
       result += add;
     }
-  return result;
-}
-
-std::string
-AuxFunc::utf8to(const std::string &line)
-{
-  UErrorCode status = U_ZERO_ERROR;
-  icu::UnicodeString ustr;
-  UConverter *c = ucnv_open(NULL, &status);
-  if(!U_SUCCESS(status))
-    {
-      std::cout << u_errorName(status) << std::endl;
-    }
-  status = U_ZERO_ERROR;
-  std::vector<char> target2;
-  ustr.remove();
-  ustr = icu::UnicodeString::fromUTF8(line.c_str());
-  target2.resize(ustr.length());
-  char16_t data[ustr.length()];
-  for(int i = 0; i < ustr.length(); i++)
-    {
-      data[i] = ustr.charAt(i);
-    }
-  size_t cb = ucnv_fromUChars(c, target2.data(), ustr.length(), data,
-                              ustr.length(), &status);
-  if(!U_SUCCESS(status))
-    {
-      if(status == U_BUFFER_OVERFLOW_ERROR)
-        {
-          status = U_ZERO_ERROR;
-          target2.clear();
-          target2.resize(cb);
-          ucnv_fromUChars(c, target2.data(), cb, data, ustr.length(), &status);
-          if(!U_SUCCESS(status))
-            {
-              std::cout << u_errorName(status) << std::endl;
-            }
-        }
-      else
-        {
-          std::cout << u_errorName(status) << std::endl;
-        }
-    }
-
-  std::string result = std::string(target2.begin(), target2.end());
-  ucnv_close(c);
-
   return result;
 }
 

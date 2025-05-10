@@ -981,24 +981,21 @@ OrbitsDiagram::bodyBuilding(const int &body)
         case 1:
           {
             gr->Surf(Xb, Yb, Zb, "{x999C99}");
-            gr->Puts(p, af.utf8to(gettext("Mercury")).c_str(), "{x999C99}",
-                     fontsize);
+            gr->Puts(p, gettext("Mercury"), "{x999C99}", fontsize);
             gr->Plot(lX, lY, lZ, "{x999C99}");
             break;
           }
         case 2:
           {
             gr->Surf(Xb, Yb, Zb, "{xD49B3A}");
-            gr->Puts(p, af.utf8to(gettext("Venus")).c_str(), "{xD49B3A}",
-                     fontsize);
+            gr->Puts(p, gettext("Venus"), "{xD49B3A}", fontsize);
             gr->Plot(lX, lY, lZ, "{xD49B3A}");
             break;
           }
         case 3:
           {
             gr->Surf(Xb, Yb, Zb, "{x5C98C0}");
-            gr->Puts(p, af.utf8to(gettext("Earth")).c_str(), "{x5C98C0}",
-                     fontsize);
+            gr->Puts(p, gettext("Earth"), "{x5C98C0}", fontsize);
             gr->Plot(lX, lY, lZ, "{x5C98C0}");
             break;
           }
@@ -1010,24 +1007,21 @@ OrbitsDiagram::bodyBuilding(const int &body)
         case 4:
           {
             gr->Surf(Xb, Yb, Zb, "{xA07C65}");
-            gr->Puts(p, af.utf8to(gettext("Mars")).c_str(), "{xA07C65}",
-                     fontsize);
+            gr->Puts(p, gettext("Mars"), "{xA07C65}", fontsize);
             gr->Plot(lX, lY, lZ, "{xA07C65}");
             break;
           }
         case 5:
           {
             gr->Surf(Xb, Yb, Zb, "{xDAD3C3}");
-            gr->Puts(p, af.utf8to(gettext("Jupiter")).c_str(), "{xDAD3C3}",
-                     fontsize * 3);
+            gr->Puts(p, gettext("Jupiter"), "{xDAD3C3}", fontsize * 3);
             gr->Plot(lX, lY, lZ, "{xDAD3C3}");
             break;
           }
         case 6:
           {
             gr->Surf(Xb, Yb, Zb, "{xE0B978}");
-            gr->Puts(p, af.utf8to(gettext("Saturn")).c_str(), "{xE0B978}",
-                     fontsize * 3);
+            gr->Puts(p, gettext("Saturn"), "{xE0B978}", fontsize * 3);
             gr->Plot(lX, lY, lZ, "{xE0B978}");
 
             struct ring_val
@@ -1519,112 +1513,98 @@ OrbitsDiagram::bodyBuilding(const int &body)
         case 7:
           {
             gr->Surf(Xb, Yb, Zb, "{xC9EFF1}");
-            gr->Puts(p, af.utf8to(gettext("Uranus")).c_str(), "{xC9EFF1}",
-                     fontsize * 25);
+            gr->Puts(p, gettext("Uranus"), "{xC9EFF1}", fontsize * 25);
             gr->Plot(lX, lY, lZ, "{xC9EFF1}");
             break;
           }
         case 8:
           {
             gr->Surf(Xb, Yb, Zb, "{x5389FD}");
-            gr->Puts(p, af.utf8to(gettext("Neptune")).c_str(), "{x5389FD}",
-                     fontsize * 25);
+            gr->Puts(p, gettext("Neptune"), "{x5389FD}", fontsize * 25);
             gr->Plot(lX, lY, lZ, "{x5389FD}");
             break;
           }
         case 9:
           {
             gr->Surf(Xb, Yb, Zb, "{xD7B699}");
-            gr->Puts(p, af.utf8to(gettext("Pluto")).c_str(), "{xD7B699}",
-                     fontsize * 25);
+            gr->Puts(p, gettext("Pluto"), "{xD7B699}", fontsize * 25);
             gr->Plot(lX, lY, lZ, "{xD7B699}");
             break;
           }
         case 2000001:
           {
             gr->Surf(Xb, Yb, Zb, "{xABABAB}");
-            gr->Puts(p, af.utf8to(gettext("Ceres")).c_str(), "{xABABAB}",
-                     fontsize * 3);
+            gr->Puts(p, gettext("Ceres"), "{xABABAB}", fontsize * 3);
             gr->Plot(lX, lY, lZ, "{xABABAB}");
             break;
           }
         case 2000002:
           {
             gr->Surf(Xb, Yb, Zb, "{xD7D7D7}");
-            gr->Puts(p, af.utf8to(gettext("Pallas")).c_str(), "{xD7D7D7}",
-                     fontsize * 3);
+            gr->Puts(p, gettext("Pallas"), "{xD7D7D7}", fontsize * 3);
             gr->Plot(lX, lY, lZ, "{xD7D7D7}");
             break;
           }
         case 2000004:
           {
             gr->Surf(Xb, Yb, Zb, "{x9C9686}");
-            gr->Puts(p, af.utf8to(gettext("Vesta")).c_str(), "{x9C9686}",
-                     fontsize * 3);
+            gr->Puts(p, gettext("Vesta"), "{x9C9686}", fontsize * 3);
             gr->Plot(lX, lY, lZ, "{x9C9686}");
             break;
           }
         case 2136199:
           {
             gr->Surf(Xb, Yb, Zb, "{xD1C1A9}");
-            gr->Puts(p, af.utf8to(gettext("Erida")).c_str(), "{xD1C1A9}",
-                     fontsize * 50);
+            gr->Puts(p, gettext("Erida"), "{xD1C1A9}", fontsize * 50);
             gr->Plot(lX, lY, lZ, "{xD1C1A9}");
             break;
           }
         case 2136108:
           {
             gr->Surf(Xb, Yb, Zb, "{x7D675D}");
-            gr->Puts(p, af.utf8to(gettext("Haumea")).c_str(), "{x7D675D}",
-                     fontsize * 100);
+            gr->Puts(p, gettext("Haumea"), "{x7D675D}", fontsize * 100);
             gr->Plot(lX, lY, lZ, "{x7D675D}");
             break;
           }
         case 2136472:
           {
             gr->Surf(Xb, Yb, Zb, "{xB97B5A}");
-            gr->Puts(p, af.utf8to(gettext("Makemake")).c_str(), "{xB97B5A}",
-                     fontsize * 50);
+            gr->Puts(p, gettext("Makemake"), "{xB97B5A}", fontsize * 50);
             gr->Plot(lX, lY, lZ, "{xB97B5A}");
             break;
           }
         case 2090377:
           {
             gr->Surf(Xb, Yb, Zb, "{xE89579}");
-            gr->Puts(p, af.utf8to(gettext("Sedna")).c_str(), "{xE89579}",
-                     fontsize * 50);
+            gr->Puts(p, gettext("Sedna"), "{xE89579}", fontsize * 50);
             gr->Plot(lX, lY, lZ, "{xE89579}");
             break;
           }
         case 2000324:
           {
             gr->Surf(Xb, Yb, Zb, "{xC8C8C8}");
-            gr->Puts(p, af.utf8to(gettext("Bamberga")).c_str(), "{xC8C8C8}",
-                     fontsize * 3);
+            gr->Puts(p, gettext("Bamberga"), "{xC8C8C8}", fontsize * 3);
             gr->Plot(lX, lY, lZ, "{xC8C8C8}");
             break;
           }
         case 2000007:
           {
             gr->Surf(Xb, Yb, Zb, "{xC6C6C6}");
-            gr->Puts(p, af.utf8to(gettext("Iris")).c_str(), "{xC6C6C6}",
-                     fontsize * 3);
+            gr->Puts(p, gettext("Iris"), "{xC6C6C6}", fontsize * 3);
             gr->Plot(lX, lY, lZ, "{xC6C6C6}");
             break;
           }
         case 2225088:
           {
             gr->Surf(Xb, Yb, Zb, "{xF21515}");
-            gr->Puts(p, af.utf8to(gettext("Gonggong")).c_str(), "{xF21515}",
-                     fontsize * 50);
+            gr->Puts(p, gettext("Gonggong"), "{xF21515}", fontsize * 50);
             gr->Plot(lX, lY, lZ, "{xF21515}");
             break;
           }
         case 2050000:
           {
             gr->Surf(Xb, Yb, Zb, "{x41C95A}");
-            gr->Puts(p, af.utf8to(gettext("Quaoar")).c_str(), "{x41C95A}",
-                     fontsize * 50);
+            gr->Puts(p, gettext("Quaoar"), "{x41C95A}", fontsize * 50);
             gr->Plot(lX, lY, lZ, "{x41C95A}");
             break;
           }

@@ -20,7 +20,6 @@
 
 #include <filesystem>
 #include <gmpxx.h>
-#include <string>
 
 #ifdef _WIN32
 #define _USE_MATH_DEFINES
@@ -76,9 +75,6 @@ public:
   Cos(const mpf_class &x);
 
   mpf_class
-  Sin(const mpf_class &x);
-
-  std::string
-  utf8to(const std::string &line);
+  Sin(const mpf_class &x);  
 };
 #endif // AUXFUNC_H
