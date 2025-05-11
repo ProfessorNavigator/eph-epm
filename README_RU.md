@@ -25,7 +25,7 @@ EphEPM использует эфемериды [EPM](https://iaaras.ru/dept/ephe
 `cd /c/EphEPM`\
 `git clone https://github.com/ProfessorNavigator/eph-epm.git`\
 `cd eph-epm`\
-`cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/ucrt64 -DCMAKE_CXX_FLAGS="-mwindows" -G"MinGW Makefiles" -B _build`\
+`cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/ucrt64 -DCMAKE_CXX_FLAGS="-mwindows" -B _build`\
 `cmake --build _build`\
 `cmake --install _build`
 
@@ -37,7 +37,7 @@ EphEPM использует эфемериды [EPM](https://iaaras.ru/dept/ephe
 
 Для компиляции EphEPM используется сборочная система cmake. Кроме того вам также может потребоваться установить make или ninja.
 
-Также вам потребуются: [gtkmm-4.0](http://www.gtkmm.org/), [icu](https://icu.unicode.org/) (версия >= 69), [mathgl](http://mathgl.sourceforge.net/), [SOFA](https://iausofa.org/) (линкуется в большинстве случаев статически, поэтому для работы скорее всего не потребуется) и [gmp](https://gmplib.org/) (вам нужна библиотека gmpxx). Все библиотеки должны иметь заголовочные файлы (для компиляции, в работе программы не требуются), поэтому если вы например используете Debian Linux, вам потребуются ...-dev версии пакетов.
+Также вам потребуются: [gtkmm-4.0](http://www.gtkmm.org/), [mathgl](http://mathgl.sourceforge.net/), [SOFA](https://iausofa.org/) (линкуется в большинстве случаев статически, поэтому для работы скорее всего не потребуется) и [gmp](https://gmplib.org/) (вам нужна библиотека gmpxx). Все библиотеки должны иметь заголовочные файлы (для компиляции, в работе программы не требуются), поэтому если вы например используете Debian Linux, вам потребуются ...-dev версии пакетов.
 
 Начиная с версии 2.3 компилятор обязательно должен иметь поддержку OpenMP.
 

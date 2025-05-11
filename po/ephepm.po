@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EphEPM\n"
-"POT-Creation-Date: 2025-05-05 19:07+0400\n"
-"PO-Revision-Date: 2025-05-05 19:07+0400\n"
+"POT-Creation-Date: 2025-05-11 14:48+0400\n"
+"PO-Revision-Date: 2025-05-11 14:48+0400\n"
 "Last-Translator: Yury Bobylev <bobilev_yury@mail.ru>\n"
 "Language-Team: Юрий Бобылев <bobilev_yury@mail.ru>\n"
 "Language: ru\n"
@@ -16,330 +16,330 @@ msgstr ""
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: DiagramWidget.cpp:68 MainWindow.cpp:629
+#: DiagramWidget.cpp:76 MainWindow.cpp:632
 msgid "Orbits"
 msgstr "Орбиты"
 
-#: DiagramWidget.cpp:99
+#: DiagramWidget.cpp:107
 msgid "Increase"
 msgstr "Увеличить"
 
-#: DiagramWidget.cpp:106
+#: DiagramWidget.cpp:114
 msgid "Decrease"
 msgstr "Уменьшить"
 
-#: DiagramWidget.cpp:113
+#: DiagramWidget.cpp:121
 msgid "Move up"
 msgstr "Сдвинуть вверх"
 
-#: DiagramWidget.cpp:120
+#: DiagramWidget.cpp:128
 msgid "Move down"
 msgstr "Сдвинуть вниз"
 
-#: DiagramWidget.cpp:127
+#: DiagramWidget.cpp:135
 msgid "Move left"
 msgstr "Сдвинуть влево"
 
-#: DiagramWidget.cpp:134
+#: DiagramWidget.cpp:142
 msgid "Move right"
 msgstr "Сдвинуть вправо"
 
-#: DiagramWidget.cpp:148
+#: DiagramWidget.cpp:156
 msgid "Rotation angles in degrees relative to axis:"
 msgstr "Углы поворота в градусах относительно осей:"
 
-#: DiagramWidget.cpp:231
+#: DiagramWidget.cpp:239
 msgid "Rotate"
 msgstr "Повернуть"
 
-#: DiagramWidget.cpp:239
+#: DiagramWidget.cpp:247
 msgid "Recover"
 msgstr "Восстановить"
 
-#: DiagramWidget.cpp:249
+#: DiagramWidget.cpp:257
 msgid "Save as jpg"
 msgstr "Сохранить в jpg"
 
-#: DiagramWidget.cpp:258
+#: DiagramWidget.cpp:266
 msgid "Save as png"
 msgstr "Сохранить в png"
 
-#: DiagramWidget.cpp:267
+#: DiagramWidget.cpp:275
 msgid "Save as svg"
 msgstr "Сохранить в svg"
 
-#: DiagramWidget.cpp:276
+#: DiagramWidget.cpp:284
 msgid "Minimize"
 msgstr "Свернуть"
 
-#: DiagramWidget.cpp:286 MainWindow.cpp:1440 ResultWindow.cpp:170
+#: DiagramWidget.cpp:294 MainWindow.cpp:1452 ResultWindow.cpp:170
 msgid "Close"
 msgstr "Закрыть"
 
-#: DiagramWidget.cpp:441 DiagramWidget.cpp:515
+#: DiagramWidget.cpp:449 DiagramWidget.cpp:523
 msgid "Save diagram"
 msgstr "Сохранить график"
 
-#: DiagramWidget.cpp:523 MainWindow.cpp:1018 MainWindow.cpp:1501
+#: DiagramWidget.cpp:531 MainWindow.cpp:1021 MainWindow.cpp:1513
 #: ResultWindow.cpp:245
 msgid "Cancel"
 msgstr "Отмена"
 
-#: DiagramWidget.cpp:525 ResultWindow.cpp:162 ResultWindow.cpp:246
+#: DiagramWidget.cpp:533 ResultWindow.cpp:162 ResultWindow.cpp:246
 msgid "Save"
 msgstr "Сохранить"
 
-#: MainWindow.cpp:96
+#: MainWindow.cpp:99
 msgid "Date and time input"
 msgstr "Ввод даты и времени"
 
-#: MainWindow.cpp:108
+#: MainWindow.cpp:111
 msgid "Day"
 msgstr "День"
 
-#: MainWindow.cpp:123
+#: MainWindow.cpp:126
 msgid "Month"
 msgstr "Месяц"
 
-#: MainWindow.cpp:138
+#: MainWindow.cpp:141
 msgid "Year"
 msgstr "Год"
 
-#: MainWindow.cpp:153
+#: MainWindow.cpp:156
 msgid "Hours"
 msgstr "Часы"
 
-#: MainWindow.cpp:168
+#: MainWindow.cpp:171
 msgid "Minutes"
 msgstr "Минуты"
 
-#: MainWindow.cpp:183
+#: MainWindow.cpp:186
 msgid "Seconds"
 msgstr "Секунды"
 
-#: MainWindow.cpp:201
+#: MainWindow.cpp:204
 msgid "Time:"
 msgstr "Время:"
 
-#: MainWindow.cpp:218
+#: MainWindow.cpp:221
 msgid "Hour belt:"
 msgstr "Часовой пояс:"
 
-#: MainWindow.cpp:253
+#: MainWindow.cpp:256
 msgid "Parameters input"
 msgstr "Ввод параметров"
 
-#: MainWindow.cpp:260
+#: MainWindow.cpp:263
 msgid "Object:"
 msgstr "Объект:"
 
-#: MainWindow.cpp:295
+#: MainWindow.cpp:298
 msgid "Coordinates:"
 msgstr "Координаты:"
 
-#: MainWindow.cpp:301
+#: MainWindow.cpp:304
 msgid "Equatorial"
 msgstr "Экваториальные"
 
-#: MainWindow.cpp:302
+#: MainWindow.cpp:305
 msgid "Ecliptical"
 msgstr "Эклиптические"
 
-#: MainWindow.cpp:313
+#: MainWindow.cpp:316
 msgid "Coordinates/Speed:"
 msgstr "Координаты/Скорость:"
 
-#: MainWindow.cpp:330
+#: MainWindow.cpp:333
 msgid "Equator and equinox:"
 msgstr "Экватор и равноденствие:"
 
-#: MainWindow.cpp:336
+#: MainWindow.cpp:339
 msgid "Mean (J2000)"
 msgstr "Средние (J2000)"
 
-#: MainWindow.cpp:337
+#: MainWindow.cpp:340
 msgid "Mean of the date (IAU2000)"
 msgstr "Средние на дату (IAU2000)"
 
-#: MainWindow.cpp:338
+#: MainWindow.cpp:341
 msgid "True of the date (IAU2000)"
 msgstr "Истинные на дату (IAU2000)"
 
-#: MainWindow.cpp:350
+#: MainWindow.cpp:353
 msgid "Units of measurement:"
 msgstr "Единицы измерения:"
 
-#: MainWindow.cpp:356 MainWindow.cpp:677 MainWindow.cpp:703
+#: MainWindow.cpp:359 MainWindow.cpp:680 MainWindow.cpp:706
 msgid "Astronomical units"
 msgstr "Астрономические единицы"
 
-#: MainWindow.cpp:357 MainWindow.cpp:678 MainWindow.cpp:704
+#: MainWindow.cpp:360 MainWindow.cpp:681 MainWindow.cpp:707
 msgid "Kilometers"
 msgstr "Километры"
 
-#: MainWindow.cpp:358 MainWindow.cpp:679 MainWindow.cpp:705
+#: MainWindow.cpp:361 MainWindow.cpp:682 MainWindow.cpp:708
 msgid "Meters"
 msgstr "Метры"
 
-#: MainWindow.cpp:376
+#: MainWindow.cpp:379
 msgid "Step size (days):"
 msgstr "Шаг (в днях):"
 
-#: MainWindow.cpp:390
+#: MainWindow.cpp:393
 msgid "Number of steps:"
 msgstr "Количество шагов:"
 
-#: MainWindow.cpp:407
+#: MainWindow.cpp:410
 msgid "Ephemeris files"
 msgstr "Файлы эфемерид"
 
-#: MainWindow.cpp:418
+#: MainWindow.cpp:421
 msgid "Path to ephemerides file:"
 msgstr "Путь к файлу эфемерид:"
 
-#: MainWindow.cpp:439 MainWindow.cpp:476 MainWindow.cpp:513 MainWindow.cpp:550
-#: MainWindow.cpp:1019
+#: MainWindow.cpp:442 MainWindow.cpp:479 MainWindow.cpp:516 MainWindow.cpp:553
+#: MainWindow.cpp:1022
 msgid "Open"
 msgstr "Открыть"
 
-#: MainWindow.cpp:449 MainWindow.cpp:486 MainWindow.cpp:523 MainWindow.cpp:560
+#: MainWindow.cpp:452 MainWindow.cpp:489 MainWindow.cpp:526 MainWindow.cpp:563
 msgid "Clear"
 msgstr "Очистить"
 
-#: MainWindow.cpp:458
+#: MainWindow.cpp:461
 msgid "Path to TT-TDB file:"
 msgstr "Путь к файлу поправок TT-TDB:"
 
-#: MainWindow.cpp:495
+#: MainWindow.cpp:498
 msgid "Path to Moon libration file:"
 msgstr "Путь к файлу физической либрации Луны:"
 
-#: MainWindow.cpp:532
+#: MainWindow.cpp:535
 msgid "Path to small bodies file:"
 msgstr "Путь к файлу малых тел:"
 
-#: MainWindow.cpp:570
+#: MainWindow.cpp:573
 msgid "Scale"
 msgstr "Масштаб"
 
-#: MainWindow.cpp:579
+#: MainWindow.cpp:582
 msgid "Diagram scale factor:"
 msgstr "Масштаб графика:"
 
-#: MainWindow.cpp:611
+#: MainWindow.cpp:614
 msgid "Operations"
 msgstr "Операции"
 
-#: MainWindow.cpp:621
+#: MainWindow.cpp:624
 msgid "Calculate coordinates"
 msgstr "Рассчитать координаты"
 
-#: MainWindow.cpp:637
+#: MainWindow.cpp:640
 msgid "About"
 msgstr "Справка"
 
-#: MainWindow.cpp:659 MainWindow.cpp:735
+#: MainWindow.cpp:662 MainWindow.cpp:738
 msgid "rad"
 msgstr "радианы"
 
-#: MainWindow.cpp:660 MainWindow.cpp:736
+#: MainWindow.cpp:663 MainWindow.cpp:739
 msgid "degrees"
 msgstr "градусы"
 
-#: MainWindow.cpp:714
+#: MainWindow.cpp:717
 msgid "AU/day"
 msgstr "ае/день"
 
-#: MainWindow.cpp:715
+#: MainWindow.cpp:718
 msgid "km/day"
 msgstr "км/день"
 
-#: MainWindow.cpp:716
+#: MainWindow.cpp:719
 msgid "km/s"
 msgstr "км/с"
 
-#: MainWindow.cpp:717
+#: MainWindow.cpp:720
 msgid "m/s"
 msgstr "м/с"
 
-#: MainWindow.cpp:745
+#: MainWindow.cpp:748
 msgid "rad/day"
 msgstr "рад/день"
 
-#: MainWindow.cpp:746
+#: MainWindow.cpp:749
 msgid "\"/day"
 msgstr "\"/день"
 
-#: MainWindow.cpp:972 MainWindow.cpp:1009
+#: MainWindow.cpp:975 MainWindow.cpp:1012
 msgid "Ephemeris file selection"
 msgstr "Выбор файла эфемерид"
 
-#: MainWindow.cpp:976
+#: MainWindow.cpp:979
 msgid "Select"
 msgstr "Выбрать"
 
-#: MainWindow.cpp:1362
+#: MainWindow.cpp:1374
 msgid "Wrong day input!"
 msgstr "Неправильно введён день!"
 
-#: MainWindow.cpp:1367
+#: MainWindow.cpp:1379
 msgid "Wrong month input!"
 msgstr "Неправильно введён месяц!"
 
-#: MainWindow.cpp:1372
+#: MainWindow.cpp:1384
 msgid "Wrong year input!"
 msgstr "Неправильно введён год!"
 
-#: MainWindow.cpp:1377
+#: MainWindow.cpp:1389
 msgid "Wrong hour input!"
 msgstr "Неправильно введены часы!"
 
-#: MainWindow.cpp:1382
+#: MainWindow.cpp:1394
 msgid "Wrong minutes input!"
 msgstr "Неправильно введены минуты!"
 
-#: MainWindow.cpp:1387
+#: MainWindow.cpp:1399
 msgid "Wrong seconds input!"
 msgstr "Неправильно введены секунды!"
 
-#: MainWindow.cpp:1392
+#: MainWindow.cpp:1404
 msgid "Wrong step input!"
 msgstr "Неправильно введён шаг!"
 
-#: MainWindow.cpp:1397
+#: MainWindow.cpp:1409
 msgid "Wrong step number input!"
 msgstr "Неправильно введено количество шагов!"
 
-#: MainWindow.cpp:1402
+#: MainWindow.cpp:1414
 msgid ""
 "Date is out of ephemeris time interval or TT-TDB amendments was not found!"
 msgstr "Дата вне интервала эфемерид или не найден файл поправок TT-TDB!"
 
-#: MainWindow.cpp:1408
+#: MainWindow.cpp:1420
 msgid "Critical error!"
 msgstr "Критическая ошибка!"
 
-#: MainWindow.cpp:1413
+#: MainWindow.cpp:1425
 msgid "Incorrect ephemeris file!"
 msgstr "Файл эфемерид содержит ошибки!"
 
-#: MainWindow.cpp:1422
+#: MainWindow.cpp:1434
 msgid "Error!"
 msgstr "Ошибка!"
 
-#: MainWindow.cpp:1462
+#: MainWindow.cpp:1474
 msgid "Processing..."
 msgstr "Расчёт..."
 
-#: MainWindow.cpp:1479 MainWindow.cpp:1488
+#: MainWindow.cpp:1491 MainWindow.cpp:1500
 msgid "Calculation in progress..."
 msgstr "Идёт расчёт..."
 
-#: MainWindow.cpp:1509
+#: MainWindow.cpp:1521
 msgid "Canceling..."
 msgstr "Отмена..."
 
-#: MainWindow.cpp:1967
+#: MainWindow.cpp:1983
 msgid ""
 "EphEPM is simple program to calculate some Solar system bodies "
 "coordinates.\n"
@@ -353,83 +353,83 @@ msgstr ""
 "\n"
 "В программе использованы следующие библиотеки:\n"
 
-#: OrbitsDiagram.cpp:972
+#: OrbitsDiagram.cpp:984
 msgid "Mercury"
 msgstr "Меркурий"
 
-#: OrbitsDiagram.cpp:980
+#: OrbitsDiagram.cpp:991
 msgid "Venus"
 msgstr "Венера"
 
-#: OrbitsDiagram.cpp:988
+#: OrbitsDiagram.cpp:998
 msgid "Earth"
 msgstr "Земля"
 
-#: OrbitsDiagram.cpp:1001
+#: OrbitsDiagram.cpp:1010
 msgid "Mars"
 msgstr "Марс"
 
-#: OrbitsDiagram.cpp:1009
+#: OrbitsDiagram.cpp:1017
 msgid "Jupiter"
 msgstr "Юпитер"
 
-#: OrbitsDiagram.cpp:1017
+#: OrbitsDiagram.cpp:1024
 msgid "Saturn"
 msgstr "Сатурн"
 
-#: OrbitsDiagram.cpp:1860
+#: OrbitsDiagram.cpp:1516
 msgid "Uranus"
 msgstr "Уран"
 
-#: OrbitsDiagram.cpp:1868
+#: OrbitsDiagram.cpp:1523
 msgid "Neptune"
 msgstr "Нептун"
 
-#: OrbitsDiagram.cpp:1876
+#: OrbitsDiagram.cpp:1530
 msgid "Pluto"
 msgstr "Плутон"
 
-#: OrbitsDiagram.cpp:1884
+#: OrbitsDiagram.cpp:1537
 msgid "Ceres"
 msgstr "Церера"
 
-#: OrbitsDiagram.cpp:1892
+#: OrbitsDiagram.cpp:1544
 msgid "Pallas"
 msgstr "Паллада"
 
-#: OrbitsDiagram.cpp:1900
+#: OrbitsDiagram.cpp:1551
 msgid "Vesta"
 msgstr "Веста"
 
-#: OrbitsDiagram.cpp:1908
+#: OrbitsDiagram.cpp:1558
 msgid "Erida"
 msgstr "Эрида"
 
-#: OrbitsDiagram.cpp:1916
+#: OrbitsDiagram.cpp:1565
 msgid "Haumea"
 msgstr "Хаумеа"
 
-#: OrbitsDiagram.cpp:1924
+#: OrbitsDiagram.cpp:1572
 msgid "Makemake"
 msgstr "Макемаке"
 
-#: OrbitsDiagram.cpp:1932
+#: OrbitsDiagram.cpp:1579
 msgid "Sedna"
 msgstr "Седна"
 
-#: OrbitsDiagram.cpp:1940
+#: OrbitsDiagram.cpp:1586
 msgid "Bamberga"
 msgstr "Бамберга"
 
-#: OrbitsDiagram.cpp:1948
+#: OrbitsDiagram.cpp:1593
 msgid "Iris"
 msgstr "Ирида"
 
-#: OrbitsDiagram.cpp:1956
+#: OrbitsDiagram.cpp:1600
 msgid "Gonggong"
 msgstr "Гунгун"
 
-#: OrbitsDiagram.cpp:1964
+#: OrbitsDiagram.cpp:1607
 msgid "Quaoar"
 msgstr "Квавар"
 

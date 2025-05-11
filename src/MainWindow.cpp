@@ -1987,7 +1987,6 @@ MainWindow::aboutProg()
           + Glib::ustring("GTK https://www.gtk.org\n"
                           "GMP https://gmplib.org\n"
                           "MathGL http://mathgl.sourceforge.net\n"
-                          "ICU https://icu.unicode.org\n"
                           "SOFA https://iausofa.org/");
   aboutd->set_comments(abbuf);
 
