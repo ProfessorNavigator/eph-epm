@@ -1953,7 +1953,7 @@ MainWindow::aboutProg()
   aboutd->set_application(this->get_application());
   aboutd->set_name("mainWindow");
   aboutd->set_program_name("EphEPM");
-  aboutd->set_version("2.3");
+  aboutd->set_version("2.3.1");
   aboutd->set_copyright(
       "Copyright 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>");
   AuxFunc af;

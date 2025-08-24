@@ -41,7 +41,11 @@ else()
   endif()
 endif()
 
-add_executable(ephepm)
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    add_executable(ephepm)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+    add_executable(ephepm WIN32)
+endif()
 
 if(GTKMM_VERSION VERSION_LESS "4.10")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEPH_GTK_OLD")
