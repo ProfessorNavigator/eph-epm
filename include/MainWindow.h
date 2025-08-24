@@ -33,7 +33,7 @@
 class MainWindow : public Gtk::ApplicationWindow
 {
 public:
-  MainWindow();
+  MainWindow(const std::shared_ptr<std::string> &default_locale_name);
 
 private:
   void
@@ -79,6 +79,8 @@ private:
   bool
   closeFunc();
 
+  std::shared_ptr<std::string> default_locale_name;
+
   std::filesystem::path Sharepath;
 
   double JDshow = 0.0;
@@ -103,7 +105,7 @@ private:
   Gtk::Entry *tttdbent;
   Gtk::Entry *mlbent;
   Gtk::Entry *smlent;
-  Gtk::Entry *scale_ent;
+  Gtk::Entry *scale_ent;  
 };
 
 #endif // MAINWINDOW_H

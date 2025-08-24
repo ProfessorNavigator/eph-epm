@@ -26,18 +26,19 @@
 int
 main(int argc, char *argv[])
 {
-  AuxFunc af;
-  std::filesystem::path p = af.get_selfpath();
-  p = p.parent_path() / std::filesystem::u8path("../share/locale");
-  bindtextdomain("ephepm", p.u8string().c_str());
-  bind_textdomain_codeset("ephepm", "UTF-8");
-  textdomain("ephepm");
-
   std::string id = "ru.mail.bobilev_yury.EphEPM";
   int exitstat = 0;
-  auto app = EPMApplication::create(id);
+  Glib::RefPtr<EPMApplication> app;
   {
-    char *loc = std::setlocale(LC_CTYPE, "C.UTF-8");
+    char *loc = std::setlocale(LC_CTYPE, nullptr);
+
+    std::shared_ptr<std::string> default_locale_name(new std::string(loc));
+    std::cout << "EphEPM default locale is: " << *default_locale_name
+              << std::endl;
+
+    app = EPMApplication::create(id, default_locale_name);
+
+    loc = std::setlocale(LC_CTYPE, "C.UTF-8");
     if(loc)
       {
         std::cout << "EphEPM locale set to " << loc << std::endl;
@@ -46,7 +47,44 @@ main(int argc, char *argv[])
       {
         std::cout << "Failed to set EphEPM locale" << std::endl;
       }
+
+    AuxFunc af;
+    std::filesystem::path p = af.get_selfpath();
+    p = p.parent_path() / std::filesystem::u8path("..");
+    p /= std::filesystem::u8path("share");
+    p /= std::filesystem::u8path("locale");
+
+    char *ch = bindtextdomain("ephepm", p.u8string().c_str());
+    if(ch)
+      {
+        std::cout << "EphEPM text domain path: " << ch << std::endl;
+      }
+    else
+      {
+        return 1;
+      }
+
+    ch = bind_textdomain_codeset("ephepm", "UTF-8");
+    if(ch)
+      {
+        std::cout << "EphEPM codeset: " << ch << std::endl;
+      }
+    else
+      {
+        return 1;
+      }
+
+    ch = textdomain("ephepm");
+    if(ch)
+      {
+        std::cout << "EphEPM domain name: " << ch << std::endl;
+      }
+    else
+      {
+        return 1;
+      }
   }
+
 #pragma omp parallel
 #pragma omp masked
   {

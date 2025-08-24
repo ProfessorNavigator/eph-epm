@@ -46,8 +46,9 @@
 #include <thread>
 #endif
 
-MainWindow::MainWindow()
+MainWindow::MainWindow(const std::shared_ptr<std::string> &default_locale_name)
 {
+  this->default_locale_name = default_locale_name;
   AuxFunc af;
   std::filesystem::path p = af.get_selfpath();
   Sharepath = p.parent_path() / std::filesystem::u8path("../share/EphEPM");
@@ -810,7 +811,7 @@ MainWindow::createBodyList()
     {
       std::vector<std::string> item = *listv.begin();
       listv.erase(listv.begin());
-      std::string lnm = std::setlocale(LC_CTYPE, NULL);
+      std::string lnm = *default_locale_name;
       std::string::size_type n;
       n = lnm.find(".");
       if(n != std::string::npos)
@@ -1333,11 +1334,18 @@ MainWindow::calcCoord()
       xyz, theory, unit, stepnum, stepnumbernum, pathstr, tttdbstr, smlstr);
   std::vector<CoordKeeper> *result = new std::vector<CoordKeeper>;
   Glib::Dispatcher *result_win_disp = new Glib::Dispatcher;
-  result_win_disp->connect([result, this, result_win_disp, info_win] {
+  result_win_disp->connect([result, this, info_win, result_win_disp] {
     std::unique_ptr<Glib::Dispatcher> disp(result_win_disp);
-    info_win->close();
-    omp_set_dynamic(false);
-    resultPresenting(result);
+    {
+      info_win->close();
+      omp_set_dynamic(false);
+      resultPresenting(result);
+      Glib::RefPtr<Glib::MainContext> mc = Glib::MainContext::get_default();
+      while(mc->pending())
+        {
+          mc->iteration(true);
+        }
+    }
   });
 
 #ifdef EPH_OMP_TASK

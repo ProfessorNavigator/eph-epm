@@ -18,22 +18,26 @@
 #include <EPMApplication.h>
 #include <vector>
 
-EPMApplication::EPMApplication(const std::string &id)
+EPMApplication::EPMApplication(
+    const std::string &id,
+    const std::shared_ptr<std::string> &default_locale_name)
     : Gtk::Application(id.c_str())
 {
+  this->default_locale_name = default_locale_name;
 }
 
 Glib::RefPtr<EPMApplication>
-EPMApplication::create(const std::string &id)
+EPMApplication::create(const std::string &id,
+                       const std::shared_ptr<std::string> &default_locale_name)
 {
   return Glib::make_refptr_for_instance<EPMApplication>(
-      new EPMApplication(id));
+      new EPMApplication(id, default_locale_name));
 }
 
 MainWindow *
 EPMApplication::create_appwindow()
 {
-  MainWindow *mw = new MainWindow;
+  MainWindow *mw = new MainWindow(default_locale_name);
   this->add_window(*mw);
   mw->signal_hide().connect([mw, this] {
     std::vector<Gtk::Window *> wv;

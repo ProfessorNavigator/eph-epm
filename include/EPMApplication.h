@@ -25,15 +25,17 @@
 class EPMApplication : public Gtk::Application
 {
 protected:
-  EPMApplication(const std::string &id);
+  EPMApplication(const std::string &id, const std::shared_ptr<std::string> &default_locale_name);
 
 public:
   static Glib::RefPtr<EPMApplication>
-  create(const std::string &id);
+  create(const std::string &id, const std::shared_ptr<std::string>&default_locale_name);
 
 private:
   MainWindow *
   create_appwindow();
+
+  std::shared_ptr<std::string> default_locale_name;
 
 protected:
   void

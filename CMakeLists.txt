@@ -11,7 +11,12 @@ find_package(Intl REQUIRED)
 find_package(Gettext)
 
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-4.0)
-pkg_check_modules(GMPXX REQUIRED IMPORTED_TARGET gmpxx)
+pkg_check_modules(GMPXX IMPORTED_TARGET gmpxx)
+
+if(NOT GMPXX_FOUND)
+    find_library(GMPXXlib NAMES gmpxx REQUIRED)
+    find_library(GMPlib NAMES gmp REQUIRED)
+endif()
 
 find_library(MGL mgl2)
 if(NOT MGL)
@@ -47,29 +52,48 @@ add_subdirectory(src)
 
 target_compile_options(ephepm
   PRIVATE ${GTKMM_CFLAGS_OTHER}
-  PRIVATE ${GMPXX_CFLAGS_OTHER}
   PRIVATE ${OpenMP_CXX_FLAGS}
 )
 
 target_include_directories(ephepm
   PRIVATE include
   PRIVATE ${GTKMM_INCLUDE_DIRS}
-  PRIVATE ${GMPXX_INCLUDE_DIRS}
   PRIVATE ${OpenMP_CXX_INCLUDE_DIRS}
 )
 
 target_link_options(ephepm
   PRIVATE ${GTKMM_LDFLAGS_OTHER}
-  PRIVATE ${GMPXX_LDFLAGS_OTHER}
 )
 
 target_link_libraries(ephepm
   PRIVATE ${GTKMM_LINK_LIBRARIES}
-  PRIVATE ${GMPXX_LINK_LIBRARIES}
   PRIVATE ${SOFA}
   PRIVATE ${MGL}
   PRIVATE ${OpenMP_CXX_LIBRARIES}
 )
+
+if(GMPXX_FOUND)
+    target_compile_options(ephepm
+        PRIVATE ${GMPXX_CFLAGS_OTHER}
+    )
+
+    target_include_directories(ephepm
+        PRIVATE ${GMPXX_INCLUDE_DIRS}
+    )
+
+    target_link_options(ephepm
+        PRIVATE ${GMPXX_LDFLAGS_OTHER}
+    )
+
+    target_link_libraries(ephepm
+      PRIVATE ${GMPXX_LINK_LIBRARIES}
+    )
+else()
+    target_link_libraries(ephepm
+        PRIVATE ${GMPXXlib}
+        PRIVATE ${GMPlib}
+    )
+endif()
 
 if(Threads_FOUND)
   target_link_libraries(ephepm PRIVATE ${CMAKE_THREAD_LIBS_INIT})
