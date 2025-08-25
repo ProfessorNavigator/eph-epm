@@ -16,9 +16,10 @@
  */
 
 #include <AuxFunc.h>
+#include <ByteOrder.h>
 #include <DAFOperations.h>
 #include <algorithm>
-#include <cstring>
+//#include <cstring>
 #include <filesystem>
 #include <iostream>
 
@@ -38,10 +39,9 @@ DAFOperations::fileVersion(std::fstream *f)
     }
   else
     {
-      std::vector<char> readv;
-      readv.resize(8);
-      f->read(readv.data(), readv.size());
-      std::string chstr(readv.begin(), readv.end());
+      std::string chstr;
+      chstr.resize(8);
+      f->read(chstr.data(), chstr.size());
       std::string::size_type n;
       n = chstr.find("DAF/SPK");
       if(n == std::string::npos)
@@ -56,17 +56,17 @@ DAFOperations::fileVersion(std::fstream *f)
       else
         {
           f->seekg(16, std::ios_base::beg);
-          readv.clear();
-          readv.resize(60);
-          f->read(readv.data(), readv.size());
-          for(size_t i = 0; i < readv.size(); i++)
-            {
-              char ch = readv[i];
-              if(ch >= ' ' && ch <= '~')
-                {
-                  result.push_back(ch);
-                }
-            }
+          result.resize(60);
+          f->read(result.data(), result.size());
+          result.erase(std::remove_if(result.begin(), result.end(),
+                                      [](const char &el) {
+                                        if(el >= ' ' && el <= '~')
+                                          {
+                                            return false;
+                                          }
+                                        return true;
+                                      }),
+                       result.end());
         }
     }
 
@@ -107,10 +107,9 @@ DAFOperations::epochCheckUTC(const int &day, const int &month, const int &year,
     }
   else
     {
-      std::vector<char> readv;
-      readv.resize(8);
-      f.read(readv.data(), readv.size());
-      std::string chstr(readv.begin(), readv.end());
+      std::string chstr;
+      chstr.resize(8);
+      f.read(chstr.data(), chstr.size());
       std::string::size_type n;
       n = chstr.find("DAF/SPK");
       if(n == std::string::npos)
@@ -194,10 +193,9 @@ DAFOperations::epochCheckUTC(const double &JD, const int &timesc, double &epb,
     }
   else
     {
-      std::vector<char> readv;
-      readv.resize(8);
-      f.read(readv.data(), readv.size());
-      std::string chstr(readv.begin(), readv.end());
+      std::string chstr;
+      chstr.resize(8);
+      f.read(chstr.data(), chstr.size());
       std::string::size_type n;
       n = chstr.find("DAF/SPK");
       if(n == std::string::npos)
@@ -213,7 +211,7 @@ DAFOperations::epochCheckUTC(const double &JD, const int &timesc, double &epb,
       else
         {
           std::vector<SPKItem> spkv;
-          spkv = this->bodiesVector(&f);
+          spkv = bodiesVector(&f);
           auto itspk = std::find_if(spkv.begin(), spkv.end(), [](SPKItem &el) {
             return el.NAIF_body_id == 1000000001;
           });
@@ -270,30 +268,27 @@ std::vector<SPKItem>
 DAFOperations::bodiesVector(std::fstream *f)
 {
   std::vector<SPKItem> spkbodyv;
-  std::vector<char> readv;
   f->seekg(8, std::ios_base::beg);
 
   uint32_t
       ND; // The number of double precision components in each array summary
-  readv.clear();
-  readv.resize(sizeof(ND));
-  f->read(readv.data(), readv.size());
-  std::memcpy(&ND, readv.data(), readv.size());
+  f->read(reinterpret_cast<char *>(&ND), sizeof(ND));
+  ByteOrder bo;
+  bo.set_little(ND);
+  ND = bo;
 
   uint32_t NI; // The number of integer components in each array summary
-  readv.clear();
-  readv.resize(sizeof(NI));
-  f->read(readv.data(), readv.size());
-  std::memcpy(&NI, readv.data(), readv.size());
+  f->read(reinterpret_cast<char *>(&NI), sizeof(NI));
+  bo.set_little(NI);
+  NI = bo;
 
   f->seekg(60, std::ios_base::cur);
 
   uint32_t
       fward; // The record number of the initial summary record in the file
-  readv.clear();
-  readv.resize(sizeof(fward));
-  f->read(readv.data(), readv.size());
-  std::memcpy(&fward, readv.data(), readv.size());
+  f->read(reinterpret_cast<char *>(&fward), sizeof(fward));
+  bo.set_little(fward);
+  fward = bo;
 
   size_t ss = (ND + (NI + 1) / 2) * 8; // Size of single summary in bytes
 
@@ -310,42 +305,42 @@ DAFOperations::bodiesVector(std::fstream *f)
         {
           f->seekg(static_cast<size_t>((RNN - 1) * 1024), std::ios_base::beg);
         }
-      readv.clear();
-      readv.resize(sizeof(RNN));
-      f->read(readv.data(), readv.size());
-      std::memcpy(&RNN, readv.data(), sizeof(RNN));
+      f->read(reinterpret_cast<char *>(&RNN), sizeof(RNN));
+      bo.set_little(RNN);
+      RNN = bo;
 
       double
           RNP; // The record number of the previous Summary Record in the file
-      readv.clear();
-      readv.resize(sizeof(RNP));
-      f->read(readv.data(), readv.size());
-      std::memcpy(&RNP, readv.data(), readv.size());
+      f->read(reinterpret_cast<char *>(&RNP), sizeof(RNP));
+      bo.set_little(RNP);
+      RNP = bo;
 
       double NS; // The number of summaries stored in this record
-      readv.clear();
-      readv.resize(sizeof(NS));
-      f->read(readv.data(), readv.size());
-      std::memcpy(&NS, readv.data(), readv.size());
+      f->read(reinterpret_cast<char *>(&NS), sizeof(NS));
+      bo.set_little(NS);
+      NS = bo;
+      double val_double;
+      size_t sz_double = sizeof(val_double);
+      uint32_t val_32;
+      size_t sz_32 = sizeof(val_32);
       for(int j = 0; j < static_cast<int>(NS); j++)
         {
           size_t readbytes = 0;
           SPKItem spkbodyitem;
           for(uint32_t i = 0; i < ND; i++)
             {
-              readv.clear();
-              double val;
-              readv.resize(sizeof(val));
-              f->read(readv.data(), readv.size());
-              readbytes += readv.size();
-              std::memcpy(&val, readv.data(), sizeof(val));
+              f->read(reinterpret_cast<char *>(&val_double), sz_double);
+              readbytes += sz_double;
+              bo.set_little(val_double);
+              val_double = bo;
+
               if(i == 0)
                 {
-                  spkbodyitem.JD_begin = 2451545.0 + val / 86400;
+                  spkbodyitem.JD_begin = 2451545.0 + val_double / 86400;
                 }
               if(i == 1)
                 {
-                  spkbodyitem.JD_end = 2451545.0 + val / 86400;
+                  spkbodyitem.JD_end = 2451545.0 + val_double / 86400;
                 }
             }
 
@@ -353,42 +348,42 @@ DAFOperations::bodiesVector(std::fstream *f)
             {
               for(uint32_t i = 0; i < NI; i++)
                 {
-                  readv.clear();
-                  uint32_t val;
-                  readv.resize(sizeof(val));
-                  f->read(readv.data(), readv.size());
-                  readbytes += readv.size();
-                  std::memcpy(&val, readv.data(), sizeof(val));
+                  f->read(reinterpret_cast<char *>(&val_32), sz_32);
+                  readbytes += sz_32;
+                  bo.set_little(val_32);
+                  val_32 = bo;
+
                   switch(i)
                     {
                     case 0:
                       {
-                        spkbodyitem.NAIF_body_id = static_cast<int>(val);
+                        spkbodyitem.NAIF_body_id = static_cast<int>(val_32);
                         break;
                       }
                     case 1:
                       {
-                        spkbodyitem.NAIF_center_id = static_cast<int>(val);
+                        spkbodyitem.NAIF_center_id = static_cast<int>(val_32);
                         break;
                       }
                     case 2:
                       {
-                        spkbodyitem.NAIF_ref_frame = static_cast<int>(val);
+                        spkbodyitem.NAIF_ref_frame = static_cast<int>(val_32);
                         break;
                       }
                     case 3:
                       {
-                        spkbodyitem.NAIF_spk_data_type = static_cast<int>(val);
+                        spkbodyitem.NAIF_spk_data_type
+                            = static_cast<int>(val_32);
                         break;
                       }
                     case 4:
                       {
-                        spkbodyitem.initial_address = static_cast<int>(val);
+                        spkbodyitem.initial_address = static_cast<int>(val_32);
                         break;
                       }
                     case 5:
                       {
-                        spkbodyitem.final_addr = val;
+                        spkbodyitem.final_addr = val_32;
                         break;
                       }
                     default:
@@ -400,37 +395,37 @@ DAFOperations::bodiesVector(std::fstream *f)
             {
               for(uint32_t i = 0; i < NI; i++)
                 {
-                  readv.clear();
-                  uint32_t val;
-                  readv.resize(sizeof(val));
-                  f->read(readv.data(), readv.size());
-                  readbytes += readv.size();
-                  std::memcpy(&val, readv.data(), sizeof(val));
+                  f->read(reinterpret_cast<char *>(&val_32), sz_32);
+                  readbytes += sz_32;
+                  bo.set_little(val_32);
+                  val_32 = bo;
+
                   switch(i)
                     {
                     case 0:
                       {
-                        spkbodyitem.NAIF_body_id = static_cast<int>(val);
+                        spkbodyitem.NAIF_body_id = static_cast<int>(val_32);
                         break;
                       }
                     case 1:
                       {
-                        spkbodyitem.NAIF_center_id = static_cast<int>(val);
+                        spkbodyitem.NAIF_center_id = static_cast<int>(val_32);
                         break;
                       }
                     case 2:
                       {
-                        spkbodyitem.NAIF_spk_data_type = static_cast<int>(val);
+                        spkbodyitem.NAIF_spk_data_type
+                            = static_cast<int>(val_32);
                         break;
                       }
                     case 3:
                       {
-                        spkbodyitem.initial_address = static_cast<int>(val);
+                        spkbodyitem.initial_address = static_cast<int>(val_32);
                         break;
                       }
                     case 4:
                       {
-                        spkbodyitem.final_addr = val;
+                        spkbodyitem.final_addr = val_32;
                         break;
                       }
                     default:

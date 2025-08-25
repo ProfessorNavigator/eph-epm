@@ -2,6 +2,7 @@ target_sources(ephepm
     PRIVATE AuxFunc.cpp
     PRIVATE BodyListItem.cpp
     PRIVATE BodyV.cpp
+    PRIVATE ByteOrder.cpp
     PRIVATE Coordinates.cpp
     PRIVATE CoordKeeper.cpp
     PRIVATE DAFOperations.cpp

@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <ByteOrder.h>
 #include <EPMCalculations.h>
 #include <cstring>
 #include <vector>
@@ -35,27 +36,26 @@ EPMCalculations::tdbCalc(std::fstream *f, const uint64_t &c_b,
       if(type == 2)
         {
           JDB = JD;
-          std::vector<char> readv;
           double val;
-          readv.resize(sizeof(val));
+          size_t sz_double = sizeof(val);
           f->seekg((c_e - 2) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          ByteOrder bo;
+          bo.set_little(val);
+          val = bo;
           mpf_class RSIZE(val);
           mpf_class PD = (RSIZE - 2) / 3 - 1;
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 3) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INTLEN = mpf_class(val) / mpf_class(86400);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 4) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INIT
               = mpf_class(2451545.0) + mpf_class(val) / mpf_class(86400);
 
@@ -64,32 +64,32 @@ EPMCalculations::tdbCalc(std::fstream *f, const uint64_t &c_b,
           std::vector<mpf_class> forcalc;
 
           f->seekg((c_b + RSIZE.get_ui() * m) * 8, std::ios_base::beg);
-          readv.clear();
-          readv.resize(sizeof(val));
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class MID
               = mpf_class(2451545.0) + mpf_class(val) / mpf_class(86400);
-          readv.clear();
-          readv.resize(sizeof(val));
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class RADIUS = mpf_class(val) / mpf_class(86400);
           tb = MID - RADIUS;
           te = MID + RADIUS;
           if(JDB >= tb && JDB <= te)
             {
+              forcalc.reserve(PD.get_ui());
               for(size_t j = 0; j < PD.get_ui() * 8; j = j + 8)
                 {
-                  readv.clear();
-                  readv.resize(sizeof(val));
-                  f->read(&readv[0], readv.size());
-                  std::memcpy(&val, &readv[0], sizeof(val));
+                  f->read(reinterpret_cast<char *>(&val), sz_double);
+                  bo.set_little(val);
+                  val = bo;
                   forcalc.push_back(val);
                 }
             }
           tau = (2 * JDB - tb - te) / (te - tb);
           std::vector<mpf_class> P;
+          P.reserve(2 + forcalc.size());
           P.push_back(1);
           P.push_back(tau);
           for(size_t i = 2; i < forcalc.size(); i++)
@@ -117,48 +117,44 @@ EPMCalculations::bodyCalcX(std::fstream *f, const uint64_t &c_b,
       if(type == 20)
         {
           mpf_class summa(0);
-          std::vector<char> readv;
           double val;
-          readv.resize(sizeof(val));
+          size_t sz_double = sizeof(val);
           f->seekg((c_e - 7) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          ByteOrder bo;
+          bo.set_little(val);
+          val = bo;
           mpf_class DSCALE(val);
           au = DSCALE;
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 6) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class TSCALE(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 5) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INITJD(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 4) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INITFR(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 3) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INTLEN(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 2) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           size_t RSIZE = static_cast<size_t>(val);
           size_t PD = RSIZE / 3 - 1;
           mpf_class T0 = JDC - (INITJD + INITFR);
@@ -168,18 +164,18 @@ EPMCalculations::bodyCalcX(std::fstream *f, const uint64_t &c_b,
           size_t numb = m * RSIZE;
           size_t n = PD;
 
-          readv.clear();
-          readv.resize((n + 1) * 8);
           f->seekg((c_b + numb) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
           std::vector<mpf_class> C_b;
-          for(size_t i = 0; i < readv.size(); i = i + 8)
+          C_b.reserve(n + 1);
+          for(size_t i = 0; i < n + 1; i++)
             {
-              std::memcpy(&val, &readv[i], sizeof(val));
+              f->read(reinterpret_cast<char *>(&val), sz_double);
+              bo.set_little(val);
+              val = bo;
               C_b.push_back(val);
             }
           std::vector<mpf_class> P;
+          P.reserve(3 + n);
           P.push_back(1);
           P.push_back(tau);
           for(size_t i = 2; i <= n; i++)
@@ -189,6 +185,7 @@ EPMCalculations::bodyCalcX(std::fstream *f, const uint64_t &c_b,
           if(var == 0)
             {
               std::vector<mpf_class> W;
+              W.reserve(2 + n);
               W.push_back(tau);
               W.push_back((P[0] + P[2]) * 0.25);
               W.resize(n);
@@ -237,27 +234,27 @@ EPMCalculations::bodyCalcX(std::fstream *f, const uint64_t &c_b,
         }
       else if(type == 2)
         {
-          std::vector<char> readv;
           double val;
-          readv.resize(sizeof(val));
+          size_t sz_double = sizeof(val);
+
           f->seekg((c_e - 2) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          ByteOrder bo;
+          bo.set_little(val);
+          val = bo;
           mpf_class RSIZE(val);
           mpf_class PD = (RSIZE - 2) / 3 - 1;
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 3) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INTLEN = mpf_class(val) / mpf_class(86400);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 4) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INIT
               = mpf_class(2451545.0) + mpf_class(val) / mpf_class(86400);
 
@@ -266,33 +263,34 @@ EPMCalculations::bodyCalcX(std::fstream *f, const uint64_t &c_b,
           std::vector<mpf_class> forcalc;
 
           f->seekg((c_b + RSIZE.get_ui() * m) * 8, std::ios_base::beg);
-          readv.clear();
-          readv.resize(sizeof(val));
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class MID
               = mpf_class(2451545.0) + mpf_class(val) / mpf_class(86400);
-          readv.clear();
-          readv.resize(sizeof(val));
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class RADIUS = mpf_class(val) / mpf_class(86400);
           mpf_class tb = MID - RADIUS;
           mpf_class te = MID + RADIUS;
           if(JDC >= tb && JDC <= te)
             {
+              forcalc.reserve(PD.get_ui());
               for(size_t j = 0; j < PD.get_ui() * 8; j = j + 8)
                 {
-                  readv.clear();
-                  readv.resize(sizeof(val));
-                  f->read(&readv[0], readv.size());
-                  std::memcpy(&val, &readv[0], sizeof(val));
+                  f->read(reinterpret_cast<char *>(&val), sz_double);
+                  bo.set_little(val);
+                  val = bo;
                   forcalc.push_back(val);
                 }
             }
-          mpf_class tau = (2 * JDC - tb - te) / (te - tb);
-          std::vector<mpf_class> P;
 
+          mpf_class tau = (2 * JDC - tb - te) / (te - tb);
+
+          std::vector<mpf_class> P;
+          P.reserve(2 + forcalc.size());
           P.push_back(1);
           P.push_back(tau);
           for(size_t i = 2; i < forcalc.size(); i++)
@@ -310,6 +308,7 @@ EPMCalculations::bodyCalcX(std::fstream *f, const uint64_t &c_b,
           else if(var == 1)
             {
               std::vector<mpf_class> P2;
+              P2.reserve(2 + forcalc.size());
               P2.push_back(0);
               P2.push_back(1);
               for(size_t i = 2; i < forcalc.size(); i++)
@@ -342,48 +341,44 @@ EPMCalculations::bodyCalcY(std::fstream *f, const uint64_t &c_b,
       if(type == 20)
         {
           mpf_class summa(0);
-          std::vector<char> readv;
           double val;
-          readv.resize(sizeof(val));
+          size_t sz_double = sizeof(val);
           f->seekg((c_e - 7) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          ByteOrder bo;
+          bo.set_little(val);
+          val = bo;
           mpf_class DSCALE(val);
           au = DSCALE;
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 6) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class TSCALE(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 5) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INITJD(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 4) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INITFR(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 3) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INTLEN(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 2) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           size_t RSIZE = static_cast<size_t>(val);
           size_t PD = RSIZE / 3 - 1;
           mpf_class T0 = JDC - (INITJD + INITFR);
@@ -393,18 +388,19 @@ EPMCalculations::bodyCalcY(std::fstream *f, const uint64_t &c_b,
           size_t numb = m * RSIZE + RSIZE / 3;
           size_t n = PD;
 
-          readv.clear();
-          readv.resize((n + 1) * 8);
           f->seekg((c_b + numb) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
           std::vector<mpf_class> C_b;
-          for(size_t i = 0; i < readv.size(); i = i + 8)
+          C_b.reserve(n + 1);
+          for(size_t i = 0; i < n + 1; i++)
             {
-              std::memcpy(&val, &readv[i], sizeof(val));
+              f->read(reinterpret_cast<char *>(&val), sz_double);
+              bo.set_little(val);
+              val = bo;
               C_b.push_back(val);
             }
+
           std::vector<mpf_class> P;
+          P.reserve(3 + n);
           P.push_back(1);
           P.push_back(tau);
           for(size_t i = 2; i <= n; i++)
@@ -414,6 +410,7 @@ EPMCalculations::bodyCalcY(std::fstream *f, const uint64_t &c_b,
           if(var == 0)
             {
               std::vector<mpf_class> W;
+              W.reserve(2 + n);
               W.push_back(tau);
               W.push_back((P[0] + P[2]) * 0.25);
               W.resize(n);
@@ -462,27 +459,26 @@ EPMCalculations::bodyCalcY(std::fstream *f, const uint64_t &c_b,
         }
       else if(type == 2)
         {
-          std::vector<char> readv;
           double val;
-          readv.resize(sizeof(val));
+          size_t sz_double = sizeof(val);
           f->seekg((c_e - 2) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          ByteOrder bo;
+          bo.set_little(val);
+          val = bo;
           mpf_class RSIZE(val);
           mpf_class PD = (RSIZE - 2) / 3 - 1;
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 3) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INTLEN = mpf_class(val) / mpf_class(86400);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 4) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INIT
               = mpf_class(2451545.0) + mpf_class(val) / mpf_class(86400);
 
@@ -491,16 +487,15 @@ EPMCalculations::bodyCalcY(std::fstream *f, const uint64_t &c_b,
           std::vector<mpf_class> forcalc;
 
           f->seekg((c_b + RSIZE.get_ui() * m) * 8, std::ios_base::beg);
-          readv.clear();
-          readv.resize(sizeof(val));
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class MID
               = mpf_class(2451545.0) + mpf_class(val) / mpf_class(86400);
-          readv.clear();
-          readv.resize(sizeof(val));
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class RADIUS = mpf_class(val) / mpf_class(86400);
           mpf_class tb = MID - RADIUS;
           mpf_class te = MID + RADIUS;
@@ -508,17 +503,18 @@ EPMCalculations::bodyCalcY(std::fstream *f, const uint64_t &c_b,
             {
               f->seekg(static_cast<size_t>(PD.get_ui() * 8) + 8,
                        std::ios_base::cur);
+              forcalc.reserve(PD.get_ui());
               for(size_t j = 0; j < PD.get_ui() * 8; j = j + 8)
                 {
-                  readv.clear();
-                  readv.resize(sizeof(val));
-                  f->read(&readv[0], readv.size());
-                  std::memcpy(&val, &readv[0], sizeof(val));
+                  f->read(reinterpret_cast<char *>(&val), sz_double);
+                  bo.set_little(val);
+                  val = bo;
                   forcalc.push_back(val);
                 }
             }
           mpf_class tau = (2 * JDC - tb - te) / (te - tb);
           std::vector<mpf_class> P;
+          P.reserve(2 + forcalc.size());
           P.push_back(1);
           P.push_back(tau);
           for(size_t i = 2; i < forcalc.size(); i++)
@@ -536,6 +532,7 @@ EPMCalculations::bodyCalcY(std::fstream *f, const uint64_t &c_b,
           else if(var == 1)
             {
               std::vector<mpf_class> P2;
+              P2.reserve(2 + forcalc.size());
               P2.push_back(0);
               P2.push_back(1);
               for(size_t i = 2; i < forcalc.size(); i++)
@@ -568,48 +565,44 @@ EPMCalculations::bodyCalcZ(std::fstream *f, const uint64_t &c_b,
       if(type == 20)
         {
           mpf_class summa(0);
-          std::vector<char> readv;
           double val;
-          readv.resize(sizeof(val));
+          size_t sz_double = sizeof(val);
           f->seekg((c_e - 7) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          ByteOrder bo;
+          bo.set_little(val);
+          val = bo;
           mpf_class DSCALE(val);
           au = DSCALE;
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 6) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class TSCALE(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 5) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INITJD(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 4) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INITFR(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 3) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INTLEN(val);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 2) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           size_t RSIZE = static_cast<size_t>(val);
           size_t PD = RSIZE / 3 - 1;
           mpf_class T0 = JDC - (INITJD + INITFR);
@@ -619,18 +612,19 @@ EPMCalculations::bodyCalcZ(std::fstream *f, const uint64_t &c_b,
           size_t numb = m * RSIZE + 2 * RSIZE / 3;
           size_t n = PD;
 
-          readv.clear();
-          readv.resize((n + 1) * 8);
           f->seekg((c_b + numb) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
           std::vector<mpf_class> C_b;
-          for(size_t i = 0; i < readv.size(); i = i + 8)
+          C_b.reserve(n + 1);
+          for(size_t i = 0; i < n + 1; i++)
             {
-              std::memcpy(&val, &readv[i], sizeof(val));
+              f->read(reinterpret_cast<char *>(&val), sz_double);
+              bo.set_little(val);
+              val = bo;
               C_b.push_back(val);
             }
+
           std::vector<mpf_class> P;
+          P.reserve(3 + n);
           P.push_back(1);
           P.push_back(tau);
           for(size_t i = 2; i <= n; i++)
@@ -640,6 +634,7 @@ EPMCalculations::bodyCalcZ(std::fstream *f, const uint64_t &c_b,
           if(var == 0)
             {
               std::vector<mpf_class> W;
+              W.reserve(2 + n);
               W.push_back(tau);
               W.push_back((P[0] + P[2]) * 0.25);
               W.resize(n);
@@ -688,27 +683,26 @@ EPMCalculations::bodyCalcZ(std::fstream *f, const uint64_t &c_b,
         }
       else if(type == 2)
         {
-          std::vector<char> readv;
           double val;
-          readv.resize(sizeof(val));
+          size_t sz_double = sizeof(val);
           f->seekg((c_e - 2) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          ByteOrder bo;
+          bo.set_little(val);
+          val = bo;
           mpf_class RSIZE(val);
           mpf_class PD = (RSIZE - 2) / 3 - 1;
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 3) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INTLEN = mpf_class(val) / mpf_class(86400);
 
-          readv.clear();
-          readv.resize(sizeof(val));
           f->seekg((c_e - 4) * 8, std::ios_base::beg);
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class INIT
               = mpf_class(2451545.0) + mpf_class(val) / mpf_class(86400);
 
@@ -717,16 +711,15 @@ EPMCalculations::bodyCalcZ(std::fstream *f, const uint64_t &c_b,
           std::vector<mpf_class> forcalc;
 
           f->seekg((c_b + RSIZE.get_ui() * m) * 8, std::ios_base::beg);
-          readv.clear();
-          readv.resize(sizeof(val));
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class MID
               = mpf_class(2451545.0) + mpf_class(val) / mpf_class(86400);
-          readv.clear();
-          readv.resize(sizeof(val));
-          f->read(&readv[0], readv.size());
-          std::memcpy(&val, &readv[0], sizeof(val));
+
+          f->read(reinterpret_cast<char *>(&val), sz_double);
+          bo.set_little(val);
+          val = bo;
           mpf_class RADIUS = mpf_class(val) / mpf_class(86400);
           mpf_class tb = MID - RADIUS;
           mpf_class te = MID + RADIUS;
@@ -734,17 +727,18 @@ EPMCalculations::bodyCalcZ(std::fstream *f, const uint64_t &c_b,
             {
               f->seekg((static_cast<size_t>(PD.get_ui() * 8) + 8) * 2,
                        std::ios_base::cur);
+              forcalc.reserve(PD.get_ui());
               for(size_t j = 0; j < PD.get_ui() * 8; j = j + 8)
                 {
-                  readv.clear();
-                  readv.resize(sizeof(val));
-                  f->read(&readv[0], readv.size());
-                  std::memcpy(&val, &readv[0], sizeof(val));
+                  f->read(reinterpret_cast<char *>(&val), sz_double);
+                  bo.set_little(val);
+                  val = bo;
                   forcalc.push_back(val);
                 }
             }
           mpf_class tau = (2 * JDC - tb - te) / (te - tb);
           std::vector<mpf_class> P;
+          P.reserve(2 + forcalc.size());
           P.push_back(1);
           P.push_back(tau);
           for(size_t i = 2; i < forcalc.size(); i++)
@@ -762,6 +756,7 @@ EPMCalculations::bodyCalcZ(std::fstream *f, const uint64_t &c_b,
           else if(var == 1)
             {
               std::vector<mpf_class> P2;
+              P2.reserve(2 + forcalc.size());
               P2.push_back(0);
               P2.push_back(1);
               for(size_t i = 2; i < forcalc.size(); i++)

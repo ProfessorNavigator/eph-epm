@@ -2,6 +2,7 @@ target_sources(ephepm
     PRIVATE AuxFunc.h
     PRIVATE BodyListItem.h
     PRIVATE BodyV.h
+    PRIVATE ByteOrder.h
     PRIVATE Coordinates.h
     PRIVATE CoordKeeper.h
     PRIVATE DAFOperations.h
