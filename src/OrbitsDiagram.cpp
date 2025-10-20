@@ -348,7 +348,11 @@ OrbitsDiagram::calculateOrbits()
       gr->SetPlotFactor(plot_factor);
       gr->SetQuality(3);
 
+#ifndef OLD_OPENMP
       omp_set_max_active_levels(omp_get_max_active_levels());
+#else
+      omp_set_nested(true);
+#endif
       omp_set_dynamic(true);
 #pragma omp parallel
 #pragma omp for

@@ -42,7 +42,11 @@
 DiagramWidget::DiagramWidget(Gtk::Window *mw, mglGraph *gr)
 {
   omp_set_dynamic(true);
+#ifndef OLD_OPENMP
   omp_set_max_active_levels(omp_get_supported_active_levels());
+#else
+  omp_set_nested(true);
+#endif
   this->mw = mw;
   this->gr = gr;
   plotincr.push_back(scale_val1);

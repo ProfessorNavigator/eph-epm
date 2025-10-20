@@ -18,17 +18,24 @@ if(NOT GMPXX_FOUND)
     find_library(GMPlib NAMES gmp REQUIRED)
 endif()
 
-find_library(MGL mgl2)
-if(NOT MGL)
-  find_library(MGL mgl REQUIRED)
+find_package(MathGL2)
+
+if(NOT MathGL2_FOUND)
+    find_library(MGL mgl2)
+    if(NOT MGL)
+        find_library(MGL mgl REQUIRED)
+    endif()
 endif()
 
 find_library(SOFA sofa_c REQUIRED)
 
 find_package(OpenMP REQUIRED)
-if(NOT OpenMP_CXX_FOUND)
-  message(FATAL_ERROR "Cannot find OpenMP for C++")
-endif()
+message(CONFIGURE_LOG "OpenMP found ${OpenMP_CXX_VERSION}")
+
+try_compile(OMP_TEST_NESTED "${CMAKE_BINARY_DIR}/omp_test_nested"
+    "${PROJECT_SOURCE_DIR}/omp_test_nested" OmpTestNested
+)
+
 find_package(Threads QUIET)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -37,50 +44,45 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_executable(ephepm WIN32)
 endif()
 
-if(GTKMM_VERSION VERSION_LESS "4.10")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEPH_GTK_OLD")
-endif()
-
 add_subdirectory(include)
 add_subdirectory(src)
 
-target_compile_options(ephepm
-  PRIVATE ${GTKMM_CFLAGS_OTHER}
-  PRIVATE ${OpenMP_CXX_FLAGS}
-)
-
 target_include_directories(ephepm
   PRIVATE include
-  PRIVATE ${GTKMM_INCLUDE_DIRS}
-  PRIVATE ${OpenMP_CXX_INCLUDE_DIRS}
-)
-
-target_link_options(ephepm
-  PRIVATE ${GTKMM_LDFLAGS_OTHER}
 )
 
 target_link_libraries(ephepm
-  PRIVATE ${GTKMM_LINK_LIBRARIES}
-  PRIVATE ${SOFA}
-  PRIVATE ${MGL}
-  PRIVATE ${OpenMP_CXX_LIBRARIES}
+  PRIVATE PkgConfig::GTKMM
+  PRIVATE ${SOFA}  
+  PRIVATE OpenMP::OpenMP_CXX
 )
 
-if(GMPXX_FOUND)
-    target_compile_options(ephepm
-        PRIVATE ${GMPXX_CFLAGS_OTHER}
-    )
+target_link_options(ephepm
+  PRIVATE ${OpenMP_CXX_FLAGS}
+)
 
+if(MathGL2_FOUND)
     target_include_directories(ephepm
-        PRIVATE ${GMPXX_INCLUDE_DIRS}
+        PRIVATE ${MathGL2_INCLUDE_DIRS}
     )
-
-    target_link_options(ephepm
-        PRIVATE ${GMPXX_LDFLAGS_OTHER}
-    )
-
     target_link_libraries(ephepm
-      PRIVATE ${GMPXX_LINK_LIBRARIES}
+        PRIVATE mgl
+    )
+else()
+    target_link_libraries(ephepm
+        PRIVATE PRIVATE ${MGL}
+    )
+endif()
+
+if(GTKMM_VERSION VERSION_LESS "4.10")
+    target_compile_options(ephepm
+        PRIVATE -DEPH_GTK_OLD
+    )
+endif()
+
+if(GMPXX_FOUND)
+    target_link_libraries(ephepm
+      PRIVATE PkgConfig::GMPXX
     )
 else()
     target_link_libraries(ephepm
@@ -90,7 +92,13 @@ else()
 endif()
 
 if(Threads_FOUND)
-  target_link_libraries(ephepm PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(ephepm PRIVATE Threads::Threads)
+endif()
+
+if(NOT OMP_TEST_NESTED)
+    target_compile_options(ephepm
+        PRIVATE -DOLD_OPENMP
+    )
 endif()
 
 include(GNUInstallDirs)
