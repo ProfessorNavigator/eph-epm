@@ -31,8 +31,6 @@ class DiagramWidget
 public:
   DiagramWidget(Gtk::Window *mw, mglGraph *gr);
 
-  ~DiagramWidget();
-
   void
   diagramPlot();
 
@@ -73,8 +71,6 @@ private:
   std::string Sharepath;
   double scale_val1 = -1143583.890685;
   double scale_val2 = 1143584.890685;
-
-  int active_lvls;
 };
 
 #endif // DIAGRAMWIDGET_H

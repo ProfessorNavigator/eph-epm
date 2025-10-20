@@ -41,6 +41,8 @@
 
 DiagramWidget::DiagramWidget(Gtk::Window *mw, mglGraph *gr)
 {
+  omp_set_dynamic(true);
+  omp_set_max_active_levels(omp_get_supported_active_levels());
   this->mw = mw;
   this->gr = gr;
   plotincr.push_back(scale_val1);
@@ -51,21 +53,6 @@ DiagramWidget::DiagramWidget(Gtk::Window *mw, mglGraph *gr)
   Gdk::Rectangle req = screenRes();
   Height = req.get_height();
   Width = req.get_width();
-#ifndef EPH_OPENMP_OLD
-  active_lvls = omp_get_max_active_levels();
-  omp_set_max_active_levels(omp_get_supported_active_levels());
-#else
-  omp_set_nested(true);
-#endif
-}
-
-DiagramWidget::~DiagramWidget()
-{
-#ifndef EPH_OPENMP_OLD
-  omp_set_max_active_levels(active_lvls);
-#else
-  omp_set_nested(false);
-#endif
 }
 
 void

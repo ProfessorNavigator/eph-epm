@@ -95,8 +95,6 @@ private:
 
   std::vector<Coordinates *> coord_ptr_v;
   omp_lock_t coord_ptr_v_mtx;
-
-  int active_lvls;
 };
 
 #endif // ORBITSDIAGRAM_H

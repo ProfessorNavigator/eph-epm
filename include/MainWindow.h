@@ -23,6 +23,7 @@
 #include <OrbitsDiagram.h>
 #include <filesystem>
 #include <giomm-2.68/giomm/liststore.h>
+#include <gtkmm-4.0/gtkmm/aboutdialog.h>
 #include <gtkmm-4.0/gtkmm/applicationwindow.h>
 #include <gtkmm-4.0/gtkmm/dropdown.h>
 #include <gtkmm-4.0/gtkmm/entry.h>
@@ -105,7 +106,9 @@ private:
   Gtk::Entry *tttdbent;
   Gtk::Entry *mlbent;
   Gtk::Entry *smlent;
-  Gtk::Entry *scale_ent;  
+  Gtk::Entry *scale_ent;
+
+  Gtk::AboutDialog *aboutd = nullptr;
 };
 
 #endif // MAINWINDOW_H

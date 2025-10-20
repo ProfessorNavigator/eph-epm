@@ -97,14 +97,6 @@ OrbitsDiagram::OrbitsDiagram(Gtk::Window *mw, const std::string &ephpath,
         }
     }
   this->plot_factor = plot_factor;
-
-  omp_set_dynamic(true);
-#ifndef EPH_OPENMP_OLD
-  active_lvls = omp_get_max_active_levels();
-  omp_set_max_active_levels(omp_get_supported_active_levels());
-#else
-  omp_set_nested(true);
-#endif
 }
 
 OrbitsDiagram::~OrbitsDiagram()
@@ -115,12 +107,6 @@ OrbitsDiagram::~OrbitsDiagram()
   delete gr;
   delete dw;
   omp_destroy_lock(&coord_ptr_v_mtx);
-  omp_set_dynamic(false);
-#ifndef EPH_OPENMP_OLD
-  omp_set_max_active_levels(active_lvls);
-#else
-  omp_set_nested(false);
-#endif
 }
 
 int
@@ -362,6 +348,8 @@ OrbitsDiagram::calculateOrbits()
       gr->SetPlotFactor(plot_factor);
       gr->SetQuality(3);
 
+      omp_set_max_active_levels(omp_get_max_active_levels());
+      omp_set_dynamic(true);
 #pragma omp parallel
 #pragma omp for
       for(auto it = bodyv.begin(); it != bodyv.end(); it++)
@@ -487,16 +475,17 @@ OrbitsDiagram::planetOrbCalc(const std::tuple<int, double> &planettup)
       resultsed.clear();
     }
   std::vector<double> X;
-  X.reserve(result.size());
+  X.resize(result.size());
   std::vector<double> Y;
-  Y.reserve(result.size());
+  Y.resize(result.size());
   std::vector<double> Z;
-  Z.reserve(result.size());
-  for(auto it = result.begin(); it != result.end(); it++)
+  Z.resize(result.size());
+#pragma omp parallel for
+  for(size_t i = 0; i < result.size(); i++)
     {
-      X.push_back(it->X.get_d());
-      Y.push_back(it->Y.get_d());
-      Z.push_back(it->Z.get_d());
+      X[i] = result[i].X.get_d();
+      Y[i] = result[i].Y.get_d();
+      Z[i] = result[i].Z.get_d();
     }
   mglData x(X), y(Y), z(Z);
 
@@ -1397,26 +1386,24 @@ OrbitsDiagram::bodyBuilding(const int &body)
             mglData xrb4, yrb4, zrb4;
             mglData xre4, yre4, zre4;
 
-#pragma omp parallel
-#pragma omp for
             for(int i = 1; i <= 6; i++)
               {
                 std::vector<double> vl_v1;
-                vl_v1.reserve(ring_vect.size());
+                vl_v1.resize(ring_vect.size());
                 std::vector<double> vl_v2;
-                vl_v2.reserve(ring_vect.size());
+                vl_v2.resize(ring_vect.size());
                 std::vector<double> vl_v3;
-                vl_v3.reserve(ring_vect.size());
+                vl_v3.resize(ring_vect.size());
                 switch(i)
                   {
                   case 1:
                     {
-                      for(auto it_rv = ring_vect.begin();
-                          it_rv != ring_vect.end(); it_rv++)
+#pragma omp parallel for
+                      for(size_t j = 0; j < ring_vect.size(); j++)
                         {
-                          vl_v1.push_back(it_rv->Xrb1);
-                          vl_v2.push_back(it_rv->Yrb1);
-                          vl_v3.push_back(it_rv->Zrb1);
+                          vl_v1[j] = ring_vect[j].Xrb1;
+                          vl_v2[j] = ring_vect[j].Yrb1;
+                          vl_v3[j] = ring_vect[j].Zrb1;
                         }
                       xrb1.Set(vl_v1);
                       yrb1.Set(vl_v2);
@@ -1425,12 +1412,12 @@ OrbitsDiagram::bodyBuilding(const int &body)
                     }
                   case 2:
                     {
-                      for(auto it_rv = ring_vect.begin();
-                          it_rv != ring_vect.end(); it_rv++)
+#pragma omp parallel for
+                      for(size_t j = 0; j < ring_vect.size(); j++)
                         {
-                          vl_v1.push_back(it_rv->Xre1);
-                          vl_v2.push_back(it_rv->Yre1);
-                          vl_v3.push_back(it_rv->Zre1);
+                          vl_v1[j] = ring_vect[j].Xre1;
+                          vl_v2[j] = ring_vect[j].Yre1;
+                          vl_v3[j] = ring_vect[j].Zre1;
                         }
                       xre1.Set(vl_v1);
                       yre1.Set(vl_v2);
@@ -1439,12 +1426,12 @@ OrbitsDiagram::bodyBuilding(const int &body)
                     }
                   case 3:
                     {
-                      for(auto it_rv = ring_vect.begin();
-                          it_rv != ring_vect.end(); it_rv++)
+#pragma omp parallel for
+                      for(size_t j = 0; j < ring_vect.size(); j++)
                         {
-                          vl_v1.push_back(it_rv->Xre2);
-                          vl_v2.push_back(it_rv->Yre2);
-                          vl_v3.push_back(it_rv->Zre2);
+                          vl_v1[j] = ring_vect[j].Xre2;
+                          vl_v2[j] = ring_vect[j].Yre2;
+                          vl_v3[j] = ring_vect[j].Zre2;
                         }
                       xre2.Set(vl_v1);
                       yre2.Set(vl_v2);
@@ -1453,12 +1440,12 @@ OrbitsDiagram::bodyBuilding(const int &body)
                     }
                   case 4:
                     {
-                      for(auto it_rv = ring_vect.begin();
-                          it_rv != ring_vect.end(); it_rv++)
+#pragma omp parallel for
+                      for(size_t j = 0; j < ring_vect.size(); j++)
                         {
-                          vl_v1.push_back(it_rv->Xre3);
-                          vl_v2.push_back(it_rv->Yre3);
-                          vl_v3.push_back(it_rv->Zre3);
+                          vl_v1[j] = ring_vect[j].Xre3;
+                          vl_v2[j] = ring_vect[j].Yre3;
+                          vl_v3[j] = ring_vect[j].Zre3;
                         }
                       xre3.Set(vl_v1);
                       yre3.Set(vl_v2);
@@ -1467,12 +1454,12 @@ OrbitsDiagram::bodyBuilding(const int &body)
                     }
                   case 5:
                     {
-                      for(auto it_rv = ring_vect.begin();
-                          it_rv != ring_vect.end(); it_rv++)
+#pragma omp parallel for
+                      for(size_t j = 0; j < ring_vect.size(); j++)
                         {
-                          vl_v1.push_back(it_rv->Xrb4);
-                          vl_v2.push_back(it_rv->Yrb4);
-                          vl_v3.push_back(it_rv->Zrb4);
+                          vl_v1[j] = ring_vect[j].Xrb4;
+                          vl_v2[j] = ring_vect[j].Yrb4;
+                          vl_v3[j] = ring_vect[j].Zrb4;
                         }
                       xrb4.Set(vl_v1);
                       yrb4.Set(vl_v2);
@@ -1481,12 +1468,12 @@ OrbitsDiagram::bodyBuilding(const int &body)
                     }
                   case 6:
                     {
-                      for(auto it_rv = ring_vect.begin();
-                          it_rv != ring_vect.end(); it_rv++)
+#pragma omp parallel for
+                      for(size_t j = 0; j < ring_vect.size(); j++)
                         {
-                          vl_v1.push_back(it_rv->Xre4);
-                          vl_v2.push_back(it_rv->Yre4);
-                          vl_v3.push_back(it_rv->Zre4);
+                          vl_v1[j] = ring_vect[j].Xre4;
+                          vl_v2[j] = ring_vect[j].Yre4;
+                          vl_v3[j] = ring_vect[j].Zre4;
                         }
                       xre4.Set(vl_v1);
                       yre4.Set(vl_v2);

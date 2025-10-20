@@ -24,7 +24,6 @@
 #include <glibmm-2.68/glibmm/dispatcher.h>
 #include <glibmm-2.68/glibmm/main.h>
 #include <glibmm-2.68/glibmm/miscutils.h>
-#include <gtkmm-4.0/gtkmm/aboutdialog.h>
 #include <gtkmm-4.0/gtkmm/box.h>
 #include <gtkmm-4.0/gtkmm/button.h>
 #include <gtkmm-4.0/gtkmm/cssprovider.h>
@@ -33,7 +32,7 @@
 #include <gtkmm-4.0/gtkmm/stringlist.h>
 #include <iostream>
 #include <libintl.h>
-#include <omp.h>
+#include <thread>
 
 #ifndef EPH_GTK_OLD
 #include <gtkmm-4.0/gtkmm/error.h>
@@ -41,9 +40,6 @@
 #endif
 #ifdef EPH_GTK_OLD
 #include <gtkmm-4.0/gtkmm/filechooserdialog.h>
-#endif
-#ifndef EPH_OMP_TASK
-#include <thread>
 #endif
 
 MainWindow::MainWindow(const std::shared_ptr<std::string> &default_locale_name)
@@ -1348,27 +1344,12 @@ MainWindow::calcCoord()
     }
   });
 
-#ifdef EPH_OMP_TASK
-#pragma omp masked
-  {
-    omp_set_dynamic(true);
-    omp_event_handle_t event;
-#pragma omp task detach(event)
-    {
-      *result = calc->calculationsXYZ();
-      delete calc;
-      result_win_disp->emit();
-      omp_fulfill_event(event);
-    }
-  }
-#else
   std::thread thr([result, calc, result_win_disp] {
     *result = calc->calculationsXYZ();
     delete calc;
     result_win_disp->emit();
   });
   thr.detach();
-#endif
 }
 
 void
@@ -1924,20 +1905,9 @@ MainWindow::orbitsGraph()
       od->canceled_signal = [canceled_disp] {
         canceled_disp->emit();
       };
-#ifdef EPH_OMP_TASK
-#pragma omp masked
-      {
-        omp_event_handle_t event;
-#pragma omp task detach(event)
-        {
-          od->calculateOrbits();
-          omp_fulfill_event(event);
-        }
-      }
-#else
+
       std::thread thr(std::bind(&OrbitsDiagram::calculateOrbits, od));
       thr.detach();
-#endif
     }
   else
     {
@@ -1948,64 +1918,68 @@ MainWindow::orbitsGraph()
 void
 MainWindow::aboutProg()
 {
-  Gtk::AboutDialog *aboutd = new Gtk::AboutDialog;
-  aboutd->set_transient_for(*this);
-  aboutd->set_application(this->get_application());
-  aboutd->set_name("mainWindow");
-  aboutd->set_program_name("EphEPM");
-  aboutd->set_version("2.3.1");
-  aboutd->set_copyright(
-      "Copyright 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>");
-  AuxFunc af;
-  std::filesystem::path filepath
-      = Sharepath / std::filesystem::u8path("COPYING");
-  std::fstream f;
-  Glib::ustring abbuf;
-  f.open(filepath, std::ios_base::in | std::ios_base::binary);
-  if(f.is_open())
+  if(aboutd == nullptr)
     {
-      size_t sz = std::filesystem::file_size(filepath);
-      std::vector<char> ab;
-      ab.resize(sz);
-      f.read(ab.data(), ab.size());
-      f.close();
-      abbuf = Glib::ustring(ab.begin(), ab.end());
-    }
-  else
-    {
-      std::cout << "Licence file not found" << std::endl;
-    }
+      aboutd = new Gtk::AboutDialog;
+      aboutd->set_transient_for(*this);
+      aboutd->set_application(this->get_application());
+      aboutd->set_name("mainWindow");
+      aboutd->set_program_name("EphEPM");
+      aboutd->set_version("2.3.2");
+      aboutd->set_copyright(
+          "Copyright 2022-2025 Yury Bobylev <bobilev_yury@mail.ru>");
+      std::filesystem::path filepath
+          = Sharepath / std::filesystem::u8path("COPYING");
+      std::fstream f;
+      Glib::ustring abbuf;
+      f.open(filepath, std::ios_base::in | std::ios_base::binary);
+      if(f.is_open())
+        {
+          size_t sz = std::filesystem::file_size(filepath);
+          std::vector<char> ab;
+          ab.resize(sz);
+          f.read(ab.data(), ab.size());
+          f.close();
+          abbuf = Glib::ustring(ab.begin(), ab.end());
+        }
+      else
+        {
+          std::cout << "Licence file not found" << std::endl;
+        }
 
-  if(abbuf.size() == 0)
-    {
-      aboutd->set_license_type(Gtk::License::GPL_3_0_ONLY);
-    }
-  else
-    {
-      aboutd->set_license(abbuf);
-    }
+      if(abbuf.size() == 0)
+        {
+          aboutd->set_license_type(Gtk::License::GPL_3_0_ONLY);
+        }
+      else
+        {
+          aboutd->set_license(abbuf);
+        }
 
-  Glib::RefPtr<Gio::File> logofile
-      = Gio::File::create_for_path(Sharepath.u8string() + "/ico.png");
-  aboutd->set_logo(Gdk::Texture::create_from_file(logofile));
-  abbuf = Glib::ustring(gettext("EphEPM is simple program to calculate some "
-                                "Solar system bodies coordinates.\n"
-                                "Author Yury Bobylev.\n\n"
-                                "Program uses next libraries:\n"))
-          + Glib::ustring("GTK https://www.gtk.org\n"
-                          "GMP https://gmplib.org\n"
-                          "MathGL http://mathgl.sourceforge.net\n"
-                          "SOFA https://iausofa.org/");
-  aboutd->set_comments(abbuf);
+      Glib::RefPtr<Gio::File> logofile
+          = Gio::File::create_for_path(Sharepath.u8string() + "/ico.png");
+      aboutd->set_logo(Gdk::Texture::create_from_file(logofile));
+      abbuf
+          = Glib::ustring(gettext("EphEPM is simple program to calculate some "
+                                  "Solar system bodies coordinates.\n"
+                                  "Author Yury Bobylev.\n\n"
+                                  "Program uses next libraries:\n"))
+            + Glib::ustring("GTK https://www.gtk.org\n"
+                            "GMP https://gmplib.org\n"
+                            "MathGL http://mathgl.sourceforge.net\n"
+                            "SOFA https://iausofa.org/");
+      aboutd->set_comments(abbuf);
 
-  aboutd->signal_close_request().connect(
-      [aboutd] {
-        aboutd->set_visible(false);
-        delete aboutd;
-        return true;
-      },
-      false);
-  aboutd->present();
+      aboutd->signal_close_request().connect(
+          [this] {
+            std::unique_ptr<Gtk::AboutDialog> aptr(aboutd);
+            aptr->set_visible(false);
+            aboutd = nullptr;
+            return true;
+          },
+          false);
+      aboutd->present();
+    }
 }
 
 bool
