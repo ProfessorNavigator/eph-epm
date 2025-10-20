@@ -30,7 +30,6 @@ endif()
 find_library(SOFA sofa_c REQUIRED)
 
 find_package(OpenMP REQUIRED)
-message(CONFIGURE_LOG "OpenMP found ${OpenMP_CXX_VERSION}")
 
 try_compile(OMP_TEST_NESTED "${CMAKE_BINARY_DIR}/omp_test_nested"
     "${PROJECT_SOURCE_DIR}/omp_test_nested" OmpTestNested
@@ -70,7 +69,7 @@ if(MathGL2_FOUND)
     )
 else()
     target_link_libraries(ephepm
-        PRIVATE PRIVATE ${MGL}
+        PRIVATE ${MGL}
     )
 endif()
 
