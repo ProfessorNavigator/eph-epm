@@ -309,12 +309,30 @@ DiagramWidget::diagramPlot()
 void
 DiagramWidget::on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int, int)
 {
-  auto image = Gdk::Pixbuf::create_from_data(
-      gr->GetRGB(), Gdk::Colorspace::RGB, false, 8, gr->GetWidth(),
-      gr->GetHeight(), 3 * gr->GetWidth() * sizeof(guint8));
-  Gdk::Cairo::set_source_pixbuf(cr, image, 0, 0);
-  cr->rectangle(0, 0, image->get_width(), image->get_height());
-  cr->fill();
+  int stride = Cairo::ImageSurface::format_stride_for_width(
+      Cairo::ImageSurface::Format::RGB24, gr->GetWidth());
+
+  const unsigned char *data = gr->GetRGBA();
+  Cairo::RefPtr<Cairo::ImageSurface> surf = Cairo::ImageSurface::create(
+      Cairo::ImageSurface::Format::RGB24, gr->GetWidth(), gr->GetHeight());
+  unsigned char *s_data = surf->get_data();
+  int limit = stride * gr->GetHeight();
+  if(limit != surf->get_stride() * surf->get_height())
+    {
+      throw std::runtime_error(
+          "DiagramWidget::on_draw: incorrect buffer size");
+    }
+  int incr = stride / gr->GetWidth();
+#pragma omp parallel for
+  for(int i = 0; i < limit; i += incr)
+    {
+      s_data[i] = data[i + 2];
+      s_data[i + 1] = data[i + 1];
+      s_data[i + 2] = data[i];
+      s_data[i + 3] = data[i + 3];
+    }
+  cr->set_source(surf, 0.0, 0.0);
+  cr->paint();
 }
 
 bool
