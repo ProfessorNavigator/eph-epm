@@ -13,18 +13,17 @@ find_package(Gettext)
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-4.0)
 pkg_check_modules(GMPXX IMPORTED_TARGET gmpxx)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 if(NOT GMPXX_FOUND)
-    find_library(GMPXXlib NAMES gmpxx REQUIRED)
-    find_library(GMPlib NAMES gmp REQUIRED)
+    find_package(GMPLIB REQUIRED)
 endif()
 
-find_package(MathGL2)
+option(USE_INTERNAL_MGL_MODULE "Use internal module to find MathGL library" OFF)
 
-if(NOT MathGL2_FOUND)
-    find_library(MGL mgl2)
-    if(NOT MGL)
-        find_library(MGL mgl REQUIRED)
-    endif()
+if(USE_INTERNAL_MGL_MODULE)
+    find_package(MGL REQUIRED)
+else()
+    find_package(MathGL2 REQUIRED)
 endif()
 
 find_library(SOFA sofa_c REQUIRED)
@@ -60,16 +59,19 @@ target_link_options(ephepm
   PRIVATE ${OpenMP_CXX_FLAGS}
 )
 
-if(MathGL2_FOUND)
+if(USE_INTERNAL_MGL_MODULE)
     target_include_directories(ephepm
-        PRIVATE ${MathGL2_INCLUDE_DIRS}
+        PRIVATE ${MGL_INCLUDE_DIR}
     )
     target_link_libraries(ephepm
         PRIVATE mgl
     )
 else()
+    target_include_directories(ephepm
+        PRIVATE ${MathGL2_INCLUDE_DIRS}
+    )
     target_link_libraries(ephepm
-        PRIVATE ${MGL}
+        PRIVATE mgl
     )
 endif()
 
@@ -84,9 +86,13 @@ if(GMPXX_FOUND)
       PRIVATE PkgConfig::GMPXX
     )
 else()
+    target_include_directories(ephepm
+        PRIVATE ${GMPXXLIB_INCLUDE_DIR}
+        PRIVATE ${GMPCLIB_INCLUDE_DIR}
+    )
     target_link_libraries(ephepm
-        PRIVATE ${GMPXXlib}
-        PRIVATE ${GMPlib}
+        PRIVATE gmp
+        PRIVATE gmpxx
     )
 endif()
 
