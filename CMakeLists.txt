@@ -18,7 +18,7 @@ if(NOT GMPXX_FOUND)
     find_package(GMPLIB REQUIRED)
 endif()
 
-option(USE_INTERNAL_MGL_MODULE "Use internal module to find MathGL library" OFF)
+option(USE_INTERNAL_MGL_MODULE "Use internal fallback module to find MathGL library" OFF)
 
 if(USE_INTERNAL_MGL_MODULE)
     find_package(MGL REQUIRED)

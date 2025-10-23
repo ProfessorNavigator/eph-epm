@@ -17,6 +17,8 @@ You may need superuser privileges to execute last command.
 
 Default installation prefix is `/usr/local`.
 
+CMake option USE_INTERNAL_MGL_MODULE has been added in version 2.3.2 (default value is `OFF`). It is recommended to set it to `ON` in case of errors on MathGL library search.
+
 ### Windows
 
 You can build EphEPM from source by MSYS2 project [https://www.msys2.org/](https://www.msys2.org/). Follow installation instructions from their site. Install dependencies from `Dependencies` section and git. Than create folder where you want to download source code (path must not include spaces or non Latin letters). Open mingw console and execute following commands (in example we download code to C:\EphEPM and use mingw32-make from ucrt64 package)
@@ -30,6 +32,8 @@ You can build EphEPM from source by MSYS2 project [https://www.msys2.org/](https
 `cmake --install _build`
 
 If everything was correct, you can find ephepm.exe file in `msys_directory/<installation_prefix>/bin`. Icon to create desktop shortcut can be found in `msys_folder/<installation_prefix>/share/icons/hicolor/256x256/apps/ephepm.ico` path.
+
+CMake option USE_INTERNAL_MGL_MODULE has been added in version 2.3.2 (default value is `OFF`). It is recommended to set it to `ON` in case of errors on MathGL library search.
 
 Also experimental installer is available (see releases).
 
